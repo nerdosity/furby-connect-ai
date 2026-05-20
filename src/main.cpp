@@ -4113,11 +4113,13 @@ void startWebServer() {
     server.on("/img/logo.png",    HTTP_GET, []() {
         File f = SPIFFS.open("/logo.png","r");
         if (!f) { server.send(404); return; }
+        server.sendHeader("Cache-Control", "public, max-age=86400");
         server.streamFile(f, "image/png"); f.close();
     });
     server.on("/img/title.png",   HTTP_GET, []() {
         File f = SPIFFS.open("/title.png","r");
         if (!f) { server.send(404); return; }
+        server.sendHeader("Cache-Control", "public, max-age=86400");
         server.streamFile(f, "image/png"); f.close();
     });
 
