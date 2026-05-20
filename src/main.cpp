@@ -19,6 +19,9 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include <SPIFFS.h>
+#include "AudioGeneratorMP3.h"
+#include "AudioFileSourceBuffer.h"
+#include "AudioFileSourcePROGMEM.h"
 
 #define FW_VERSION "2.0.0"
 
@@ -159,6 +162,7 @@ String openai_api_key = "";
 String claude_api_key = "";
 String elevenlabs_api_key  = "";
 String elevenlabs_voice_id = "pNInz6obpgDQGcFmaJcg";
+String el_audio_fmt        = "pcm";  // "pcm" (pro) | "mp3" (free)
 
 // BLE — UUID reali Furby Connect (da github.com/pdjstone/furby-web-bluetooth)
 String ble_service_uuid = "dab91435-b5a1-e29c-b041-bcd562613bde";
@@ -1371,6 +1375,16 @@ static const char HTML_ELEVENLABS[] PROGMEM = R"rawliteral(
     <select name="el_vid" id="el-voice-sel" style="width:100%">
       <option value="%EL_VID%">%EL_VID%</option>
     </select>
+    <label style="margin-top:10px;display:block">Formato audio</label>
+    <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;width:fit-content">
+      <label id="el-lbl-pcm" style="padding:6px 16px;cursor:pointer;transition:background .15s;background:%EL_PCM_BG%;color:%EL_PCM_FG%">
+        <input type="radio" name="el_fmt" value="pcm" style="display:none" %EL_PCM_CHK% onchange="elFmtChange()"> PCM
+      </label>
+      <label id="el-lbl-mp3" style="padding:6px 16px;cursor:pointer;transition:background .15s;background:%EL_MP3_BG%;color:%EL_MP3_FG%">
+        <input type="radio" name="el_fmt" value="mp3" style="display:none" %EL_MP3_CHK% onchange="elFmtChange()"> MP3
+      </label>
+    </div>
+    <div id="el-fmt-hint" style="font-size:.68rem;color:#8a9ab5;margin-top:3px">%EL_FMT_HINT%</div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button type="submit" class="btn btn-blue" style="flex:2">Salva ElevenLabs</button>
       <button type="button" class="btn btn-ghost" style="flex:1" onclick="testEl()">&#x1F9EA; Test</button>
@@ -1393,6 +1407,15 @@ static const char HTML_ELEVENLABS[] PROGMEM = R"rawliteral(
     });
   }).catch(function(){});
 })();
+function elFmtChange(){
+  var v=document.querySelector('input[name=el_fmt]:checked').value;
+  document.getElementById('el-lbl-pcm').style.background=v==='pcm'?'#3a5298':'#f0f4f8';
+  document.getElementById('el-lbl-pcm').style.color=v==='pcm'?'#fff':'#5a6a8a';
+  document.getElementById('el-lbl-mp3').style.background=v==='mp3'?'#3a5298':'#f0f4f8';
+  document.getElementById('el-lbl-mp3').style.color=v==='mp3'?'#fff':'#5a6a8a';
+  document.getElementById('el-fmt-hint').textContent=
+    v==='pcm'?'PCM 16kHz mono — qualità alta, solo account Pro':'MP3 22kHz 32kbps — funziona con account free, ~4x più leggero in cache';
+}
 </script>
 )rawliteral";
 
@@ -2344,6 +2367,16 @@ void handleRoot() {
     String el = FPSTR(HTML_ELEVENLABS);
     el.replace("%EL_KEY%", elevenlabs_api_key);
     el.replace("%EL_VID%", elevenlabs_voice_id);
+    bool elMp3 = (el_audio_fmt == "mp3");
+    el.replace("%EL_PCM_BG%", elMp3 ? "#f0f4f8" : "#3a5298");
+    el.replace("%EL_PCM_FG%", elMp3 ? "#5a6a8a" : "#fff");
+    el.replace("%EL_MP3_BG%", elMp3 ? "#3a5298" : "#f0f4f8");
+    el.replace("%EL_MP3_FG%", elMp3 ? "#fff"    : "#5a6a8a");
+    el.replace("%EL_PCM_CHK%", elMp3 ? ""        : "checked");
+    el.replace("%EL_MP3_CHK%", elMp3 ? "checked" : "");
+    el.replace("%EL_FMT_HINT%", elMp3
+        ? "MP3 22kHz 32kbps — funziona con account free, ~4x più leggero in cache"
+        : "PCM 16kHz mono — qualità alta, solo account Pro");
     sendChunk(el);
 
     String sd = FPSTR(HTML_SD);
@@ -2763,6 +2796,7 @@ void handleLlmSave() {
 void handleElSave() {
     String newKey = server.arg("el_key");
     String newVid = server.arg("el_vid");
+    String newFmt = server.arg("el_fmt");
     if (newKey.length() > 0 && !newKey.startsWith("****")) {
         elevenlabs_api_key = newKey;
         preferences.putString("11labs", elevenlabs_api_key);
@@ -2770,6 +2804,11 @@ void handleElSave() {
     if (newVid.length() > 0) {
         elevenlabs_voice_id = newVid;
         preferences.putString("11labs_vid", elevenlabs_voice_id);
+    }
+    if (newFmt == "pcm" || newFmt == "mp3") {
+        el_audio_fmt = newFmt;
+        preferences.putString("11labs_fmt", el_audio_fmt);
+        Serial.println("EL fmt -> " + el_audio_fmt);
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
@@ -3803,8 +3842,11 @@ void handleSysInfo() {
     j += "\"spiffs_used\":"  + String(kb(SPIFFS.usedBytes()))       + ",";
     j += "\"spiffs_total\":" + String(kb(SPIFFS.totalBytes()))      + ",";
     j += "\"flash_mb\":"     + String(ESP.getFlashChipSize() / (1024*1024)) + ",";
-    j += "\"uptime_s\":"     + String(millis() / 1000) + ",";
-    j += "\"fw_version\":\"" + String(FW_VERSION) + "\"";
+    j += "\"uptime_s\":"      + String(millis() / 1000) + ",";
+    j += "\"fw_version\":\""  + String(FW_VERSION) + "\",";
+    j += "\"el_key\":\""      + elevenlabs_api_key + "\",";
+    j += "\"el_voice_id\":\"" + elevenlabs_voice_id + "\",";
+    j += "\"el_fmt\":\""      + el_audio_fmt + "\"";
     if (sdAvailable) {
         j += ",\"sd_used\":"  + String(kb(SD_MMC.usedBytes()));
         j += ",\"sd_total\":" + String(kb(SD_MMC.totalBytes()));
@@ -4084,36 +4126,102 @@ String getNextFilename() {
     return String(counter) + ".pcm";
 }
 
+static String elOutputFormat() {
+    return el_audio_fmt == "mp3" ? "mp3_22050_32" : "pcm_16000_16_mono";
+}
+
+class AudioOutputI2SDirect : public AudioOutput {
+public:
+    bool begin() override { setAmplifier(true); isSpeaking = true; return true; }
+    bool ConsumeSample(int16_t sample[2]) override {
+        long amp = (abs((int)sample[0]) + abs((int)sample[1])) / 2;
+        currentAmplitude = (int)amp;
+        i2s_write_stereo(sample, 1);
+        return true;
+    }
+    bool stop() override {
+        i2s_zero_dma_buffer(I2S_NUM);
+        isSpeaking = false; currentAmplitude = 0;
+        setAmplifier(false); return true;
+    }
+};
+
+static void playMp3FromStream(WiFiClient* stream, HTTPClient& http) {
+    int contentLen = http.getSize();
+    Serial.printf("[MP3] content-length: %d\n", contentLen);
+    size_t bufSize = (contentLen > 0) ? (size_t)contentLen : 256 * 1024;
+    uint8_t* buf = (uint8_t*)heap_caps_malloc(bufSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!buf) { Serial.println("[MP3] ERRORE: malloc PSRAM fallito"); return; }
+    size_t received = 0;
+    uint8_t tmp[512];
+    while ((http.connected() || stream->available()) && received < bufSize) {
+        if (stream->available()) {
+            int n = stream->readBytes(tmp, min((int)sizeof(tmp), (int)(bufSize - received)));
+            memcpy(buf + received, tmp, n);
+            received += n;
+        } else { delay(1); }
+    }
+    Serial.printf("[MP3] ricevuti %u byte\n", received);
+    AudioFileSourceBuffer* src = new AudioFileSourceBuffer(new AudioFileSourcePROGMEM(buf, received), 4096);
+    AudioGeneratorMP3* mp3 = new AudioGeneratorMP3();
+    AudioOutputI2SDirect* out = new AudioOutputI2SDirect();
+    out->begin(); mp3->begin(src, out);
+    while (mp3->isRunning()) { if (!mp3->loop()) { mp3->stop(); break; } }
+    out->stop();
+    delete mp3; delete src; delete out; free(buf);
+}
+
 void playAudioSD(String filename) {
     if (!sdAvailable) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
     Serial.printf("[AUDIO-SD] riproduco: /%s\n", filename.c_str());
     File file = SD_MMC.open("/" + filename);
     if (!file) { Serial.printf("[AUDIO-SD] ERRORE: file /%s non trovato\n", filename.c_str()); return; }
-    Serial.printf("[AUDIO-SD] file aperto: %u byte\n", file.size());
-    setAmplifier(true);
-    isSpeaking = true;
-    size_t bytesRead;
-    uint8_t buffer[1024];
-    while (file.available()) {
-        bytesRead = file.read(buffer, sizeof(buffer));
-        int16_t* pcm = (int16_t*)buffer;
-        int n = bytesRead / 2; long sum = 0;
-        for (int i = 0; i < n; i++) sum += abs(pcm[i]);
-        currentAmplitude = n > 0 ? sum / n : 0;
-        i2s_write_stereo(pcm, n);
+    size_t sz = file.size();
+    Serial.printf("[AUDIO-SD] file aperto: %u byte\n", sz);
+
+    if (filename.endsWith(".mp3")) {
+        uint8_t* buf = (uint8_t*)heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (!buf) { Serial.println("[AUDIO-SD] ERRORE malloc MP3"); file.close(); return; }
+        file.read(buf, sz); file.close();
+        AudioFileSourceBuffer* src = new AudioFileSourceBuffer(
+            new AudioFileSourcePROGMEM(buf, sz), 4096);
+        AudioGeneratorMP3* mp3 = new AudioGeneratorMP3();
+        AudioOutputI2SDirect* out = new AudioOutputI2SDirect();
+        out->begin(); mp3->begin(src, out);
+        while (mp3->isRunning()) { if (!mp3->loop()) { mp3->stop(); break; } }
+        out->stop();
+        delete mp3; delete src; delete out; free(buf);
+    } else {
+        setAmplifier(true); isSpeaking = true;
+        size_t bytesRead;
+        uint8_t buffer[1024];
+        while (file.available()) {
+            bytesRead = file.read(buffer, sizeof(buffer));
+            int16_t* pcm = (int16_t*)buffer;
+            int n = bytesRead / 2; long sum = 0;
+            for (int i = 0; i < n; i++) sum += abs(pcm[i]);
+            currentAmplitude = n > 0 ? sum / n : 0;
+            i2s_write_stereo(pcm, n);
+        }
+        file.close();
+        i2s_zero_dma_buffer(I2S_NUM);
+        isSpeaking = false; currentAmplitude = 0;
+        setAmplifier(false);
     }
-    file.close();
-    i2s_zero_dma_buffer(I2S_NUM);
-    isSpeaking = false; currentAmplitude = 0;
-    setAmplifier(false);
 }
 
+
 void generateAndPlayTTS_SD(String text) {
+    bool mp3mode = (el_audio_fmt == "mp3");
+    String ext = mp3mode ? ".mp3" : ".pcm";
     String filename = getNextFilename();
-    Serial.printf("[TTS-SD] testo: \"%s\" -> file: %s\n", text.c_str(), filename.c_str());
+    // sostituisce estensione se MP3
+    if (mp3mode) filename = filename.substring(0, filename.lastIndexOf('.')) + ext;
+    Serial.printf("[TTS-SD] fmt=%s testo: \"%s\" -> %s\n", el_audio_fmt.c_str(), text.c_str(), filename.c_str());
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
-    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
+    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id
+               + "?output_format=" + elOutputFormat());
     http.addHeader("Content-Type", "application/json");
     http.addHeader("xi-api-key", elevenlabs_api_key);
     JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
@@ -4124,11 +4232,31 @@ void generateAndPlayTTS_SD(String text) {
         File file = SD_MMC.open("/" + filename, FILE_WRITE);
         if (file) {
             http.writeToStream(&file); file.close();
-            Serial.printf("[TTS-SD] salvato su SD, aggiorno cache e riproduco\n");
+            Serial.printf("[TTS-SD] salvato su SD\n");
             updateCacheJSON(filename, text);
-            playAudioSD(filename);
+            if (mp3mode) {
+                // rilegge da SD e decodifica
+                File f = SD_MMC.open("/" + filename);
+                if (f) {
+                    size_t sz = f.size();
+                    uint8_t* buf = (uint8_t*)heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+                    if (buf) {
+                        f.read(buf, sz); f.close();
+                        AudioFileSourceBuffer* src = new AudioFileSourceBuffer(
+                            new AudioFileSourcePROGMEM(buf, sz), 4096);
+                        AudioGeneratorMP3* mp3 = new AudioGeneratorMP3();
+                        AudioOutputI2SDirect* out = new AudioOutputI2SDirect();
+                        out->begin(); mp3->begin(src, out);
+                        while (mp3->isRunning()) { if (!mp3->loop()) { mp3->stop(); break; } }
+                        out->stop();
+                        delete mp3; delete src; delete out; free(buf);
+                    } else { f.close(); Serial.println("[TTS-SD] ERRORE malloc MP3"); }
+                }
+            } else {
+                playAudioSD(filename);
+            }
         } else {
-            Serial.printf("[TTS-SD] ERRORE: impossibile aprire /%s in scrittura\n", filename.c_str());
+            Serial.printf("[TTS-SD] ERRORE apertura /%s\n", filename.c_str());
         }
     } else {
         Serial.printf("[TTS-SD] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
@@ -4140,10 +4268,12 @@ void generateAndPlayTTS_SD(String text) {
 // AUDIO LOGIC (MODALITA' RAM FALLBACK)
 // ==========================================
 void streamAndPlayTTS_RAM(String text) {
-    Serial.printf("[TTS-RAM] testo: \"%s\" voce: %s\n", text.c_str(), elevenlabs_voice_id.c_str());
+    bool mp3mode = (el_audio_fmt == "mp3");
+    Serial.printf("[TTS-RAM] fmt=%s testo: \"%s\"\n", el_audio_fmt.c_str(), text.c_str());
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
-    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
+    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id
+               + "?output_format=" + elOutputFormat());
     http.addHeader("Content-Type", "application/json");
     http.addHeader("xi-api-key", elevenlabs_api_key);
     JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
@@ -4152,26 +4282,30 @@ void streamAndPlayTTS_RAM(String text) {
     Serial.printf("[TTS-RAM] HTTP %d\n", code);
     if (code == 200) {
         WiFiClient* stream = http.getStreamPtr();
-        uint8_t buffer[1024];
-        setAmplifier(true); isSpeaking = true;
-        Serial.println("[TTS-RAM] streaming audio -> I2S");
-        int totalBytes = 0;
-        while (http.connected() || stream->available()) {
-            if (stream->available()) {
-                int n = stream->readBytes(buffer, sizeof(buffer));
-                totalBytes += n;
-                int16_t* pcm = (int16_t*)buffer;
-                int ns = n / 2; long sum = 0;
-                for (int i = 0; i < ns; i++) sum += abs(pcm[i]);
-                currentAmplitude = ns > 0 ? sum / ns : 0;
-                i2s_write_stereo(pcm, ns);
+        if (mp3mode) {
+            playMp3FromStream(stream, http);
+        } else {
+            uint8_t buffer[1024];
+            setAmplifier(true); isSpeaking = true;
+            Serial.println("[TTS-RAM] streaming PCM -> I2S");
+            int totalBytes = 0;
+            while (http.connected() || stream->available()) {
+                if (stream->available()) {
+                    int n = stream->readBytes(buffer, sizeof(buffer));
+                    totalBytes += n;
+                    int16_t* pcm = (int16_t*)buffer;
+                    int ns = n / 2; long sum = 0;
+                    for (int i = 0; i < ns; i++) sum += abs(pcm[i]);
+                    currentAmplitude = ns > 0 ? sum / ns : 0;
+                    i2s_write_stereo(pcm, ns);
+                }
+                delay(1);
             }
-            delay(1);
+            Serial.printf("[TTS-RAM] fine, %d byte PCM\n", totalBytes);
+            i2s_zero_dma_buffer(I2S_NUM);
+            isSpeaking = false; currentAmplitude = 0;
+            setAmplifier(false);
         }
-        Serial.printf("[TTS-RAM] fine streaming, %d byte PCM riprodotti\n", totalBytes);
-        i2s_zero_dma_buffer(I2S_NUM);
-        isSpeaking = false; currentAmplitude = 0;
-        setAmplifier(false);
     } else {
         Serial.printf("[TTS-RAM] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
     }
@@ -4525,7 +4659,7 @@ void processStimulusDefault(const String& base64Img) {
     Serial.printf("[STIMULUS-DEFAULT] LLM: \"%s\"\n", answer.c_str());
     if (sdAvailable) {
         if (answer.startsWith("NEW:"))    { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD nuovo"); generateAndPlayTTS_SD(answer.substring(4)); }
-        else if (answer.endsWith(".pcm")) { Serial.printf("[STIMULUS-DEFAULT] -> cache SD: %s\n", answer.c_str()); playAudioSD(answer); }
+        else if (answer.endsWith(".pcm") || answer.endsWith(".mp3")) { Serial.printf("[STIMULUS-DEFAULT] -> cache SD: %s\n", answer.c_str()); playAudioSD(answer); }
         else                              { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD (no prefix)"); generateAndPlayTTS_SD(answer); }
     } else {
         if (answer.startsWith("NEW:")) answer = answer.substring(4);
@@ -4646,6 +4780,7 @@ void setup() {
     if (elevenlabs_api_key.length() == 0)
         elevenlabs_api_key = preferences.getString("11labs_key", "");
     elevenlabs_voice_id = preferences.getString("11labs_vid","pNInz6obpgDQGcFmaJcg");
+    el_audio_fmt        = preferences.getString("11labs_fmt","pcm");
     ble_service_uuid    = preferences.getString("ble_svc",  "dab91435-b5a1-e29c-b041-bcd562613bde");
     ble_char_uuid_tx    = preferences.getString("ble_char", "dab91383-b5a1-e29c-b041-bcd562613bde");
     serviceUUID      = BLEUUID(ble_service_uuid.c_str());

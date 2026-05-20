@@ -1046,23 +1046,49 @@ function testTtsSend(){
   var msg=document.getElementById('test-tts-msg');
   var dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
   if(dest==='browser'){
-    if(!window.speechSynthesis){msg.textContent='Web Speech API non supportata in questo browser.';return;}
-    window.speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(text);
-    u.lang=navigator.language||'it-IT';
-    window.speechSynthesis.speak(u);
-    msg.textContent=t('playing');
-    setTimeout(function(){msg.textContent='';},3000);
+    msg.style.color='#5a6a8a';
+    msg.textContent='Carico config...';
+    fetch('/sys/info').then(function(r){return r.json();}).then(function(cfg){
+      var key=cfg.el_key||'';
+      var vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
+      if(!key){msg.style.color='#dc2626';msg.textContent='API key ElevenLabs non configurata.';return;}
+      msg.style.color='#5a6a8a';
+      msg.textContent='Sintesi in corso...';
+      fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid+'?output_format=mp3_22050_32',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','xi-api-key':key},
+        body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2'})
+      }).then(function(r){
+        if(!r.ok){return r.json().then(function(e){throw new Error(JSON.stringify(e));});}
+        return r.arrayBuffer();
+      }).then(function(buf){
+        var ctx=new (window.AudioContext||window.webkitAudioContext)();
+        ctx.decodeAudioData(buf,function(decoded){
+          var src=ctx.createBufferSource();
+          src.buffer=decoded;
+          src.connect(ctx.destination);
+          src.start(0);
+          msg.style.color='#16a34a';
+          msg.textContent='▶ Riproduzione in corso...';
+          src.onended=function(){msg.textContent='';ctx.close();};
+        });
+      }).catch(function(e){
+        msg.style.color='#dc2626';
+        msg.textContent='Errore ElevenLabs: '+e.message;
+      });
+    }).catch(function(){msg.style.color='#dc2626';msg.textContent='Errore connessione ESP32.';});
   } else {
+    msg.style.color='#5a6a8a';
     msg.textContent=t('sending_tts');
     var fd=new FormData(); fd.append('text',text);
     fetch('/test/tts',{method:'POST',body:fd})
       .then(function(r){return r.json();})
       .then(function(d){
+        msg.style.color=d.ok?'#16a34a':'#dc2626';
         msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
         setTimeout(function(){msg.textContent='';},3500);
       })
-      .catch(function(e){msg.textContent=t('error_conn');});
+      .catch(function(e){msg.style.color='#dc2626';msg.textContent=t('error_conn');});
   }
 }
 
