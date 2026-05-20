@@ -1527,12 +1527,13 @@ function fmLoad(){
     var rows='';
     d.files.forEach(function(f){
       var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      var ro=f.name.endsWith('.html');
       rows+='<tr>'
-        +'<td class="fm-name">'+n+'</td>'
+        +'<td class="fm-name">'+n+(ro?' <span style="font-size:.6rem;color:#8a9ab5;font-weight:700">RO</span>':'')+'</td>'
         +'<td class="fm-size">'+fmFmtSize(f.size)+'</td>'
-        +'<td><button class="btn" style="padding:3px 8px;font-size:.65rem" onclick="fmEdit(\''+n+'\')">&#x270F;</button></td>'
+        +'<td>'+(ro?'':'<button class="btn" style="padding:3px 8px;font-size:.65rem" onclick="fmEdit(\''+n+'\')">&#x270F;</button>')+'</td>'
         +'<td><a class="btn b-slt" style="padding:3px 8px;font-size:.65rem;text-decoration:none" href="/fs/get'+n+'" download>&#x2193;</a></td>'
-        +'<td><button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="fmDel(\''+n+'\')">&#x2715;</button></td>'
+        +'<td>'+(ro?'':'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="fmDel(\''+n+'\')">&#x2715;</button>')+'</td>'
         +'</tr>';
     });
     tb.innerHTML=rows;

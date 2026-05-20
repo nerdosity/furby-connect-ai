@@ -3341,6 +3341,7 @@ void handleTestBehavior() {
 void handleDebugPage() {
     File f = SPIFFS.open("/debug.html", "r");
     if (!f) { server.send_P(200, "text/html", HTML_DEBUG); return; }
+    server.sendHeader("Cache-Control", "no-cache, must-revalidate");
     server.streamFile(f, "text/html; charset=utf-8");
     f.close();
 }
@@ -3680,7 +3681,7 @@ void handleCamDescribe() {
 void handleCameraPage() {
     if (!camActive) camInit();
     File f = SPIFFS.open("/camera.html", "r");
-    if (f) { server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
+    if (f) { server.sendHeader("Cache-Control", "public, max-age=3600"); server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
     // fallback minimale se SPIFFS non flashato
     server.send(200, "text/html", F("<!DOCTYPE html><html><body>"
         "<p>camera.html non trovato in SPIFFS. Esegui: pio run -t uploadfs</p>"
@@ -4105,10 +4106,10 @@ void startWebServer() {
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);
-    server.on("/favicon.ico",    HTTP_GET,  []() { server.send(204); });
-    server.on("/apple-touch-icon.png",        HTTP_GET, []() { server.send(204); });
-    server.on("/apple-touch-icon-precomposed.png", HTTP_GET, []() { server.send(204); });
-    server.on("/manifest.json",  HTTP_GET,  []() { server.send(204); });
+    server.on("/favicon.ico",    HTTP_GET,  []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
+    server.on("/apple-touch-icon.png",        HTTP_GET, []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
+    server.on("/apple-touch-icon-precomposed.png", HTTP_GET, []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
+    server.on("/manifest.json",  HTTP_GET,  []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
     // Serve immagini statiche da SPIFFS: GET /img/<nome>.png|jpg
     server.on("/img/logo.png",    HTTP_GET, []() {
         File f = SPIFFS.open("/logo.png","r");
