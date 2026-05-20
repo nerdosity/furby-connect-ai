@@ -1232,8 +1232,11 @@ function togglePw(id){var i=document.getElementById(id);i.type=i.type==='passwor
       document.getElementById('sys-bar').textContent=
         'CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)
         +' | PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)
+        +' | Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)
         +' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)
         +' | Flash '+d.flash_mb+'MB'+sd;
+      var u=document.getElementById('esp-uptime');
+      if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m';}
     }).catch(function(){});
   }
   load(); setInterval(load,10000);
@@ -1339,10 +1342,15 @@ function loadModels(){
   st.textContent='carico...';
   fetch('/api/models?provider='+p)
     .then(function(r){return r.json();})
-    .then(function(list){
-      if(!list||!list.length){
+    .then(function(d){
+      // supporta sia {ok,models:[]} sia array diretto (retrocompat)
+      var list=Array.isArray(d)?d:(d.models||[]);
+      if(!d.ok&&d.error==='no_key'){
         fillSelect(FALLBACK[p]||[cur],cur);
-        st.textContent='token assente — lista predefinita';
+        st.textContent='token non salvato — lista predefinita';
+      } else if(!list.length){
+        fillSelect(FALLBACK[p]||[cur],cur);
+        st.textContent='nessun modello compatibile — lista predefinita';
       } else {
         list.sort();
         fillSelect(list,cur);
@@ -1704,6 +1712,8 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
   </nav>
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
+<div id="sys-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap">carico...</div>
+<script>(function(){function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}function load(){fetch('/sys/info').then(function(r){return r.json();}).then(function(d){var sd=d.sd_total?' | SD '+fkb(d.sd_used)+'/'+fkb(d.sd_total):'';document.getElementById('sys-bar').textContent='CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)+' | PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)+' | Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)+' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)+' | Flash '+d.flash_mb+'MB'+sd;}).catch(function(){});}load();setInterval(load,10000);})();</script>
 
 <!-- BLE status bar -->
 <div class="ble-bar">
@@ -2575,6 +2585,10 @@ void handleApiModels() {
     String provider = server.arg("provider");
     if (provider.length() == 0) provider = llm_provider;
 
+    // Rilegge dalla NVS in caso la RAM sia stata svuotata per qualsiasi motivo
+    if (openai_api_key.length() == 0) openai_api_key = preferences.getString("openai", "");
+    if (claude_api_key.length() == 0) claude_api_key  = preferences.getString("claude", "");
+
     Serial.printf("[API-MODELS] provider=%s openai_key_len=%u claude_key_len=%u\n",
         provider.c_str(), openai_api_key.length(), claude_api_key.length());
 
@@ -2582,18 +2596,22 @@ void handleApiModels() {
     HTTPClient http;
     String result = "[";
 
+    server.sendHeader("Cache-Control", "no-store");
+
     if (provider == "openai") {
         if (openai_api_key.length() == 0) {
-            Serial.println("[API-MODELS] openai_api_key vuota -> ritorno []");
-            server.send(200, "application/json", "[]"); return;
+            Serial.println("[API-MODELS] openai_api_key vuota -> ritorno errore");
+            server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return;
         }
         http.begin(client, "https://api.openai.com/v1/models");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
         int oaCode = http.GET();
         Serial.printf("[API-MODELS] OpenAI /models HTTP %d\n", oaCode);
         if (oaCode == 200) {
-            // Filtra solo i modelli GPT (esclude embedding, tts, dall-e, whisper, ecc.)
             String body = http.getString();
+            Serial.printf("[API-MODELS] OpenAI body len=%u\n", body.length());
+            // Filtra modelli testuali: gpt-*, o1*, o3*, o4*, chatgpt-*
+            // Esclude: embedding, tts, dall-e, whisper, babbage, davinci, ada
             int pos = 0;
             bool first = true;
             while (true) {
@@ -2602,18 +2620,28 @@ void handleApiModels() {
                 idx += 6;
                 int end = body.indexOf("\"", idx);
                 String id = body.substring(idx, end);
-                if (id.startsWith("gpt-") || id.startsWith("o1") || id.startsWith("o3")) {
+                bool isText = id.startsWith("gpt-") || id.startsWith("o1") ||
+                              id.startsWith("o3")   || id.startsWith("o4") ||
+                              id.startsWith("chatgpt-");
+                bool isExcl = id.indexOf("embed") >= 0 || id.indexOf("tts") >= 0 ||
+                              id.indexOf("dall-e") >= 0 || id.indexOf("whisper") >= 0 ||
+                              id.indexOf("babbage") >= 0 || id.indexOf("davinci") >= 0 ||
+                              id.indexOf("ada") >= 0;
+                if (isText && !isExcl) {
                     if (!first) result += ",";
                     result += "\"" + id + "\"";
                     first = false;
                 }
                 pos = end + 1;
             }
+            Serial.printf("[API-MODELS] OpenAI modelli trovati: %s\n", result.c_str());
+        } else {
+            Serial.printf("[API-MODELS] OpenAI HTTP %d: %s\n", oaCode, http.getString().substring(0,200).c_str());
         }
         http.end();
 
     } else if (provider == "claude") {
-        if (claude_api_key.length() == 0) { server.send(200, "application/json", "[]"); return; }
+        if (claude_api_key.length() == 0) { server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return; }
         http.begin(client, "https://api.anthropic.com/v1/models");
         http.addHeader("x-api-key", claude_api_key);
         http.addHeader("anthropic-version", "2023-06-01");
@@ -2637,8 +2665,7 @@ void handleApiModels() {
     }
 
     result += "]";
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", result);
+    server.send(200, "application/json", "{\"ok\":true,\"models\":" + result + "}");
 }
 
 // GET /api/config?openai_key=...&claude_key=...&el_key=...&el_vid=...&provider=...&model=...&ssid=...&pass=...
@@ -3603,7 +3630,9 @@ void handleCamDescribe() {
     String b64 = base64Encode(fb->buf, fb->len);
     esp_camera_fb_return(fb);
     Serial.printf("[CAM-DESCRIBE] base64: %u char, prompt: \"%s\"\n", b64.length(), gCamDescPrompt.c_str());
-    String answer = callLLM(b64, gCamDescPrompt, "Descrivi cosa vedi.");
+    String sysP = gPersonalityPrompt;
+    if (gCamDescPrompt.length() > 0) sysP += " " + gCamDescPrompt;
+    String answer = callLLM(b64, sysP, "Descrivi quello che vedi, in prima persona, come se fossi tu a guardare.");
     Serial.printf("[CAM-DESCRIBE] risposta LLM (%u char): \"%s\"\n", answer.length(), answer.c_str());
     String safe;
     for (char c : answer) {
@@ -3636,7 +3665,6 @@ void handleCameraPage() {
         ".header .desktop-nav a:hover{background:#ffffff22}"
         ".header .desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}"
         "@media(min-width:900px){.header .desktop-nav{display:flex}}"
-        ".header span{color:#8fb3e8;font-size:.7rem;margin-left:12px}"
         ".wrap{max-width:780px;margin:16px auto;padding:0 16px}"
         ".frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;"
           "background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;"
@@ -3658,6 +3686,8 @@ void handleCameraPage() {
           "line-height:1.5}"
         ".b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}"
         ".b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}"
+        "#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;"
+          "color:#4a6a9a;overflow-x:auto;white-space:nowrap}"
         "</style></head><body>"
         "<div class='header'>"
           "<h1>&#x1F4F7; Camera</h1>"
@@ -3666,18 +3696,34 @@ void handleCameraPage() {
             "<a href='/debug'>Debug</a>"
             "<a href='/camera' class='active'>Camera</a>"
           "</nav>"
-          "<span id='fps'>—</span>"
         "</div>"
+        "<div id='sys-bar'>carico...</div>"
+        "<script>"
+        "(function(){"
+          "function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}"
+          "function load(){"
+            "fetch('/sys/info').then(function(r){return r.json();}).then(function(d){"
+              "var sd=d.sd_total?' | SD '+fkb(d.sd_used)+'/'+fkb(d.sd_total):'';"
+              "document.getElementById('sys-bar').textContent="
+                "'CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)"
+                "+'| PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)"
+                "+'| Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)"
+                "+'| SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)"
+                "+'| Flash '+d.flash_mb+'MB'+sd;"
+            "}).catch(function(){});}"
+          "load();setInterval(load,10000);"
+        "})();"
+        "</script>"
         "<div class='wrap'>"
         "<div class='frame-box'>"
           "<img id='camimg' src='/camera/frame' alt='camera'>"
         "</div>"
+        "<div class='status' id='status'>Streaming attivo &nbsp;&#x2022;&nbsp; <span id='fps'>—</span> fps</div>"
         "<div class='controls'>"
           "<button class='btn' id='btn-tog' onclick='toggleStream()'>&#x23F8; Pausa</button>"
           "<button class='btn' onclick='setQuality(12)'>Qualit&#224; alta</button>"
           "<button class='btn' onclick='setQuality(25)'>Qualit&#224; bassa</button>"
         "</div>"
-        "<div class='status' id='status'>Streaming attivo</div>"
 
         "<div class='card'>"
           "<h3>&#x1F9E0; Descrivi frame con LLM</h3>"
@@ -3728,16 +3774,18 @@ void handleCameraPage() {
           "var t=Date.now();"
           "img.onload=function(){"
             "frameCount++;"
-            "if(t-last>=1000){document.getElementById('fps').textContent=(frameCount/(((t-last)||1000)/1000)).toFixed(1)+' fps';frameCount=0;last=t;}"
+            "if(t-last>=1000){document.getElementById('fps').textContent=(frameCount/(((t-last)||1000)/1000)).toFixed(1);frameCount=0;last=t;}"
             "if(running)nextFrame();"
           "};"
           "img.onerror=function(){setTimeout(nextFrame,1000);};"
           "img.src='/camera/frame?t='+Date.now();"
         "}"
         "function toggleStream(){"
+          "var st=document.getElementById('status');"
           "running=!running;"
           "document.getElementById('btn-tog').textContent=running?'\\u23F8 Pausa':'\\u25B6 Riprendi';"
-          "document.getElementById('status').textContent=running?'Streaming attivo':'In pausa';"
+          "if(!running)st.textContent='In pausa';"
+          "else st.innerHTML='Streaming attivo &nbsp;&#x2022;&nbsp; <span id=\\'fps\\'>—</span> fps';"
           "if(running)nextFrame();"
         "}"
         "function setQuality(q){"
@@ -3876,9 +3924,11 @@ void handleSysInfo() {
     j += "\"heap_total\":"   + String(kb(ESP.getHeapSize()))        + ",";
     j += "\"psram_free\":"   + String(kb(psramFound() ? ESP.getFreePsram() : 0)) + ",";
     j += "\"psram_total\":"  + String(kb(psramFound() ? ESP.getPsramSize()  : 0)) + ",";
-    j += "\"spiffs_used\":"  + String(kb(SPIFFS.usedBytes()))       + ",";
-    j += "\"spiffs_total\":" + String(kb(SPIFFS.totalBytes()))      + ",";
-    j += "\"flash_mb\":"     + String(ESP.getFlashChipSize() / (1024*1024)) + ",";
+    j += "\"spiffs_used\":"   + String(kb(SPIFFS.usedBytes()))                  + ",";
+    j += "\"spiffs_total\":"  + String(kb(SPIFFS.totalBytes()))                 + ",";
+    j += "\"sketch_used\":"   + String(kb(ESP.getSketchSize()))                 + ",";
+    j += "\"sketch_total\":"  + String(kb(ESP.getFreeSketchSpace() + ESP.getSketchSize())) + ",";
+    j += "\"flash_mb\":"      + String(ESP.getFlashChipSize() / (1024*1024))    + ",";
     j += "\"uptime_s\":"      + String(millis() / 1000) + ",";
     j += "\"fw_version\":\""  + String(FW_VERSION) + "\",";
     j += "\"el_key\":\""      + elevenlabs_api_key + "\",";

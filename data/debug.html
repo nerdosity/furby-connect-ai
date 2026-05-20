@@ -319,7 +319,7 @@ function setLang(l){
 </div>
 <div id="db-ble-list" style="background:#f5f8ff;padding:0 16px;border-bottom:1px solid #e4eaf4"></div>
 
-<div id="sys-info-bar" style="background:#f5f8ff;padding:5px 16px;font-size:.62rem;font-family:monospace;color:#5a6a8a;border-bottom:1px solid #e4eaf4;overflow-x:auto;white-space:nowrap">carico info sistema...</div>
+<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap">carico info sistema...</div>
 
 <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;background:#fff;border-bottom:1px solid #e4eaf4">
   <span style="font-size:.68rem;color:#5a6a8a;flex-shrink:0">&#x1F50A; VOL</span>
@@ -1177,17 +1177,23 @@ setInterval(dbBlePoll,5000);
 
 // ---- System info ----
 function fmtKB(kb){if(kb>=1024)return(kb/1024).toFixed(1)+' MB';return kb+' KB';}
+function buildSysBarText(d){
+  var s='CPU: '+d.cpu_mhz+'MHz'
+    +' | Heap: '+fmtKB(d.heap_free)+'/'+fmtKB(d.heap_total)
+    +' | PSRAM: '+fmtKB(d.psram_free)+'/'+fmtKB(d.psram_total)
+    +' | Sketch: '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
+    +' | SPIFFS: '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
+    +' | Flash: '+d.flash_mb+'MB';
+  if(d.sd_total) s+=' | SD: '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total);
+  return s;
+}
 function sysInfoPoll(){
   fetch('/sys/info').then(r=>r.json()).then(function(d){
     var el=document.getElementById('sys-info-bar');if(!el)return;
-    var sd=d.sd_total?(' | SD: '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total)):'';
-    el.textContent='CPU: '+d.cpu_mhz+'MHz'
-      +' | Heap: '+fmtKB(d.heap_free)+'/'+fmtKB(d.heap_total)
-      +' | PSRAM: '+fmtKB(d.psram_free)+'/'+fmtKB(d.psram_total)
-      +' | SPIFFS: '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
-      +' | Flash: '+d.flash_mb+'MB'
-      +sd;
+    el.textContent=buildSysBarText(d);
     if(d.fw_version){var fv=document.getElementById('hdr-fw-ver');if(fv)fv.textContent='v'+d.fw_version;}
+    var ut=document.getElementById('db-uptime');
+    if(ut&&d.uptime_s!=null){var s=d.uptime_s;ut.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m';}
   }).catch(function(){});
 }
 sysInfoPoll();
