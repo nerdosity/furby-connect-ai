@@ -13,19 +13,16 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
 .nav-toggle{background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-shrink:0}
 .nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
-/* ── desktop: nav-toggle nascosto, drawer laterale fisso ─────────────── */
+/* ── desktop: hamburger nascosto, link inline ─────────────── */
+.desktop-nav{display:none;align-items:center;gap:4px}
+.desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
+  padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
+.desktop-nav a:hover{background:#ffffff22}
+.desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
 @media(min-width:900px){
   .nav-toggle{display:none}
-  .desktop-nav-links{display:flex!important;gap:2px}
-  .nav-overlay{display:none!important}
-  .nav-drawer{position:static;width:auto;height:auto;background:transparent;
-    box-shadow:none;padding:0;display:flex;flex-direction:row;align-items:center;gap:4px}
-  .nav-drawer.open{right:auto}
-  .nav-header{display:none}
-  .nav-item{padding:6px 12px;font-size:.8rem;border-bottom:none;border-radius:6px;color:#c8d8f0;white-space:nowrap}
-  .nav-item:hover,.nav-item.active{background:#ffffff22}
-  .nav-item svg{display:none}
-  .header{padding:10px 24px;gap:16px}
+  .desktop-nav{display:flex}
+  .hdr-right{margin-left:0!important}
 }
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
 .nav-overlay.open{display:block}
@@ -55,12 +52,20 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .tab-pane{display:none;padding:20px 24px;max-width:1400px;margin:0 auto}
 .tab-pane.active{display:block}
 @media(min-width:900px){
-  .tab-pane{padding:24px 32px}
-  .card{padding:20px 26px}
+  body{font-size:16px}
+  .tab-pane{padding:28px 36px}
+  .card{padding:22px 28px}
+  .card h3{font-size:.85rem;letter-spacing:.8px}
+  .sensor{font-size:.92rem}
+  .tab{padding:13px 24px;font-size:.88rem}
+  .btn{font-size:.9rem;padding:9px 16px}
+  label,input[type=text],input[type=number],select,textarea{font-size:.88rem}
   .sensors{grid-template-columns:1fr 1fr 1fr 1fr}
-  .act-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-  .fm-table{font-size:.85rem}
-  .fm-editor{height:420px;font-size:.82rem}
+  .act-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .fm-table{font-size:.88rem}
+  .fm-editor{height:440px;font-size:.85rem}
+  .log{font-size:.8rem;height:160px}
+  .raw{font-size:.78rem}
 }
 .card{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:12px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
@@ -288,13 +293,12 @@ function setLang(l){
     <img src="/img/title.png" alt="FurbyMind Connect" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
     <p>Uptime: <span id="db-uptime">—</span> &nbsp;·&nbsp; <span id="hdr-fw-ver" style="opacity:.7">v?</span></p>
   </div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
-    <!-- link desktop (nascosti su mobile, visibili da 900px) -->
-    <nav style="display:none" class="desktop-nav-links">
-      <a href="/" style="color:#c8d8f0;text-decoration:none;font-size:.8rem;font-weight:600;padding:5px 11px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='#ffffff22'" onmouseout="this.style.background=''">&#x2302; Home</a>
-      <a href="/debug" style="color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;padding:5px 11px;border-radius:6px;background:#ffffff22">Debug</a>
-      <a href="/camera" style="color:#c8d8f0;text-decoration:none;font-size:.8rem;font-weight:600;padding:5px 11px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='#ffffff22'" onmouseout="this.style.background=''">Camera</a>
-    </nav>
+  <nav class="desktop-nav" style="margin-left:auto">
+    <a href="/">&#x2302; Home</a>
+    <a href="/debug" class="active">Debug</a>
+    <a href="/camera">Camera</a>
+  </nav>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto" class="hdr-right">
     <button onclick="setLang('it')" id="lang-it" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">IT</button>
     <button onclick="setLang('en')" id="lang-en" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">EN</button>
     <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>

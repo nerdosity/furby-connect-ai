@@ -1100,6 +1100,7 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .header-text p{color:#8fb3e8;font-size:.72rem;margin-top:2px;letter-spacing:.3px}
 /* ---- LAYOUT ---- */
 .container{max-width:640px;margin:0 auto;padding:16px}
+@media(min-width:900px){body{font-size:16px}.container{max-width:860px;padding:24px}}
 /* ---- SECTION TITLE ---- */
 .sec-title{display:flex;align-items:center;gap:8px;
   font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
@@ -1165,7 +1166,7 @@ tr:last-child td{border-bottom:none}
   font-size:.73rem;color:#5a6a8a;margin-bottom:4px;
   display:flex;align-items:center;gap:6px}
 /* ---- NAV HAMBURGER ---- */
-.nav-toggle{background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-shrink:0}
+.nav-toggle{background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0}
 .nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
 .nav-overlay.open{display:block}
@@ -1180,6 +1181,16 @@ tr:last-child td{border-bottom:none}
   transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
 .nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}
+/* ---- DESKTOP NAV ---- */
+.desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}
+.desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
+  padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
+.desktop-nav a:hover{background:#ffffff22}
+.desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
+@media(min-width:900px){
+  .nav-toggle{display:none}
+  .desktop-nav{display:flex}
+}
 </style></head>
 <body>
 <!-- Nav overlay + drawer -->
@@ -1204,7 +1215,12 @@ function togglePw(id){var i=document.getElementById(id);i.type=i.type==='passwor
     <h1>FurbyMind Connect</h1>
     <p>IP: %IP% &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">—</span></p>
   </div>
-  <button class="nav-toggle" onclick="navOpen()" style="margin-left:auto"><span></span><span></span><span></span></button>
+  <nav class="desktop-nav">
+    <a href="/" class="active">&#x2302; Home</a>
+    <a href="/debug">Debug</a>
+    <a href="/camera">Camera</a>
+  </nav>
+  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 <div id="sys-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap">carico...</div>
 <script>
@@ -1565,8 +1581,9 @@ setInterval(blePoll, 5000);
 
 static const char HTML_FOOT[] PROGMEM = R"rawliteral(
 </div><!-- /container -->
-<div style="text-align:center;padding:10px 0 18px;font-size:.72rem;color:#aab">
-  <a href="/debug" style="color:#6b8abb;text-decoration:none">&#x1F50D; Debug Furby</a>
+<div style="text-align:center;padding:10px 0 18px;font-size:.72rem;color:#aab;display:flex;justify-content:center;gap:20px">
+  <a href="/debug" style="color:#6b8abb;text-decoration:none">&#x1F50D; Debug</a>
+  <a href="/camera" style="color:#6b8abb;text-decoration:none">&#x1F4F7; Camera</a>
 </div>
 </body></html>
 )rawliteral";
@@ -1600,6 +1617,12 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .nav-item{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#c8d8f0;
   font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
+.desktop-nav{display:none;align-items:center;gap:4px}
+.desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
+  padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
+.desktop-nav a:hover{background:#ffffff22}
+.desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
+@media(min-width:900px){.nav-toggle{display:none}.desktop-nav{display:flex}}
 /* BLE status bar */
 .ble-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;
   border-bottom:1px solid #e4eaf4;font-size:.75rem;color:#1a2340}
@@ -1674,6 +1697,11 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
     <h1>FurbyMind Debug</h1>
     <p>Uptime: <span id="db-uptime">—</span></p>
   </div>
+  <nav class="desktop-nav" style="margin-left:auto">
+    <a href="/">&#x2302; Home</a>
+    <a href="/debug" class="active">Debug</a>
+    <a href="/camera">Camera</a>
+  </nav>
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 
@@ -3601,9 +3629,14 @@ void handleCameraPage() {
         ".header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);"
           "padding:16px 20px;display:flex;align-items:center;gap:14px;"
           "box-shadow:0 3px 12px rgba(0,0,0,.35)}"
-        ".header h1{color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:.4px;flex:1}"
-        ".header a{color:#8fb3e8;font-size:.82rem;text-decoration:none;font-weight:600}"
-        ".header span{color:#8fb3e8;font-size:.7rem}"
+        ".header h1{color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:.4px}"
+        ".header .desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}"
+        ".header .desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;"
+          "padding:6px 13px;border-radius:7px;transition:background .15s}"
+        ".header .desktop-nav a:hover{background:#ffffff22}"
+        ".header .desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}"
+        "@media(min-width:900px){.header .desktop-nav{display:flex}}"
+        ".header span{color:#8fb3e8;font-size:.7rem;margin-left:12px}"
         ".wrap{max-width:780px;margin:16px auto;padding:0 16px}"
         ".frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;"
           "background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;"
@@ -3627,8 +3660,12 @@ void handleCameraPage() {
         ".b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}"
         "</style></head><body>"
         "<div class='header'>"
-          "<a href='/debug'>&#x2190; Debug</a>"
           "<h1>&#x1F4F7; Camera</h1>"
+          "<nav class='desktop-nav'>"
+            "<a href='/'>&#x2302; Home</a>"
+            "<a href='/debug'>Debug</a>"
+            "<a href='/camera' class='active'>Camera</a>"
+          "</nav>"
           "<span id='fps'>—</span>"
         "</div>"
         "<div class='wrap'>"
