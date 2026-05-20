@@ -1,54 +1,54 @@
 # Furby Connect AI
 
-ESP32-S3 firmware that turns a classic Furby into an AI-powered interactive robot.
+Firmware per ESP32-S3 che trasforma un Furby classico in un robot interattivo alimentato da AI.
 
-## What it does
+## Cosa fa
 
-The Furby looks around with its camera, thinks with GPT-4o-mini (or Claude), responds with voice via ElevenLabs TTS, and moves its mouth in sync with the audio over Bluetooth LE. It has a deliberately rude and cynical personality.
+Il Furby guarda con la camera, pensa con GPT-4o-mini (o Claude), risponde a voce tramite ElevenLabs TTS e muove la bocca sincronizzata all'audio via Bluetooth LE. Ha una personalità volutamente maleducata e cinica.
 
 ```
-Button press → capture image → GPT-4o-mini (vision)
-  → text → ElevenLabs TTS → PCM audio 16kHz
-  → I2S (ES8311 DAC) + BLE lipsync → Furby mouth
+Pressione tasto → cattura immagine → GPT-4o-mini (vision)
+  → testo → ElevenLabs TTS → audio PCM 16kHz
+  → I2S (ES8311 DAC) + lipsync BLE → bocca Furby
 ```
 
 ## Hardware
 
 - **Board**: Waveshare ESP32-S3-CAM
-- **Speaker**: ES8311 codec via I2S
-- **Microphones**: ES7210 codec (4-mic array) via I2S
-- **Furby**: any Furby Connect (2016) with BLE
+- **Speaker**: codec ES8311 via I2S
+- **Microfoni**: codec ES7210 (4 mic array) via I2S
+- **Furby**: qualsiasi Furby Connect (2016) con BLE
 
-## Features
+## Funzionalità
 
-- Context-aware responses with camera vision (GPT-4o-mini / Claude)
-- Multilingual speech synthesis (ElevenLabs)
-- Real-time mouth lipsync via BLE
-- VAD (voice activity detection) with 250Hz high-pass filter to ignore mechanical noise
-- SD card audio cache: previously heard responses are not regenerated
-- Debug web UI at `http://furby.local`
-- WiFi setup via captive portal (AP `Furby_Config`)
-- Multi-WiFi (up to 5 saved networks, priority configurable)
-- Multi-LLM provider: OpenAI or Anthropic Claude
+- Risposta contestuale con visione camera (GPT-4o-mini / Claude)
+- Sintesi vocale multilingua (ElevenLabs)
+- Lipsync bocca via BLE in tempo reale
+- VAD (rilevamento parlato) con filtro passa-alto 250Hz per ignorare rumori meccanici
+- Cache audio su SD card: le risposte già sentite non vengono rigenerate
+- Web UI di debug su `http://furby.local`
+- Configurazione WiFi via captive portal (AP `Furby_Config`)
+- Multi-WiFi (fino a 5 reti salvate in flash, priorità configurabile)
+- Multi-provider LLM: OpenAI o Anthropic Claude
 
-## Project status
+## Stato del progetto
 
-| Component | Status |
+| Componente | Stato |
 |---|---|
-| Camera + GPT-4o-mini vision | working |
-| ElevenLabs TTS + I2S audio | working |
-| ES8311 DAC (speaker) | working |
-| ES7210 ADC (microphones) | working |
-| VAD with frequency filter | working |
-| BLE scan + Furby connect | working |
-| BLE lipsync | partial (tuning) |
-| SD card cache | working |
-| Debug web UI | working |
-| Multi-WiFi | working |
+| Camera + GPT-4o-mini vision | funzionante |
+| ElevenLabs TTS + audio I2S | funzionante |
+| ES8311 DAC (speaker) | funzionante |
+| ES7210 ADC (microfoni) | funzionante |
+| VAD con filtro frequenziale | funzionante |
+| BLE scan + connect Furby | funzionante |
+| Lipsync BLE | parziale (in tuning) |
+| Cache SD card | funzionante |
+| Web UI debug | funzionante |
+| Multi-WiFi | funzionante |
 
-## Build & flash
+## Build e flash
 
-**Requirements**: PlatformIO (recommended) or Arduino IDE 2.x with ESP32-S3 core.
+**Requisiti**: PlatformIO (consigliato) o Arduino IDE 2.x con core ESP32-S3.
 
 ```bash
 # Build + flash firmware
@@ -58,21 +58,17 @@ pio run -t upload
 pio run -t uploadfs
 ```
 
-On first boot (or with no saved WiFi), the device creates the `Furby_Config` AP: connect to it and go to `http://192.168.4.1` to enter WiFi credentials and API keys.
+Al primo avvio (o senza WiFi salvato) il dispositivo crea l'AP `Furby_Config`: collegati e vai su `http://192.168.4.1` per inserire le credenziali WiFi e le API key.
 
-## Configuration
+## Configurazione
 
-Credentials are stored in flash via `Preferences` and never leave the device.
+Le credenziali vengono salvate in flash via `Preferences` e non escono dal dispositivo.
 
-| Parameter | Where |
+| Parametro | Dove |
 |---|---|
-| WiFi SSID/password | captive portal or web UI |
-| OpenAI API key | web UI → Settings |
-| Anthropic API key | web UI → Settings |
-| ElevenLabs API key + Voice ID | web UI → Settings |
-| LLM provider (openai/claude) | web UI → Settings |
-| VAD threshold | web UI → Audio |
-
-## Italian README
-
-[README.it.md](README.it.md)
+| WiFi SSID/password | captive portal o web UI |
+| OpenAI API key | web UI → Impostazioni |
+| Anthropic API key | web UI → Impostazioni |
+| ElevenLabs API key + Voice ID | web UI → Impostazioni |
+| Provider LLM (openai/claude) | web UI → Impostazioni |
+| Soglia VAD | web UI → Audio |
