@@ -14,7 +14,7 @@ Button press → capture image → GPT-4o-mini (vision)
 
 ## Hardware
 
-- **Board**: Waveshare ESP32-S3-CAM
+- **Board**: [Waveshare ESP32-S3-CAM](https://amzn.to/4fyMf8R)
 - **Speaker**: ES8311 codec via I2S
 - **Microphones**: ES7210 codec (4-mic array) via I2S
 - **Furby**: any Furby Connect (2016) with BLE

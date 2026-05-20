@@ -3,60 +3,74 @@
 <title>Furby Debug</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:15px}
 .header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);
-  padding:18px 20px 14px;display:flex;align-items:center;gap:14px;
+  padding:14px 24px;display:flex;align-items:center;gap:16px;
   box-shadow:0 3px 12px rgba(0,0,0,.35)}
-.logo-wrap{width:52px;height:52px;flex-shrink:0;border-radius:8px;overflow:hidden}
+.logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden}
 .logo-wrap img{width:100%;height:100%;object-fit:cover}
-.header-text h1{color:#fff;font-size:1.35rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
-.header-text p{color:#8fb3e8;font-size:.72rem;margin-top:2px;letter-spacing:.3px}
+.header-text h1{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
+.header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
 .nav-toggle{background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-shrink:0}
 .nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
+/* ── desktop: nav-toggle nascosto, drawer laterale fisso ─────────────── */
+@media(min-width:900px){
+  .nav-toggle{display:none}
+  .nav-overlay{display:none!important}
+  .nav-drawer{position:static;width:auto;height:auto;background:transparent;
+    box-shadow:none;padding:0;display:flex;flex-direction:row;align-items:center;gap:4px}
+  .nav-drawer.open{right:auto}
+  .nav-header{display:none}
+  .nav-item{padding:6px 12px;font-size:.8rem;border-bottom:none;border-radius:6px;color:#c8d8f0;white-space:nowrap}
+  .nav-item:hover,.nav-item.active{background:#ffffff22}
+  .nav-item svg{display:none}
+  .header{padding:10px 24px;gap:16px}
+}
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
 .nav-overlay.open{display:block}
-.nav-drawer{position:fixed;top:0;right:-220px;width:210px;height:100%;background:#1a2340;
+.nav-drawer{position:fixed;top:0;right:-240px;width:220px;height:100%;background:#1a2340;
   z-index:100;transition:right .22s ease;padding:0;box-shadow:-4px 0 18px rgba(0,0,0,.4)}
 .nav-drawer.open{right:0}
 .nav-header{display:flex;align-items:center;padding:18px 16px 14px;border-bottom:1px solid #2d3f6e}
 .nav-header span{color:#8fb3e8;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .nav-close{background:none;border:none;color:#8fb3e8;font-size:1.2rem;cursor:pointer;margin-left:auto;padding:2px 6px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#c8d8f0;
+.nav-item{display:flex;align-items:center;gap:10px;padding:13px 18px;color:#c8d8f0;
   font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
-.ble-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;
-  border-bottom:1px solid #e4eaf4;font-size:.75rem;color:#1a2340}
-.ble-dot{width:9px;height:9px;border-radius:50%;background:#ef4444;flex-shrink:0;
+/* ── layout principale ───────────────────────────────────────────────── */
+.ble-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:#fff;
+  border-bottom:1px solid #e4eaf4;font-size:.8rem;color:#1a2340}
+.ble-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;
   box-shadow:0 0 5px #ef444488}
 .ble-dot.on{background:#22c55e;box-shadow:0 0 5px #22c55e88}
 .ble-dot.scan{background:#f59e0b;box-shadow:0 0 5px #f59e0b88}
+/* tab bar orizzontale */
 .tabs{display:flex;gap:0;border-bottom:2px solid #e4eaf4;background:#fff;overflow-x:auto}
-.tab{padding:10px 16px;font-size:.75rem;font-weight:700;color:#8a9ab5;cursor:pointer;
+.tab{padding:11px 20px;font-size:.82rem;font-weight:700;color:#8a9ab5;cursor:pointer;
   border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
 .tab.active{color:#3a5298;border-bottom-color:#3a5298}
 .tab:hover{color:#3a5298}
-.tab-pane{display:none;padding:14px 16px;max-width:960px;margin:0 auto}
+/* contenuto tab: max-width ampio su desktop */
+.tab-pane{display:none;padding:20px 24px;max-width:1400px;margin:0 auto}
 .tab-pane.active{display:block}
-@media(min-width:700px){
-  body{font-size:15px}
-  .card{padding:18px 22px}
-  .tab{padding:12px 20px;font-size:.82rem}
-  .btn{font-size:.8rem;padding:7px 13px}
+@media(min-width:900px){
+  .tab-pane{padding:24px 32px}
+  .card{padding:20px 26px}
   .sensors{grid-template-columns:1fr 1fr 1fr 1fr}
-  .act-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
-  .fm-table{font-size:.8rem}
-  .fm-editor{height:360px;font-size:.78rem}
+  .act-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .fm-table{font-size:.85rem}
+  .fm-editor{height:420px;font-size:.82rem}
 }
-.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;
+.card{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:12px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
-.card h3{font-size:.7rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
-  letter-spacing:1.2px;margin-bottom:10px}
-.sensors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 10px}
-.sensor{display:flex;align-items:center;gap:6px;font-size:.74rem;padding:3px 0;color:#1a2340}
-.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#e4eaf4;transition:background .12s}
+.card h3{font-size:.78rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:12px}
+.sensors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px}
+.sensor{display:flex;align-items:center;gap:7px;font-size:.85rem;padding:4px 0;color:#1a2340}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#e4eaf4;transition:background .12s}
 .dot.on{background:#22c55e;box-shadow:0 0 5px #22c55e88}
-.raw{font-size:.63rem;color:#8a9ab5;margin-top:8px;font-family:monospace}
-.btn{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:.73rem;font-weight:700;
+.raw{font-size:.72rem;color:#8a9ab5;margin-top:8px;font-family:monospace}
+.btn{padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.85rem;font-weight:700;
   background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff;transition:opacity .12s}
 .btn:hover{opacity:.85}.btn:active{opacity:.65}
 .b-red{background:linear-gradient(135deg,#dc2626,#ef4444)}
@@ -65,32 +79,34 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .b-pur{background:linear-gradient(135deg,#7c3aed,#a855f7)}
 .b-slt{background:#f0f4f8;color:#5a6a8a;border:1px solid #d0d9ee}
 .b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}
-.btn-row{display:flex;gap:6px;flex-wrap:wrap}
-.act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px}
-.act-btn{padding:6px 8px;font-size:.68rem;text-align:left;line-height:1.3;white-space:normal;border-radius:8px}
-.mood-row{display:grid;grid-template-columns:80px 1fr 24px;gap:4px 8px;align-items:center;font-size:.73rem;margin-bottom:5px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.act-btn{padding:8px 10px;font-size:.8rem;text-align:left;line-height:1.3;white-space:normal;border-radius:8px}
+.mood-row{display:grid;grid-template-columns:90px 1fr 28px;gap:4px 10px;align-items:center;font-size:.82rem;margin-bottom:6px}
 .mood-row span{color:#8a9ab5}
-.rgb-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
-.rgb-row span{color:#5a6a8a;font-size:.68rem;width:10px;flex-shrink:0}
+.rgb-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.rgb-row span{color:#5a6a8a;font-size:.78rem;width:12px;flex-shrink:0}
 .rgb-row input[type=range]{flex:1;accent-color:#3a5298}
-.rgb-prev{width:24px;height:24px;border-radius:6px;border:1.5px solid #d0d9ee;flex-shrink:0}
-.cfg-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
-  background:#f5f8ff;margin-bottom:6px;border:1.5px solid #e4eaf4}
+.rgb-prev{width:26px;height:26px;border-radius:6px;border:1.5px solid #d0d9ee;flex-shrink:0}
+.cfg-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+  background:#f5f8ff;margin-bottom:7px;border:1.5px solid #e4eaf4}
 .cfg-item.active-cfg{border-color:#22c55e;background:#f0fff4}
-.cfg-name{flex:1;font-size:.79rem;font-weight:700;color:#1a2340}
-.rule-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:.73rem}
+.cfg-name{flex:1;font-size:.88rem;font-weight:700;color:#1a2340}
+.rule-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.82rem}
 .rule-row select,.rule-row input{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;
-  border-radius:7px;padding:4px 7px;font-size:.71rem}
+  border-radius:7px;padding:5px 9px;font-size:.8rem}
+select{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;border-radius:7px;padding:5px 8px;font-size:.82rem}
 input[type=text],input[type=number]{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;
-  border-radius:7px;padding:5px 8px;font-size:.73rem}
-input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
-.log{background:#1a2340;border-radius:8px;padding:8px 10px;font-family:monospace;
-  font-size:.65rem;color:#8fb3e8;height:100px;overflow-y:auto;margin-top:6px}
+  border-radius:7px;padding:6px 10px;font-size:.82rem}
+input:focus,select:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
+textarea{font-size:.82rem}
+.log{background:#1a2340;border-radius:8px;padding:10px 12px;font-family:monospace;
+  font-size:.75rem;color:#8fb3e8;height:130px;overflow-y:auto;margin-top:6px}
 /* file manager */
-.fm-table{width:100%;border-collapse:collapse;font-size:.72rem}
-.fm-table th{text-align:left;padding:5px 8px;color:#5a6a8a;font-size:.65rem;
+.fm-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.fm-table th{text-align:left;padding:6px 10px;color:#5a6a8a;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e4eaf4}
-.fm-table td{padding:5px 8px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+.fm-table td{padding:6px 10px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
 .fm-table tr:hover td{background:#f5f8ff}
 .fm-name{font-family:monospace;color:#1a2340;font-size:.72rem;word-break:break-all}
 .fm-size{color:#8a9ab5;white-space:nowrap}
@@ -101,7 +117,157 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
 .fm-path{font-family:monospace;font-size:.72rem;color:#3a5298;font-weight:700;flex:1;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fm-quota{font-size:.65rem;color:#8a9ab5}
-</style></head>
+</style>
+<script>
+// ======================= I18N =======================
+var TRANSLATIONS={
+  it:{
+    'nav.config':'Configurazione','nav.debug':'Debug Furby','nav.camera':'Camera','nav.reset':'Reset ESP32',
+    'nav.confirm_reset':'Riavviare l\'ESP32?',
+    'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
+    'tab.configs':'Configurazioni','tab.raw':'Raw / Log','tab.audio':'Audio',
+    'tab.files':'File SPIFFS','tab.persona':'Personalità',
+    'ble.not_connected':'BLE: non connesso','ble.connected':'Connesso','ble.connecting':'Connessione...',
+    'ble.scanning':'Scansione BLE...','ble.scan':'Cerca','ble.stop':'Stop scan',
+    'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Trovati finora:',
+    'ble.connect':'Connetti',
+    'persona.base_title':'Personalità base',
+    'persona.base_desc':'System prompt LLM — definisce carattere e tono del Furby',
+    'persona.voice_label':'ElevenLabs Voice ID',
+    'persona.save_btn':'Salva personalità',
+    'persona.beh_title':'Comportamenti — eventi → conseguenze',
+    'persona.beh_desc':'Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.',
+    'persona.beh_add':'+ Aggiungi','persona.beh_export':'⬇ Esporta JSON','persona.beh_import':'⬆ Importa JSON',
+    'beh.new_title':'Nuovo comportamento','beh.trigger_label':'Trigger','beh.sensor_label':'Sensore',
+    'beh.name_label':'Nome','beh.name_placeholder':'es. Tocco testa',
+    'beh.save':'💾 Salva comportamento','beh.cancel':'Annulla','beh.add_csq':'+ Conseguenza',
+    'beh.del_confirm':'Elimina',
+    'beh.trg.vad':'VAD (parlato)','beh.trg.button':'Pulsante ESP32','beh.trg.sensor':'Sensore Furby',
+    'beh.sensor.ant_l':'Antenna sx','beh.sensor.ant_r':'Antenna dx',
+    'beh.sensor.ant_f':'Antenna avanti','beh.sensor.ant_b':'Antenna indietro',
+    'beh.sensor.tickle_head':'Tickle testa','beh.sensor.tickle_tummy':'Tickle pancia',
+    'beh.sensor.tickle_r':'Tickle dx','beh.sensor.tickle_l':'Tickle sx',
+    'beh.sensor.pull_tail':'Tira coda','beh.sensor.push_tongue':'Spingi lingua',
+    'beh.sensor.upright':'Dritto','beh.sensor.upside_down':'Capovolto',
+    'beh.sensor.side_r':'Lato dx','beh.sensor.side_l':'Lato sx',
+    'beh.sensor.lean_back':'Inclinato back','beh.sensor.tilt_r':'Inclinato dx','beh.sensor.tilt_l':'Inclinato sx',
+    'csq.furby_action':'Azione Furby','csq.tts_fixed':'TTS fisso',
+    'csq.prompt_fixed':'Prompt fisso → LLM','csq.llm_decide':'LLM decide (+ reazioni)',
+    'csq.snapshot':'Includi foto (snapshot)',
+    'csq.reactions_label':'Reazioni fisiche disponibili (max 3) — l\'LLM sceglie la più adatta',
+    'csq.tts_placeholder':'Testo da pronunciare',
+    'csq.prompt_placeholder':'Prompt fisso (es. \'Commenta in modo irritato la foto\')',
+    'csq.llm_placeholder':'Contesto evento (es. \'Qualcuno ti parla\')',
+    'csq.action_placeholder':'-- scegli azione --',
+    'test.llm_title':'Test LLM','test.llm_desc':'Invia un messaggio al modello con il personality prompt corrente (senza foto)',
+    'test.llm_send':'➤ Invia','test.llm_placeholder':'Cosa pensi del meteo oggi?',
+    'test.tts_title':'Test TTS','test.tts_desc':'Invia testo ad ElevenLabs e riproduci sull\'ESP32 (usa la voce corrente)',
+    'test.tts_play':'▶ Riproduci','test.tts_placeholder':'Ciao, sono un Furby cinico.',
+    'test.voices_title':'Voci ElevenLabs','test.voices_desc':'Voci disponibili nel tuo account — clicca "Usa" per impostare la Voice ID nel campo Personalità',
+    'test.voices_load':'↻ Carica voci','test.voices_use':'Usa','test.voices_none':'Nessuna voce trovata.',
+    'sys.loading':'carico info sistema...',
+    'saved':'Salvato.','error':'Errore.','error_conn':'Errore connessione.',
+    'no_behaviors':'Nessun comportamento configurato.',
+    'imported':'Importato.','playing':'In riproduzione sull\'ESP32.','sending':'Invio...',
+    'sending_tts':'Invio a ElevenLabs e riproduco...',
+    'modify':'Modifica','delete_btn':'✕','no_name':'Senza nome',
+    'voice_set':'Voice ID impostato:'
+  },
+  en:{
+    'nav.config':'Configuration','nav.debug':'Debug Furby','nav.camera':'Camera','nav.reset':'Reset ESP32',
+    'nav.confirm_reset':'Restart the ESP32?',
+    'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
+    'tab.configs':'Configs','tab.raw':'Raw / Log','tab.audio':'Audio',
+    'tab.files':'SPIFFS Files','tab.persona':'Personality',
+    'ble.not_connected':'BLE: not connected','ble.connected':'Connected','ble.connecting':'Connecting...',
+    'ble.scanning':'BLE scanning...','ble.scan':'Scan','ble.stop':'Stop scan',
+    'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Found so far:',
+    'ble.connect':'Connect',
+    'persona.base_title':'Base personality',
+    'persona.base_desc':'LLM system prompt — defines Furby\'s character and tone',
+    'persona.voice_label':'ElevenLabs Voice ID',
+    'persona.save_btn':'Save personality',
+    'persona.beh_title':'Behaviors — triggers → consequences',
+    'persona.beh_desc':'Each behavior maps a trigger to 1-3 consequences executed in sequence.',
+    'persona.beh_add':'+ Add','persona.beh_export':'⬇ Export JSON','persona.beh_import':'⬆ Import JSON',
+    'beh.new_title':'New behavior','beh.trigger_label':'Trigger','beh.sensor_label':'Sensor',
+    'beh.name_label':'Name','beh.name_placeholder':'e.g. Head tickle',
+    'beh.save':'💾 Save behavior','beh.cancel':'Cancel','beh.add_csq':'+ Consequence',
+    'beh.del_confirm':'Delete',
+    'beh.trg.vad':'VAD (speech)','beh.trg.button':'ESP32 button','beh.trg.sensor':'Furby sensor',
+    'beh.sensor.ant_l':'Antenna left','beh.sensor.ant_r':'Antenna right',
+    'beh.sensor.ant_f':'Antenna forward','beh.sensor.ant_b':'Antenna back',
+    'beh.sensor.tickle_head':'Tickle head','beh.sensor.tickle_tummy':'Tickle tummy',
+    'beh.sensor.tickle_r':'Tickle right','beh.sensor.tickle_l':'Tickle left',
+    'beh.sensor.pull_tail':'Pull tail','beh.sensor.push_tongue':'Push tongue',
+    'beh.sensor.upright':'Upright','beh.sensor.upside_down':'Upside down',
+    'beh.sensor.side_r':'Right side','beh.sensor.side_l':'Left side',
+    'beh.sensor.lean_back':'Lean back','beh.sensor.tilt_r':'Tilt right','beh.sensor.tilt_l':'Tilt left',
+    'csq.furby_action':'Furby action','csq.tts_fixed':'Fixed TTS',
+    'csq.prompt_fixed':'Fixed prompt → LLM','csq.llm_decide':'LLM decides (+ reactions)',
+    'csq.snapshot':'Include photo (snapshot)',
+    'csq.reactions_label':'Available physical reactions (max 3) — LLM picks the best fit',
+    'csq.tts_placeholder':'Text to speak',
+    'csq.prompt_placeholder':'Fixed prompt (e.g. \'Comment the photo in an annoyed way\')',
+    'csq.llm_placeholder':'Event context (e.g. \'Someone is talking to you\')',
+    'csq.action_placeholder':'-- choose action --',
+    'test.llm_title':'Test LLM','test.llm_desc':'Send a message to the model with the current personality prompt (no photo)',
+    'test.llm_send':'➤ Send','test.llm_placeholder':'What do you think about the weather today?',
+    'test.tts_title':'Test TTS','test.tts_desc':'Send text to ElevenLabs and play on the ESP32 (uses current voice)',
+    'test.tts_play':'▶ Play','test.tts_placeholder':'Hello, I\'m a cynical Furby.',
+    'test.voices_title':'ElevenLabs Voices','test.voices_desc':'Voices available in your account — click "Use" to set the Voice ID in the Personality field',
+    'test.voices_load':'↻ Load voices','test.voices_use':'Use','test.voices_none':'No voices found.',
+    'sys.loading':'loading system info...',
+    'saved':'Saved.','error':'Error.','error_conn':'Connection error.',
+    'no_behaviors':'No behaviors configured.',
+    'imported':'Imported.','playing':'Playing on ESP32.','sending':'Sending...',
+    'sending_tts':'Sending to ElevenLabs and playing...',
+    'modify':'Edit','delete_btn':'✕','no_name':'Unnamed',
+    'voice_set':'Voice ID set:'
+  }
+};
+
+var gLang='it';
+function t(k){return (TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||k;}
+
+function setLang(l){
+  gLang=l;
+  localStorage.setItem('furby_lang',l);
+  document.getElementById('lang-it').style.background=(l==='it')?'#ffffff33':'none';
+  document.getElementById('lang-en').style.background=(l==='en')?'#ffffff33':'none';
+  // aggiorna tutti gli elementi data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k=el.getAttribute('data-i18n');
+    var attr=el.getAttribute('data-i18n-attr');
+    if(attr)el.setAttribute(attr,t(k));
+    else el.textContent=t(k);
+  });
+  // ricostruisci tabelle dinamiche
+  var trgSel=document.getElementById('beh-trg');
+  if(trgSel){
+    trgSel.options[0].textContent=t('beh.trg.vad');
+    trgSel.options[1].textContent=t('beh.trg.button');
+    trgSel.options[2].textContent=t('beh.trg.sensor');
+  }
+  // ricostruisci lista sensori se già popolata
+  var senSel=document.getElementById('beh-sensor');
+  if(senSel&&senSel.options.length){
+    senSel.innerHTML='';
+    var keys=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l',
+              'pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
+    keys.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);senSel.appendChild(o);});
+  }
+  // rirenderizza lista comportamenti se tab persona attiva
+  if(gBehaviors&&gBehaviors.length)behRender();
+}
+
+// init lingua da localStorage
+(function(){
+  var l=localStorage.getItem('furby_lang')||'it';
+  gLang=l;
+})();
+</script>
+</head>
 <body>
 <div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
 <div class="nav-drawer" id="nav-drawer">
@@ -119,9 +285,13 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
   </div>
   <div class="header-text">
     <h1>FurbyMind Debug</h1>
-    <p>Uptime: <span id="db-uptime">—</span></p>
+    <p>Uptime: <span id="db-uptime">—</span> &nbsp;·&nbsp; <span id="hdr-fw-ver" style="opacity:.7">v?</span></p>
   </div>
-  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <button onclick="setLang('it')" id="lang-it" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">IT</button>
+    <button onclick="setLang('en')" id="lang-en" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">EN</button>
+    <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
+  </div>
 </div>
 
 <div class="ble-bar">
@@ -147,13 +317,14 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('t-sensors',this)">Sensori</div>
-  <div class="tab" onclick="showTab('t-actions',this)">Azioni</div>
-  <div class="tab" onclick="showTab('t-control',this)">Controllo</div>
-  <div class="tab" onclick="showTab('t-configs',this)">Configurazioni</div>
-  <div class="tab" onclick="showTab('t-raw',this)">Raw / Log</div>
-  <div class="tab" onclick="showTab('t-audio',this)">Audio</div>
-  <div class="tab" onclick="showTab('t-files',this)">File SPIFFS</div>
+  <div class="tab active" onclick="showTab('t-sensors',this)" data-i18n="tab.sensors">Sensori</div>
+  <div class="tab" onclick="showTab('t-actions',this)" data-i18n="tab.actions">Azioni</div>
+  <div class="tab" onclick="showTab('t-control',this)" data-i18n="tab.control">Controllo</div>
+  <div class="tab" onclick="showTab('t-configs',this)" data-i18n="tab.configs">Configurazioni</div>
+  <div class="tab" onclick="showTab('t-raw',this)" data-i18n="tab.raw">Raw / Log</div>
+  <div class="tab" onclick="showTab('t-audio',this)" data-i18n="tab.audio">Audio</div>
+  <div class="tab" onclick="showTab('t-files',this)" data-i18n="tab.files">File SPIFFS</div>
+  <div class="tab" onclick="showTab('t-persona',this)" data-i18n="tab.persona">Personalità</div>
 </div>
 
 <!-- TAB: Sensori -->
@@ -399,6 +570,98 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
   </div>
 </div>
 
+<!-- TAB PERSONALITÀ -->
+<div class="tab-pane" id="t-persona">
+  <div class="card">
+    <h3>Personalità base</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px">System prompt LLM — definisce carattere e tono del Furby</div>
+    <textarea id="pers-prompt" style="width:100%;height:90px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Sei un giocattolo cinico..."></textarea>
+    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 2px">ElevenLabs Voice ID</div>
+    <input type="text" id="pers-voice" style="width:100%;font-size:.75rem;font-family:monospace" placeholder="pNInz6obpgDQGcFmaJcg">
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn b-grn" onclick="persSave()" style="flex:1">Salva personalità</button>
+    </div>
+    <div id="pers-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+  </div>
+
+  <div class="card">
+    <h3>Comportamenti — eventi → conseguenze</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">
+      Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.
+    </div>
+    <div id="beh-list"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn b-grn" onclick="behAdd()">+ Aggiungi</button>
+      <button class="btn b-tel" onclick="behExport()">&#x2B07; Esporta JSON</button>
+      <label class="btn b-amb" style="cursor:pointer">&#x2B06; Importa JSON<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+    </div>
+    <div id="beh-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+  </div>
+
+  <!-- Editor comportamento inline -->
+  <div class="card" id="beh-editor" style="display:none">
+    <h3 id="beh-editor-title">Nuovo comportamento</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Trigger</div>
+        <select id="beh-trg" style="width:100%;font-size:.75rem" onchange="behTrgChange()">
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
+        </select>
+      </div>
+      <div id="beh-sensor-wrap" style="display:none">
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Sensore</div>
+        <select id="beh-sensor" style="width:100%;font-size:.75rem"></select>
+      </div>
+      <div>
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Nome</div>
+        <input type="text" id="beh-name" style="width:100%;font-size:.75rem" placeholder="es. Tocco testa">
+      </div>
+    </div>
+    <div id="csq-list"></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn b-grn" id="csq-add-btn" onclick="csqAdd()">+ Conseguenza</button>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn" onclick="behSave()" style="flex:1">&#x1F4BE; Salva comportamento</button>
+      <button class="btn b-slt" onclick="behEditorClose()">Annulla</button>
+    </div>
+  </div>
+
+  <!-- Pannello di test -->
+  <div class="card">
+    <h3>Test LLM</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px">Invia un messaggio al modello con il personality prompt corrente (senza foto)</div>
+    <textarea id="test-llm-text" style="width:100%;height:60px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Cosa pensi del meteo oggi?"></textarea>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn b-tel" onclick="testLlmSend()" style="flex:1">&#x27A4; Invia</button>
+    </div>
+    <div id="test-llm-resp" style="display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;border-radius:8px;padding:10px;font-size:.78rem;color:#1a2340;white-space:pre-wrap;font-family:monospace"></div>
+    <div id="test-llm-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+  </div>
+
+  <div class="card">
+    <h3>Test TTS</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px">Invia testo ad ElevenLabs e riproduci sull'ESP32 (usa la voce corrente)</div>
+    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn b-grn" onclick="testTtsSend()" style="flex:1">&#x25B6; Riproduci</button>
+    </div>
+    <div id="test-tts-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+  </div>
+
+  <div class="card">
+    <h3>Voci ElevenLabs</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">Voci disponibili nel tuo account — clicca "Usa" per impostare la Voice ID nel campo Personalità</div>
+    <div class="btn-row" style="margin-bottom:10px">
+      <button class="btn b-tel" onclick="testVoicesLoad()" id="btn-voices-load">&#x21BB; Carica voci</button>
+    </div>
+    <div id="test-voices-list"></div>
+    <div id="test-voices-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+  </div>
+</div>
+
 <script>
 function showTab(id,el){
   document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
@@ -408,6 +671,325 @@ function showTab(id,el){
   if(id==='t-audio'){startMicPoll();ampLoad();}else stopMicPoll();
   if(id==='t-files'){fmLoad();}
   if(id==='t-configs'){cfgLoad();}
+  if(id==='t-persona'){persLoad();}
+}
+// ======================= PERSONALITÀ =======================
+var gBehaviors=[]; var gActions=[]; var gEditIdx=-1;
+
+function persLoad(){
+  fetch('/personality').then(r=>r.json()).then(d=>{
+    document.getElementById('pers-prompt').value=d.prompt||'';
+    document.getElementById('pers-voice').value=d.voice_id||'';
+  });
+  fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
+  behLoad();
+}
+
+function persSave(){
+  var fd=new FormData();
+  fd.append('prompt',document.getElementById('pers-prompt').value);
+  fd.append('voice_id',document.getElementById('pers-voice').value);
+  fetch('/personality/save',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    document.getElementById('pers-msg').textContent=d.ok?'Salvato.':'Errore.';
+    setTimeout(()=>{document.getElementById('pers-msg').textContent='';},2500);
+  });
+}
+
+function behLoad(){
+  fetch('/behaviors').then(r=>r.json()).then(d=>{
+    gBehaviors=d.behaviors||[];
+    // aggiorna anche personalità se non ancora caricata
+    if(d.personality){
+      var pp=document.getElementById('pers-prompt');
+      var pv=document.getElementById('pers-voice');
+      if(pp&&!pp.value)pp.value=d.personality.prompt||'';
+      if(pv&&!pv.value)pv.value=d.personality.voice_id||'';
+    }
+    behRender();
+  });
+}
+
+// trigger: 0=VAD, 1=Pulsante, 2=Sensore Furby
+var SENSOR_KEYS=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l',
+  'pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
+function getSensorName(i){if(i<1||i>SENSOR_KEYS.length)return String(i);return t('beh.sensor.'+SENSOR_KEYS[i-1]);}
+function getTrgName(n){return t(['beh.trg.vad','beh.trg.button','beh.trg.sensor'][n]||'?');}
+function getCsqName(n){return t(['','csq.furby_action','csq.tts_fixed','csq.prompt_fixed','csq.llm_decide'][n]||'?');}
+// alias per compatibilità con il JS del file manager che usa SENSOR_NAMES direttamente
+var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro',
+  'Tickle testa','Tickle pancia','Tickle dx','Tickle sx',
+  'Tira coda','Spingi lingua',
+  'Dritto','Capovolto','Lato dx','Lato sx',
+  'Inclinato back','Inclinato dx','Inclinato sx'];
+var CSQ_COLORS={1:'#7c3aed',2:'#0f766e',3:'#d97706',4:'#3a5298'};
+
+function trgLabel(b){
+  if(b.trigger===2) return t('beh.trg.sensor')+': '+getSensorName(b.sensor_id);
+  return getTrgName(b.trigger)||'?';
+}
+
+function behTrgChange(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var wrap=document.getElementById('beh-sensor-wrap');
+  wrap.style.display=(trg===2)?'block':'none';
+  if(trg===2){
+    var sel=document.getElementById('beh-sensor');
+    var prev=sel.value;
+    sel.innerHTML='';
+    SENSOR_KEYS.forEach(function(k,i){
+      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
+    });
+    if(prev)sel.value=prev;
+  }
+}
+
+function behRender(){
+  var el=document.getElementById('beh-list');
+  if(!gBehaviors.length){el.innerHTML='<div style="color:#8a9ab5;font-size:.75rem;padding:8px 0">'+t('no_behaviors')+'</div>';return;}
+  el.innerHTML=gBehaviors.map(function(b,i){
+    var csqHtml=b.consequences.map(function(c){
+      var col=CSQ_COLORS[c.type]||'#8a9ab5';
+      var lbl=getCsqName(c.type);
+      var det='';
+      if(c.type==1&&c.action_id){var act=gActions.find(function(a){return a.id==c.action_id;});det=act?act.label:c.action_id;}
+      else if(c.type==2&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
+      else if(c.type==3&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
+      else if(c.type==4){det=c.snapshot?'📷 ':'';det+=c.reaction_count?c.reaction_count+' reactions':'text only';}
+      return '<span style="display:inline-flex;align-items:center;gap:3px;background:'+col+'18;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:2px">'+lbl+(det?': <em>'+det+'</em>':'')+'</span>';
+    }).join('<span style="color:#8a9ab5;margin:0 2px;font-size:.8rem">→</span>');
+    return '<div class="cfg-item" style="flex-direction:column;align-items:flex-start;gap:6px">'
+      +'<div style="display:flex;width:100%;align-items:center;gap:8px">'
+      +'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#e4eaf4;color:#5a6a8a">'+trgLabel(b)+'</span>'
+      +'<span class="cfg-name">'+b.name+'</span>'
+      +'<button class="btn b-slt" style="margin-left:auto;padding:3px 8px;font-size:.65rem" onclick="behEdit('+i+')">Modifica</button>'
+      +'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="behDel('+i+')">✕</button>'
+      +'</div>'
+      +'<div>'+csqHtml+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function behEdit(i){
+  gEditIdx=i;
+  var b=gBehaviors[i];
+  document.getElementById('beh-editor-title').textContent='Modifica: '+b.name;
+  var trg=b.trigger!==undefined?b.trigger:(b.event===1?0:b.event===2?1:0);
+  document.getElementById('beh-trg').value=trg;
+  behTrgChange();
+  if(trg===2)document.getElementById('beh-sensor').value=b.sensor_id||1;
+  document.getElementById('beh-name').value=b.name||'';
+  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));
+  csqRender();
+  document.getElementById('beh-editor').style.display='block';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+
+function behAdd(){
+  gEditIdx=-1;
+  document.getElementById('beh-editor-title').textContent='Nuovo comportamento';
+  document.getElementById('beh-trg').value=0;
+  behTrgChange();
+  document.getElementById('beh-name').value='';
+  gEditCsqs=[];
+  csqRender();
+  document.getElementById('beh-editor').style.display='block';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+
+function behEditorClose(){
+  document.getElementById('beh-editor').style.display='none';
+  gEditIdx=-1; gEditCsqs=[];
+}
+
+function behDel(i){
+  if(!confirm('Elimina "'+gBehaviors[i].name+'"?'))return;
+  gBehaviors.splice(i,1);
+  behSaveAll();
+}
+
+function behSave(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
+  var name=document.getElementById('beh-name').value.trim()||t('no_name');
+  csqCollect();
+  var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs};
+  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}
+  else gBehaviors.push(b);
+  behSaveAll();
+  behEditorClose();
+}
+
+function behSaveAll(){
+  fetch('/behaviors').then(r=>r.json()).then(d=>{
+    d.behaviors=gBehaviors;
+    return fetch('/behaviors/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  }).then(r=>r.json()).then(d=>{
+    document.getElementById('beh-msg').textContent=d.ok?t('saved'):t('error');
+    setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);
+    behLoad();
+  });
+}
+
+function behExport(){window.location='/behaviors/export';}
+
+function behImport(inp){
+  var f=inp.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(e){
+    fetch('/behaviors/import',{method:'POST',headers:{'Content-Type':'application/json'},body:e.target.result})
+      .then(r=>r.json()).then(d=>{
+        document.getElementById('beh-msg').textContent=d.ok?t('imported'):t('error')+' '+(d.error||'?');
+        setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);
+        if(d.ok)persLoad();
+      });
+  };
+  rd.readAsText(f);
+}
+
+// ======================= CONSEGUENZE =======================
+var gEditCsqs=[];
+
+function csqRender(){
+  var el=document.getElementById('csq-list'); el.innerHTML='';
+  gEditCsqs.forEach(function(c,i){el.appendChild(csqCard(c,i));});
+  document.getElementById('csq-add-btn').style.display=gEditCsqs.length>=3?'none':'';
+}
+
+function csqCard(c,i){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='border:1.5px solid #e4eaf4;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#f8faff';
+  var typeSel='<select onchange="csqTypeChange('+i+',this.value)" style="font-size:.82rem">'
+    +'<option value="1"'+(c.type==1?' selected':'')+'>'+t('csq.furby_action')+'</option>'
+    +'<option value="2"'+(c.type==2?' selected':'')+'>'+t('csq.tts_fixed')+'</option>'
+    +'<option value="3"'+(c.type==3?' selected':'')+'>'+t('csq.prompt_fixed')+'</option>'
+    +'<option value="4"'+(c.type==4?' selected':'')+'>'+t('csq.llm_decide')+'</option>'
+    +'</select>';
+  var del='<button class="btn b-red" style="margin-left:auto;padding:4px 9px;font-size:.72rem" onclick="csqDel('+i+')">✕</button>';
+  var hdr='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+typeSel+del+'</div>';
+  var body='';
+  var ta='width:100%;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:6px;padding:8px;resize:vertical;font-size:.82rem';
+
+  if(c.type==1){
+    var opts=gActions.map(function(a){return '<option value="'+a.id+'"'+(c.action_id==a.id?' selected':'')+'>'+a.label+'</option>';}).join('');
+    body='<select id="csq-act-'+i+'" style="width:100%;font-size:.82rem"><option value="">'+t('csq.action_placeholder')+'</option>'+opts+'</select>';
+  } else if(c.type==2){
+    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.tts_placeholder')+'" style="'+ta+';height:56px">'+esc(c.text||'')+'</textarea>';
+  } else if(c.type==3){
+    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.prompt_placeholder')+'" style="'+ta+';height:56px">'+esc(c.text||'')+'</textarea>'
+      +'<label style="display:flex;align-items:center;gap:6px;font-size:.8rem;margin-top:7px;cursor:pointer">'
+      +'<input type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'>'+t('csq.snapshot')+'</label>';
+  } else if(c.type==4){
+    var checked=[]; if(c.reactions)checked=c.reactions;
+    var allAct=gActions.map(function(a){
+      return '<label style="display:flex;align-items:center;gap:5px;font-size:.8rem;margin-bottom:3px;cursor:pointer">'
+        +'<input type="checkbox" name="csq-ract-'+i+'" value="'+a.id+'"'+(checked.indexOf(a.id)>=0?' checked':'')+' onchange="limitReact('+i+')"> '+a.label+'</label>';
+    }).join('');
+    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.llm_placeholder')+'" style="'+ta+';height:46px;margin-bottom:8px">'+esc(c.text||'')+'</textarea>'
+      +'<label style="display:flex;align-items:center;gap:6px;font-size:.8rem;margin-bottom:8px;cursor:pointer">'
+      +'<input type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'>'+t('csq.snapshot')+'</label>'
+      +'<div style="font-size:.72rem;color:#8a9ab5;margin-bottom:4px">'+t('csq.reactions_label')+'</div>'
+      +'<div id="csq-ract-'+i+'" style="max-height:150px;overflow-y:auto;border:1px solid #e4eaf4;border-radius:6px;padding:8px;background:#fff">'+allAct+'</div>';
+  }
+  wrap.innerHTML=hdr+body;
+  return wrap;
+}
+
+function limitReact(i){
+  var checks=document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked');
+  if(checks.length>3){event.target.checked=false;}
+}
+
+function csqTypeChange(i,v){
+  gEditCsqs[i]={type:parseInt(v),action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0};
+  csqRender();
+}
+
+function csqDel(i){gEditCsqs.splice(i,1);csqRender();}
+
+function csqAdd(){
+  if(gEditCsqs.length>=3)return;
+  gEditCsqs.push({type:1,action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0});
+  csqRender();
+}
+
+function csqCollect(){
+  gEditCsqs.forEach(function(c,i){
+    if(c.type==1){var s=document.getElementById('csq-act-'+i);if(s)c.action_id=s.value;}
+    else if(c.type==2||c.type==3||c.type==4){var t=document.getElementById('csq-txt-'+i);if(t)c.text=t.value;}
+    if(c.type==3||c.type==4){var sn=document.getElementById('csq-snap-'+i);if(sn)c.snapshot=sn.checked;}
+    if(c.type==4){
+      var racts=[]; document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked').forEach(function(cb){racts.push(cb.value);});
+      c.reactions=racts; c.reaction_count=racts.length;
+    }
+  });
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ======================= TEST PANEL =======================
+function testLlmSend(){
+  var text=document.getElementById('test-llm-text').value.trim();
+  if(!text)return;
+  var msg=document.getElementById('test-llm-msg');
+  var resp=document.getElementById('test-llm-resp');
+  msg.textContent=t('sending'); resp.style.display='none';
+  var fd=new FormData(); fd.append('text',text);
+  fetch('/test/llm',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      msg.textContent='';
+      if(d.ok){resp.style.display='block';resp.textContent=d.response;}
+      else{msg.textContent=t('error')+' '+(d.error||'?');}
+    })
+    .catch(function(e){msg.textContent=t('error_conn');});
+}
+
+function testTtsSend(){
+  var text=document.getElementById('test-tts-text').value.trim();
+  if(!text)return;
+  var msg=document.getElementById('test-tts-msg');
+  msg.textContent=t('sending_tts');
+  var fd=new FormData(); fd.append('text',text);
+  fetch('/test/tts',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
+      setTimeout(function(){msg.textContent='';},3500);
+    })
+    .catch(function(e){msg.textContent=t('error_conn');});
+}
+
+function testVoicesLoad(){
+  var btn=document.getElementById('btn-voices-load');
+  var list=document.getElementById('test-voices-list');
+  var msg=document.getElementById('test-voices-msg');
+  btn.disabled=true; btn.textContent=t('sending'); list.innerHTML=''; msg.textContent='';
+  fetch('/test/voices')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      btn.disabled=false; btn.textContent=t('test.voices_load');
+      if(!d.ok){msg.textContent=t('error')+' '+(d.error||'?');return;}
+      if(!d.voices||!d.voices.length){list.innerHTML='<div style="color:#8a9ab5;font-size:.82rem">'+t('test.voices_none')+'</div>';return;}
+      list.innerHTML=d.voices.map(function(v){
+        var cat=v.category?'<span style="font-size:.7rem;color:#5a6a8a;background:#e4eaf4;border-radius:4px;padding:1px 6px;margin-left:6px">'+v.category+'</span>':'';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e4eaf4">'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:.88rem;font-weight:600;color:#1a2340">'+esc(v.name)+cat+'</div>'
+          +'<div style="font-size:.72rem;color:#8a9ab5;font-family:monospace;margin-top:2px">'+v.id+'</div>'
+          +'</div>'
+          +'<button class="btn b-grn" style="padding:5px 12px;font-size:.78rem;white-space:nowrap" onclick="testVoiceUse(\''+v.id+'\',\''+esc(v.name)+'\')">'+t('test.voices_use')+'</button>'
+          +'</div>';
+      }).join('');
+    })
+    .catch(function(e){btn.disabled=false;btn.textContent=t('test.voices_load');msg.textContent=t('error_conn');});
+}
+
+function testVoiceUse(id,name){
+  document.getElementById('pers-voice').value=id;
+  var msg=document.getElementById('test-voices-msg');
+  msg.textContent=t('voice_set')+' '+name;
+  setTimeout(function(){msg.textContent='';},2500);
+  document.getElementById('pers-voice').scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return(h?h+'h ':'')+(m?m+'m ':'')+ss+'s';}
@@ -500,10 +1082,12 @@ function sysInfoPoll(){
       +' | SPIFFS: '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
       +' | Flash: '+d.flash_mb+'MB'
       +sd;
+    if(d.fw_version){var fv=document.getElementById('hdr-fw-ver');if(fv)fv.textContent='v'+d.fw_version;}
   }).catch(function(){});
 }
 sysInfoPoll();
 setInterval(sysInfoPoll,8000);
+setLang(gLang);
 
 function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
 function wbCmd(label,bytes){espCmd(label,bytes);}

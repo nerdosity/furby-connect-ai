@@ -19,6 +19,8 @@
 #include <BLEAdvertisedDevice.h>
 #include <SPIFFS.h>
 
+#define FW_VERSION "2.0.0"
+
 // ==========================================
 // PINOUT E CONFIG HARDWARE
 // (da schema ESP32-S3-CAM-OVxxxx Waveshare)
@@ -260,6 +262,98 @@ static const char* SENSOR_NAMES[] = {
     "Inclinato back", "Inclinato dx", "Inclinato sx"
 };
 
+// ==========================================
+// SISTEMA EVENTI / COMPORTAMENTI (event → conseguenze)
+// ==========================================
+
+// Azioni Furby invocabili via BLE — lista curata, comuni a tutti i Furby Connect
+// Formato: cmd[0]=0x13 (specific), 0x00, input, index, subindex, specific
+// oppure cmd[0]=0x14 (antenna), r, g, b
+struct FurbyActionDef { const char* id; const char* label; uint8_t cmd[6]; uint8_t len; };
+static const FurbyActionDef FURBY_ACTIONS[] = {
+    // Reazioni fisiche (coccole)
+    {"pet_happy",    "Coccola felice",          {0x13,0x00, 1,0,0,0}, 6},
+    {"pet_reluctant","Coccola riluttante",       {0x13,0x00, 1,1,0,0}, 6},
+    // Risate / solletico
+    {"tickle_laugh", "Risata (solletico)",        {0x13,0x00, 2,0,0,0}, 6},
+    {"belly_laugh",  "Risata di pancia",          {0x13,0x00, 2,3,0,0}, 6},
+    {"laugh_snort",  "Risata con sbuffo",         {0x13,0x00, 2,3,0,6}, 6},
+    // Peti e ruttini
+    {"fart_musical", "Peto musicale",             {0x13,0x00, 7,0,0,0}, 6},
+    {"fart_wet",     "Peto umido",                {0x13,0x00, 7,0,0,2}, 6},
+    {"fart_silent",  "Silent but deadly",         {0x13,0x00, 7,3,0,3}, 6},
+    {"burp",         "Rutto",                     {0x13,0x00, 7,3,0,0}, 6},
+    {"burp_loud",    "Rutto forte",               {0x13,0x00,16,0,2,2}, 6},
+    {"hiccup",       "Singhiozzo",                {0x13,0x00,16,0,0,0}, 6},
+    // Musica / danza
+    {"sing",         "Cantare",                   {0x13,0x00,17,0,0,0}, 6},
+    {"beatbox",      "Beatbox",                   {0x13,0x00,17,0,0,5}, 6},
+    {"dance",        "Ballare",                   {0x13,0x00,17,2,0,3}, 6},
+    // Movimento
+    {"shake",        "Tremare/agitato",            {0x13,0x00, 9,0,0,0}, 6},
+    {"vomit",        "Vomitare",                  {0x13,0x00, 9,1,0,1}, 6},
+    // Sonno
+    {"sleep",        "Addormentarsi",             {0x13,0x00,12,0,0,0}, 6},
+    {"snore",        "Russare",                   {0x13,0x00,12,3,0,0}, 6},
+    {"lullaby",      "Ninna nanna",               {0x13,0x00,12,2,1,1}, 6},
+    {"wakeup",       "Svegliarsi",                {0x13,0x00,13,0,0,0}, 6},
+    // Emozioni
+    {"hungry",       "Fame",                      {0x13,0x00,23,0,0,0}, 6},
+    {"sick",         "Malato",                    {0x13,0x00,22,0,0,0}, 6},
+    {"dropped",      "Caduto",                    {0x13,0x00,21,0,0,0}, 6},
+    {"loud_noise",   "Rumore forte",              {0x13,0x00,20,0,0,0}, 6},
+    // Conversazione
+    {"convo_yes",    "Conversazione: si!",        {0x13,0x00, 8,0,0,0}, 6},
+    {"convo_no",     "Conversazione: no",         {0x13,0x00, 8,1,0,0}, 6},
+    {"convo_bored",  "Conversazione: annoiato",   {0x13,0x00, 8,2,0,0}, 6},
+    {"eating",       "Mangiare",                  {0x13,0x00,14,0,0,0}, 6},
+    // Antenna LED
+    {"ant_red",      "Antenna rossa",             {0x14,255,  0,  0,0,0}, 4},
+    {"ant_blue",     "Antenna blu",               {0x14,  0,  0,255,0,0}, 4},
+    {"ant_green",    "Antenna verde",             {0x14,  0,255,  0,0,0}, 4},
+    {"ant_off",      "Antenna spenta",            {0x14,  0,  0,  0,0,0}, 4},
+};
+static const int FURBY_ACTIONS_COUNT = (int)(sizeof(FURBY_ACTIONS)/sizeof(FURBY_ACTIONS[0]));
+
+enum ConsequenceType : uint8_t {
+    CSQ_NONE = 0,
+    CSQ_FURBY_ACTION,  // BLE → Furby
+    CSQ_TTS_FIXED,     // testo fisso → ElevenLabs
+    CSQ_PROMPT_FIXED,  // prompt fisso → LLM → TTS
+    CSQ_PROMPT_LLM     // LLM sceglie: action + speech_before + speech_after
+};
+
+// Trigger di un comportamento
+// trigger=0 → VAD (microfono)
+// trigger=1 → pulsante fisico ESP32
+// trigger=2 → sensore Furby (usa sensor_id, stessa numerazione SensorId: 1=ant_sx … 17=tilt_sx)
+enum TriggerType : uint8_t { TRG_VAD=0, TRG_BUTTON=1, TRG_SENSOR=2 };
+
+// Alias di compatibilità (usato solo internamente da processStimulus)
+enum EventType : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
+
+#define MAX_REACTIONS        3
+#define MAX_CONSEQUENCES     3
+#define MAX_EVENT_BEHAVIORS  16
+
+struct Consequence {
+    ConsequenceType type         = CSQ_NONE;
+    char action_id[32]           = {};
+    char text[256]               = {};
+    bool snapshot                = false;
+    char reactions[MAX_REACTIONS][32] = {};
+    uint8_t reaction_count       = 0;
+};
+
+struct EventBehavior {
+    char        id[32]           = {};
+    TriggerType trigger          = TRG_VAD;
+    uint8_t     sensor_id        = 0;   // valido solo se trigger==TRG_SENSOR
+    char        name[48]         = {};
+    Consequence consequences[MAX_CONSEQUENCES] = {};
+    uint8_t     consequence_count = 0;
+};
+
 // Forward declarations
 void saveBehaviorConfigs();
 void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur);
@@ -267,8 +361,24 @@ static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp
 bool camInit();
 void camDeinit();
 static void i2s_write_stereo(const int16_t* buf_mono, int mono_samples);
+void loadEventBehaviors();
+void saveEventBehaviors();
+const FurbyActionDef* findFurbyAction(const char* id);
+void executeConsequence(const Consequence& csq, const String& base64Img);
+void processStimulusDefault(const String& base64Img);
+void processStimulus(TriggerType trg, uint8_t sensorId);
 
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
+
+// Globals — sistema eventi/comportamenti
+static String           gPersonalityPrompt;
+static String           gPersonalityVoiceId;
+static EventBehavior    gEventBehaviors[MAX_EVENT_BEHAVIORS];
+static int              gEventBehaviorCount = 0;
+volatile TriggerType    pendingTrigger  = TRG_VAD;
+volatile uint8_t        pendingSensorId = 0;
+// alias mantenuto per compatibilità con il codice VAD
+volatile EventType      pendingEvent    = EVT_VAD;
 
 volatile bool isSpeaking      = false;
 volatile bool wakeUpTriggered = false;
@@ -430,7 +540,7 @@ void initES8311() {
     es8311WriteReg(ES8311_DAC_REG31, 0x00); // unmute DAC (bit6/5 = 0)
 
     // Volume iniziale 75% (reg = 0x80 + 75*0x7F/100 = 0x80 + 95 = 0xDF)
-    es8311WriteReg(ES8311_DAC_REG32, 0xBF);  // 75% = (75*256/100)-1 = 191
+    es8311WriteReg(ES8311_DAC_REG32, 186);  // setVolume(75) = -3dB
 
     es8311WriteReg(ES8311_GP_REG45, 0x00);
     Serial.println("ES8311: init OK, volume=75%");
@@ -581,6 +691,9 @@ void vadTask(void* pvParameters) {
                     inSpeech = false;
                     micVadActive = false;
                     Serial.println("VAD: parlato rilevato -> trigger");
+                    pendingTrigger = TRG_VAD;
+                    pendingSensorId = 0;
+                    pendingEvent = EVT_VAD;
                     wakeUpTriggered = true;
                 }
             } else {
@@ -2883,6 +2996,142 @@ void handleCaptiveRedirect() {
 }
 
 // ==========================================
+// HANDLER SISTEMA PERSONALITÀ / COMPORTAMENTI
+// ==========================================
+
+// GET /personality
+void handlePersonalityGet() {
+    String j = "{\"prompt\":";
+    j += "\""; for (char c : gPersonalityPrompt) { if (c=='"') j+="\\\""; else if (c=='\\') j+="\\\\"; else if (c=='\n') j+="\\n"; else j+=c; } j += "\"";
+    j += ",\"voice_id\":\"" + gPersonalityVoiceId + "\"}";
+    server.send(200, "application/json", j);
+}
+
+// POST /personality/save  (form: prompt, voice_id)
+void handlePersonalitySave() {
+    if (server.hasArg("prompt"))   gPersonalityPrompt  = server.arg("prompt");
+    if (server.hasArg("voice_id")) gPersonalityVoiceId = server.arg("voice_id");
+    saveEventBehaviors();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// GET /behaviors  →  JSON completo (inclusa personality)
+void handleBehaviorsGet() {
+    if (!SPIFFS.exists("/behaviors.json")) { saveEventBehaviors(); }
+    File f = SPIFFS.open("/behaviors.json", "r");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    server.streamFile(f, "application/json"); f.close();
+}
+
+// POST /behaviors/save  (body: JSON completo behaviors.json)
+void handleBehaviorsSave() {
+    String body = server.arg("plain");
+    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
+    JsonDocument doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
+    }
+    File f = SPIFFS.open("/behaviors.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(body); f.close();
+    loadEventBehaviors();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// GET /behaviors/export  →  download behaviors.json
+void handleBehaviorsExport() {
+    if (!SPIFFS.exists("/behaviors.json")) saveEventBehaviors();
+    File f = SPIFFS.open("/behaviors.json", "r");
+    if (!f) { server.send(404, "text/plain", "not found"); return; }
+    server.sendHeader("Content-Disposition", "attachment; filename=behaviors.json");
+    server.streamFile(f, "application/json"); f.close();
+}
+
+// POST /behaviors/import  (body: JSON)
+void handleBehaviorsImport() {
+    String body = server.arg("plain");
+    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
+    JsonDocument doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
+    }
+    File f = SPIFFS.open("/behaviors.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(body); f.close();
+    loadEventBehaviors();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// GET /behaviors/actions  →  lista azioni Furby disponibili
+void handleBehaviorsActions() {
+    String j = "[";
+    for (int i = 0; i < FURBY_ACTIONS_COUNT; i++) {
+        if (i > 0) j += ",";
+        j += "{\"id\":\""; j += FURBY_ACTIONS[i].id;
+        j += "\",\"label\":\""; j += FURBY_ACTIONS[i].label; j += "\"}";
+    }
+    j += "]";
+    server.send(200, "application/json", j);
+}
+
+// POST /test/llm  (form: text)  →  chiama LLM con personality prompt corrente, senza immagine
+void handleTestLlm() {
+    if (isProcessing) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return; }
+    String text = server.arg("text");
+    if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
+    String answer = callLLM("", gPersonalityPrompt, text);
+    String safe; for (char c : answer) { if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c; }
+    server.send(200, "application/json", "{\"ok\":true,\"response\":\"" + safe + "\"}");
+}
+
+// POST /test/tts  (form: text)  →  invia ad ElevenLabs e riproduce sull'ESP32
+void handleTestTts() {
+    if (isProcessing || isSpeaking) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return; }
+    String text = server.arg("text");
+    if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
+    server.send(200, "application/json", "{\"ok\":true}");
+    // Riproduce in background per non bloccare il server
+    xTaskCreatePinnedToCore([](void* p) {
+        String* t = (String*)p;
+        isSpeaking = true;
+        if (sdAvailable) generateAndPlayTTS_SD(*t);
+        else             streamAndPlayTTS_RAM(*t);
+        isSpeaking = false;
+        delete t;
+        vTaskDelete(NULL);
+    }, "tts_test", 16384, new String(text), 1, NULL, 1);
+}
+
+// GET /test/voices  →  lista voci ElevenLabs (proxy)
+void handleTestVoices() {
+    WiFiClientSecure client; client.setInsecure();
+    HTTPClient http;
+    http.begin(client, "https://api.elevenlabs.io/v1/voices");
+    http.addHeader("xi-api-key", elevenlabs_api_key);
+    int code = http.GET();
+    if (code == 200) {
+        String raw = http.getString();
+        JsonDocument doc;
+        String out = "{\"ok\":true,\"voices\":[";
+        bool first = true;
+        if (deserializeJson(doc, raw) == DeserializationError::Ok) {
+            for (JsonObject v : doc["voices"].as<JsonArray>()) {
+                if (!first) out += ",";
+                out += "{\"id\":\"";       out += v["voice_id"].as<const char*>();  out += "\"";
+                out += ",\"name\":\"";     out += v["name"].as<const char*>();      out += "\"";
+                out += ",\"category\":\""; out += v["category"].as<const char*>();  out += "\"}";
+                first = false;
+            }
+        }
+        out += "]}";
+        server.send(200, "application/json", out);
+    } else {
+        server.send(502, "application/json", "{\"ok\":false,\"error\":\"ElevenLabs " + String(code) + "\"}");
+    }
+    http.end();
+}
+
+// ==========================================
 // DEBUG HANDLERS
 // ==========================================
 void handleDebugPage() {
@@ -3054,11 +3303,15 @@ void handleDebugAmp() {
     server.send(200, "application/json", "{\"ok\":true,\"on\":" + String(on ? "true" : "false") + "}");
 }
 
+// ES8311 REG32: 0x00=mute, 0x01=-96dB, step 0.5dB/LSB, 0xFF=+32dB
+// Mappa 1-100% su -30dB..+6dB (range percettivo usabile; 50%=-12dB, 75%=-3dB)
 void setVolume(int pct) {
     pct = constrain(pct, 0, 100);
-    uint8_t reg = (pct == 0) ? 0x00 : (uint8_t)((pct * 256 / 100) - 1);
-    es8311WriteReg(ES8311_DAC_REG32, reg);
-    Serial.printf("Volume: %d%% (reg=0x%02X)\n", pct, reg);
+    if (pct == 0) { es8311WriteReg(ES8311_DAC_REG32, 0x00); return; }
+    float db  = -30.0f + (pct * 36.0f / 100.0f);
+    int   reg = constrain((int)((db + 96.0f) * 2.0f), 1, 255);
+    es8311WriteReg(ES8311_DAC_REG32, (uint8_t)reg);
+    Serial.printf("Volume: %d%% (%.1fdB reg=0x%02X)\n", pct, db, reg);
 }
 
 // POST /debug/vol?vol=0-100 — volume DAC ES8311
@@ -3312,7 +3565,8 @@ void handleSysInfo() {
     j += "\"spiffs_used\":"  + String(kb(SPIFFS.usedBytes()))       + ",";
     j += "\"spiffs_total\":" + String(kb(SPIFFS.totalBytes()))      + ",";
     j += "\"flash_mb\":"     + String(ESP.getFlashChipSize() / (1024*1024)) + ",";
-    j += "\"uptime_s\":"     + String(millis() / 1000);
+    j += "\"uptime_s\":"     + String(millis() / 1000) + ",";
+    j += "\"fw_version\":\"" + String(FW_VERSION) + "\"";
     if (sdAvailable) {
         j += ",\"sd_used\":"  + String(kb(SD_MMC.usedBytes()));
         j += ",\"sd_total\":" + String(kb(SD_MMC.totalBytes()));
@@ -3386,6 +3640,16 @@ void startWebServer() {
     server.on("/debug/amp",        HTTP_GET,  handleDebugAmp);
     server.on("/debug/amp",        HTTP_POST, handleDebugAmp);
     server.on("/debug/vol",        HTTP_POST, handleDebugVol);
+    server.on("/personality",          HTTP_GET,  handlePersonalityGet);
+    server.on("/personality/save",     HTTP_POST, handlePersonalitySave);
+    server.on("/behaviors",            HTTP_GET,  handleBehaviorsGet);
+    server.on("/behaviors/save",       HTTP_POST, handleBehaviorsSave);
+    server.on("/behaviors/export",     HTTP_GET,  handleBehaviorsExport);
+    server.on("/behaviors/import",     HTTP_POST, handleBehaviorsImport);
+    server.on("/behaviors/actions",    HTTP_GET,  handleBehaviorsActions);
+    server.on("/test/llm",             HTTP_POST, handleTestLlm);
+    server.on("/test/tts",             HTTP_POST, handleTestTts);
+    server.on("/test/voices",          HTTP_GET,  handleTestVoices);
     server.on("/debug/tone",       HTTP_POST, handleDebugTone);
     server.on("/debug/mic/record", HTTP_POST, handleDebugMicRecord);
     server.on("/fs/list",    HTTP_GET,  handleFsList);
@@ -3395,6 +3659,18 @@ void startWebServer() {
     server.on("/apple-touch-icon.png",        HTTP_GET, []() { server.send(204); });
     server.on("/apple-touch-icon-precomposed.png", HTTP_GET, []() { server.send(204); });
     server.on("/manifest.json",  HTTP_GET,  []() { server.send(204); });
+    // Serve immagini statiche da SPIFFS: GET /img/<nome>.png|jpg
+    server.on("/img/logo.png",    HTTP_GET, []() {
+        File f = SPIFFS.open("/logo.png","r");
+        if (!f) { server.send(404); return; }
+        server.streamFile(f, "image/png"); f.close();
+    });
+    server.on("/img/title.png",   HTTP_GET, []() {
+        File f = SPIFFS.open("/title.png","r");
+        if (!f) { server.send(404); return; }
+        server.streamFile(f, "image/png"); f.close();
+    });
+
     server.onNotFound([]() {
         String uri = server.uri();
         // /fs/get/* → serve file da SPIFFS
@@ -3510,9 +3786,21 @@ void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur) {
     for (int r = 0; r < MAX_CFG_RULES; r++) {
         BehaviorRule& rule = cfg.rules[r];
         if (rule.sensorId == SEN_NONE || rule.len == 0) continue;
-        // Fronte di salita: era false, ora true
         if (curVals[rule.sensorId] && !prevVals[rule.sensorId])
             furbyWrite(rule.bytes, rule.len);
+    }
+
+    // Fronte di salita su qualsiasi sensore → trigger per il sistema comportamenti
+    if (!isProcessing && !wakeUpTriggered) {
+        for (int s = 1; s < SEN_COUNT; s++) {
+            if (curVals[s] && !prevVals[s]) {
+                pendingTrigger  = TRG_SENSOR;
+                pendingSensorId = (uint8_t)s;
+                pendingEvent    = EVT_NONE;
+                wakeUpTriggered = true;
+                break;
+            }
+        }
     }
 }
 
@@ -3708,12 +3996,13 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         http.addHeader("Content-Type", "application/json");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
 
+        String userContent = "[{\"type\":\"text\",\"text\":\"" + userText + "\"}";
+        if (base64Img.length() > 0)
+            userContent += ",{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/jpeg;base64," + base64Img + "\"}}";
+        userContent += "]";
         String body = "{\"model\":\"" + llm_model + "\",\"messages\":["
             "{\"role\":\"system\",\"content\":\"" + systemPrompt + "\"},"
-            "{\"role\":\"user\",\"content\":["
-              "{\"type\":\"text\",\"text\":\"" + userText + "\"},"
-              "{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/jpeg;base64," + base64Img + "\"}}"
-            "]}]}";
+            "{\"role\":\"user\",\"content\":" + userContent + "}]}";
         uint8_t* buf = makePsramPayload(body);
         body = ""; // libera subito la String dall'heap interno
         if (buf) {
@@ -3732,12 +4021,13 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         http.addHeader("x-api-key", claude_api_key);
         http.addHeader("anthropic-version", "2023-06-01");
 
+        String claudeContent = "[{\"type\":\"text\",\"text\":\"" + userText + "\"}";
+        if (base64Img.length() > 0)
+            claudeContent += ",{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"" + base64Img + "\"}}";
+        claudeContent += "]";
         String body = "{\"model\":\"" + llm_model + "\",\"max_tokens\":128,"
             "\"system\":\"" + systemPrompt + "\","
-            "\"messages\":[{\"role\":\"user\",\"content\":["
-              "{\"type\":\"text\",\"text\":\"" + userText + "\"},"
-              "{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"" + base64Img + "\"}}"
-            "]}]}";
+            "\"messages\":[{\"role\":\"user\",\"content\":" + claudeContent + "}]}";
         uint8_t* buf = makePsramPayload(body);
         body = "";
         if (buf) {
@@ -3756,38 +4046,205 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
     return answer;
 }
 
-void processStimulus() {
-    if (!camActive && !camInit()) return;
-    camera_fb_t* fb = esp_camera_fb_get();
-    if (!fb) return;
-    String base64Img = base64Encode(fb->buf, fb->len);
-    esp_camera_fb_return(fb);
+// ==========================================
+// SISTEMA EVENTI / COMPORTAMENTI
+// ==========================================
 
+void saveEventBehaviors() {
+    JsonDocument doc;
+    JsonObject pers = doc["personality"].to<JsonObject>();
+    pers["prompt"]   = gPersonalityPrompt;
+    pers["voice_id"] = gPersonalityVoiceId;
+    JsonArray arr = doc["behaviors"].to<JsonArray>();
+    for (int i = 0; i < gEventBehaviorCount; i++) {
+        EventBehavior& b = gEventBehaviors[i];
+        JsonObject bo = arr.add<JsonObject>();
+        bo["id"]        = b.id;
+        bo["trigger"]   = (int)b.trigger;
+        bo["sensor_id"] = (int)b.sensor_id;
+        bo["name"]      = b.name;
+        JsonArray cs = bo["consequences"].to<JsonArray>();
+        for (int c = 0; c < b.consequence_count; c++) {
+            Consequence& q = b.consequences[c];
+            JsonObject co = cs.add<JsonObject>();
+            co["type"]      = (int)q.type;
+            co["action_id"] = q.action_id;
+            co["text"]      = q.text;
+            co["snapshot"]  = q.snapshot;
+            JsonArray ra = co["reactions"].to<JsonArray>();
+            for (int r = 0; r < q.reaction_count; r++) ra.add(q.reactions[r]);
+        }
+    }
+    String out; serializeJson(doc, out);
+    File f = SPIFFS.open("/behaviors.json", "w");
+    if (f) { f.print(out); f.close(); }
+}
+
+void loadEventBehaviors() {
+    gPersonalityPrompt  = "Sei un giocattolo cinico, volgare e scontroso. Genera frasi BREVISSIME (max 8 parole). Sii diretto e sgarbato.";
+    gPersonalityVoiceId = elevenlabs_voice_id;
+    gEventBehaviorCount = 0;
+    if (!SPIFFS.exists("/behaviors.json")) {
+        // Comportamento di default: VAD -> prompt_llm senza azioni fisiche
+        EventBehavior& b = gEventBehaviors[0];
+        strlcpy(b.id,   "vad_default", sizeof(b.id));
+        b.trigger   = TRG_VAD;
+        b.sensor_id = 0;
+        strlcpy(b.name, "Parlato rilevato (VAD)", sizeof(b.name));
+        b.consequences[0].type     = CSQ_PROMPT_LLM;
+        b.consequences[0].snapshot = true;
+        strlcpy(b.consequences[0].text, "Qualcuno ti sta parlando. Reagisci.", sizeof(b.consequences[0].text));
+        b.consequence_count = 1;
+        gEventBehaviorCount = 1;
+        saveEventBehaviors();
+        return;
+    }
+    File f = SPIFFS.open("/behaviors.json", "r");
+    if (!f) return;
+    String raw = f.readString(); f.close();
+    JsonDocument doc;
+    if (deserializeJson(doc, raw) != DeserializationError::Ok) return;
+    if (doc["personality"].is<JsonObject>()) {
+        gPersonalityPrompt  = doc["personality"]["prompt"]   | gPersonalityPrompt;
+        gPersonalityVoiceId = doc["personality"]["voice_id"] | gPersonalityVoiceId;
+    }
+    for (JsonObject bo : doc["behaviors"].as<JsonArray>()) {
+        if (gEventBehaviorCount >= MAX_EVENT_BEHAVIORS) break;
+        EventBehavior& b = gEventBehaviors[gEventBehaviorCount++];
+        strlcpy(b.id,   bo["id"]   | "", sizeof(b.id));
+        b.trigger   = (TriggerType)(bo["trigger"]   | (int)(bo["event"] | 0));  // compatibilità JSON vecchio
+        b.sensor_id = (uint8_t)(bo["sensor_id"] | 0);
+        strlcpy(b.name, bo["name"] | "", sizeof(b.name));
+        b.consequence_count = 0;
+        for (JsonObject co : bo["consequences"].as<JsonArray>()) {
+            if (b.consequence_count >= MAX_CONSEQUENCES) break;
+            Consequence& q = b.consequences[b.consequence_count++];
+            q.type     = (ConsequenceType)(co["type"] | 0);
+            strlcpy(q.action_id, co["action_id"] | "", sizeof(q.action_id));
+            strlcpy(q.text,      co["text"]      | "", sizeof(q.text));
+            q.snapshot = co["snapshot"] | false;
+            q.reaction_count = 0;
+            for (JsonVariant rv : co["reactions"].as<JsonArray>()) {
+                if (q.reaction_count >= MAX_REACTIONS) break;
+                strlcpy(q.reactions[q.reaction_count++], rv.as<const char*>() ? rv.as<const char*>() : "", 32);
+            }
+        }
+    }
+}
+
+const FurbyActionDef* findFurbyAction(const char* id) {
+    for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
+        if (strcmp(FURBY_ACTIONS[i].id, id) == 0) return &FURBY_ACTIONS[i];
+    return nullptr;
+}
+
+static void speakText(const String& text) {
+    if (sdAvailable) generateAndPlayTTS_SD(text);
+    else             streamAndPlayTTS_RAM(text);
+}
+
+void executeConsequence(const Consequence& csq, const String& base64Img) {
+    switch (csq.type) {
+        case CSQ_FURBY_ACTION: {
+            const FurbyActionDef* act = findFurbyAction(csq.action_id);
+            if (act) { furbyWrite(act->cmd, act->len); delay(1500); }
+            break;
+        }
+        case CSQ_TTS_FIXED: {
+            String t = String(csq.text); t.trim();
+            if (t.length() > 0) speakText(t);
+            break;
+        }
+        case CSQ_PROMPT_FIXED: {
+            String img = csq.snapshot ? base64Img : "";
+            String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
+            if (answer.length() > 0) speakText(answer);
+            break;
+        }
+        case CSQ_PROMPT_LLM: {
+            String img = csq.snapshot ? base64Img : "";
+            if (csq.reaction_count == 0) {
+                String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
+                if (answer.length() > 0) speakText(answer);
+            } else {
+                String reactList;
+                for (int r = 0; r < csq.reaction_count; r++) {
+                    const FurbyActionDef* act = findFurbyAction(csq.reactions[r]);
+                    if (act) reactList += String(act->id) + ": " + act->label + "\n";
+                }
+                String sys = gPersonalityPrompt +
+                    " Rispondi SOLO con JSON valido (niente altro testo): "
+                    "{\"action\":\"id_o_null\",\"speech_before\":\"...\",\"speech_after\":\"...\"}."
+                    " Frasi max 6 parole o null. Azioni disponibili:\n" + reactList;
+                String answer = callLLM(img, sys, String(csq.text));
+                String speechBefore, speechAfter, actionId;
+                JsonDocument rdoc;
+                if (deserializeJson(rdoc, answer) == DeserializationError::Ok) {
+                    speechBefore = rdoc["speech_before"] | "";
+                    speechAfter  = rdoc["speech_after"]  | "";
+                    actionId     = rdoc["action"]         | "";
+                } else {
+                    speechBefore = answer;
+                }
+                if (speechBefore.length() > 0 && speechBefore != "null") speakText(speechBefore);
+                if (actionId.length() > 0 && actionId != "null") {
+                    const FurbyActionDef* act = findFurbyAction(actionId.c_str());
+                    if (act) { furbyWrite(act->cmd, act->len); delay(1500); }
+                }
+                if (speechAfter.length() > 0 && speechAfter != "null") speakText(speechAfter);
+            }
+            break;
+        }
+        default: break;
+    }
+}
+
+void processStimulusDefault(const String& base64Img) {
     String sysPrompt, userText;
-
     if (sdAvailable) {
         String cacheJSON = getCacheJSON();
-        sysPrompt = "Sei un giocattolo cinico, volgare e scontroso. Ti passo un'immagine e un JSON con la cache audio. Se una frase in cache va bene, rispondi SOLO con la sua chiave (es. '1.pcm'). Se NESSUNA va bene, genera una nuova frase BREVISSIMA (max 8 parole) anteponendo 'NEW:'.";
+        sysPrompt = gPersonalityPrompt + " Ti passo un JSON con la cache audio. Se una frase in cache va bene, rispondi SOLO con la sua chiave (es. '1.pcm'). Se NESSUNA va bene, genera una nuova frase BREVISSIMA (max 8 parole) anteponendo 'NEW:'.";
         userText  = "Cache JSON: " + cacheJSON;
     } else {
-        sysPrompt = "Sei un giocattolo cinico, volgare e scontroso. Genera una frase BREVISSIMA (max 8 parole) per commentare l'ambiente o chi ti sta davanti. Sii diretto e sgarbato. Rispondi solo con la frase, niente prefissi.";
-        userText  = "";
+        sysPrompt = gPersonalityPrompt;
+        userText  = "Commenta quello che vedi.";
     }
-
     String answer = callLLM(base64Img, sysPrompt, userText);
     if (answer.length() == 0) return;
-
     if (sdAvailable) {
-        if (answer.startsWith("NEW:"))      generateAndPlayTTS_SD(answer.substring(4));
-        else if (answer.endsWith(".pcm"))   playAudioSD(answer);
-        else                                generateAndPlayTTS_SD(answer);
+        if (answer.startsWith("NEW:"))    generateAndPlayTTS_SD(answer.substring(4));
+        else if (answer.endsWith(".pcm")) playAudioSD(answer);
+        else                              generateAndPlayTTS_SD(answer);
     } else {
         if (answer.startsWith("NEW:")) answer = answer.substring(4);
         streamAndPlayTTS_RAM(answer);
     }
 }
 
-void IRAM_ATTR isrWakeUp() { wakeUpTriggered = true; }
+void processStimulus(TriggerType trg, uint8_t sensorId) {
+    String base64Img;
+    if (camActive || camInit()) {
+        camera_fb_t* fb = esp_camera_fb_get();
+        if (fb) { base64Img = base64Encode(fb->buf, fb->len); esp_camera_fb_return(fb); }
+    }
+
+    // Cerca comportamento che matcha trigger (e sensor_id per TRG_SENSOR)
+    EventBehavior* beh = nullptr;
+    for (int i = 0; i < gEventBehaviorCount; i++) {
+        EventBehavior& b = gEventBehaviors[i];
+        if (b.trigger != trg) continue;
+        if (trg == TRG_SENSOR && b.sensor_id != sensorId) continue;
+        beh = &b;
+        break;
+    }
+
+    if (!beh) { processStimulusDefault(base64Img); return; }
+
+    for (int c = 0; c < beh->consequence_count; c++)
+        executeConsequence(beh->consequences[c], base64Img);
+}
+
+void IRAM_ATTR isrWakeUp() { pendingTrigger = TRG_BUTTON; pendingSensorId = 0; pendingEvent = EVT_BUTTON; wakeUpTriggered = true; }
 
 // ==========================================
 // CAMERA INIT/DEINIT
@@ -3852,6 +4309,7 @@ void setup() {
     vad_threshold = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);
     vadEnabled    = preferences.getBool("vad_en",  true);
     loadBehaviorConfigs();
+    loadEventBehaviors();
 
     // SD
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
@@ -3949,11 +4407,16 @@ void loop() {
         if (wakeUpTriggered && !isProcessing) {
             wakeUpTriggered = false;
             isProcessing    = true;
-            xTaskCreatePinnedToCore([](void*) {
-                processStimulus();
+            // Impacchetta trigger+sensorId in un uintptr_t: byte alto = trigger, byte basso = sensorId
+            uintptr_t arg = ((uintptr_t)pendingTrigger << 8) | pendingSensorId;
+            xTaskCreatePinnedToCore([](void* p) {
+                uintptr_t v = (uintptr_t)p;
+                TriggerType trg = (TriggerType)((v >> 8) & 0xFF);
+                uint8_t     sid = (uint8_t)(v & 0xFF);
+                processStimulus(trg, sid);
                 isProcessing = false;
                 vTaskDelete(NULL);
-            }, "Stimulus", 16384, NULL, 1, NULL, 1);
+            }, "Stimulus", 16384, (void*)arg, 1, NULL, 1);
         }
     }
 }
