@@ -12,6 +12,7 @@
 #include <driver/i2s.h>
 #include <ArduinoJson.h>
 #include "mbedtls/base64.h"
+#include "mbedtls/platform.h"
 #include "esp_heap_caps.h"
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -361,6 +362,10 @@ static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp
 bool camInit();
 void camDeinit();
 static void i2s_write_stereo(const int16_t* buf_mono, int mono_samples);
+void generateAndPlayTTS_SD(String text);
+void streamAndPlayTTS_RAM(String text);
+String base64Encode(uint8_t* data, size_t length);
+String callLLM(const String& base64Img, const String& systemPrompt, const String& userText);
 void loadEventBehaviors();
 void saveEventBehaviors();
 const FurbyActionDef* findFurbyAction(const char* id);
@@ -373,6 +378,7 @@ struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
 // Globals — sistema eventi/comportamenti
 static String           gPersonalityPrompt;
 static String           gPersonalityVoiceId;
+static String           gCamDescPrompt;
 static EventBehavior    gEventBehaviors[MAX_EVENT_BEHAVIORS];
 static int              gEventBehaviorCount = 0;
 volatile TriggerType    pendingTrigger  = TRG_VAD;
@@ -3423,6 +3429,45 @@ void handleDebugMicRecord() {
 }
 
 // ==========================================
+// CAMERA DESCRIBE
+// ==========================================
+
+// GET /camera/describe/prompt  →  {"prompt":"..."}
+void handleCamDescPromptGet() {
+    String safe;
+    for (char c : gCamDescPrompt) {
+        if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c;
+    }
+    server.send(200, "application/json", "{\"prompt\":\"" + safe + "\"}");
+}
+
+// POST /camera/describe/prompt  (form: prompt)  →  salva
+void handleCamDescPromptSave() {
+    gCamDescPrompt = server.arg("prompt");
+    preferences.putString("cam_desc_prompt", gCamDescPrompt);
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// POST /camera/describe  →  cattura frame + LLM + {"ok":true,"text":"..."}
+void handleCamDescribe() {
+    if (!camActive && !camInit()) {
+        server.send(503, "application/json", "{\"ok\":false,\"error\":\"camera non disponibile\"}"); return;
+    }
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+        server.send(503, "application/json", "{\"ok\":false,\"error\":\"frame non disponibile\"}"); return;
+    }
+    String b64 = base64Encode(fb->buf, fb->len);
+    esp_camera_fb_return(fb);
+    String answer = callLLM(b64, gCamDescPrompt, "Descrivi cosa vedi.");
+    String safe;
+    for (char c : answer) {
+        if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c;
+    }
+    server.send(200, "application/json", "{\"ok\":true,\"text\":\"" + safe + "\"}");
+}
+
+// ==========================================
 // CAMERA PAGE
 // ==========================================
 void handleCameraPage() {
@@ -3442,7 +3487,7 @@ void handleCameraPage() {
         ".header h1{color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:.4px;flex:1}"
         ".header a{color:#8fb3e8;font-size:.82rem;text-decoration:none;font-weight:600}"
         ".header span{color:#8fb3e8;font-size:.7rem}"
-        ".wrap{max-width:640px;margin:16px auto;padding:0 14px}"
+        ".wrap{max-width:780px;margin:16px auto;padding:0 16px}"
         ".frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;"
           "background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;"
           "box-shadow:0 2px 12px rgba(0,0,0,.12)}"
@@ -3452,9 +3497,20 @@ void handleCameraPage() {
           "font-weight:700;background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff}"
         ".btn.stop{background:linear-gradient(135deg,#dc2626,#ef4444)}"
         ".status{font-size:.7rem;color:#8a9ab5;margin-top:6px}"
+        ".card{background:#fff;border-radius:14px;padding:16px 20px;margin-top:14px;"
+          "border:1px solid #e4eaf4;box-shadow:0 2px 8px rgba(0,0,0,.07)}"
+        ".card h3{font-size:.72rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;"
+          "letter-spacing:1px;margin-bottom:10px}"
+        "textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0d9ee;"
+          "border-radius:8px;padding:8px;resize:vertical;background:#f5f8ff;color:#1a2340}"
+        "#desc-out{display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;"
+          "border-radius:8px;padding:10px;font-size:.85rem;color:#1a2340;white-space:pre-wrap;"
+          "line-height:1.5}"
+        ".b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}"
+        ".b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}"
         "</style></head><body>"
         "<div class='header'>"
-          "<a href='/'>&#x2190; Home</a>"
+          "<a href='/debug'>&#x2190; Debug</a>"
           "<h1>&#x1F4F7; Camera</h1>"
           "<span id='fps'>—</span>"
         "</div>"
@@ -3468,6 +3524,47 @@ void handleCameraPage() {
           "<button class='btn' onclick='setQuality(25)'>Qualit&#224; bassa</button>"
         "</div>"
         "<div class='status' id='status'>Streaming attivo</div>"
+
+        "<div class='card'>"
+          "<h3>&#x1F9E0; Descrivi frame con LLM</h3>"
+          "<div style='font-size:.72rem;color:#8a9ab5;margin-bottom:8px'>"
+            "Cattura un frame e chiedi all'LLM configurato di descriverlo con il prompt qui sotto."
+          "</div>"
+          "<textarea id='desc-prompt' rows='4' placeholder='Sei un Furby maleducato...'></textarea>"
+          "<div style='display:flex;gap:8px;margin-top:8px;flex-wrap:wrap'>"
+            "<button class='btn b-tel' onclick='descSavePrompt()' style='flex:1'>&#x1F4BE; Salva prompt</button>"
+            "<button class='btn b-grn' onclick='descRun()' id='btn-desc' style='flex:1'>&#x1F50D; Descrivi ora</button>"
+          "</div>"
+          "<div style='margin-top:12px;padding:10px 12px;background:#f5f8ff;border:1.5px solid #e4eaf4;"
+            "border-radius:9px;display:flex;align-items:center;gap:14px;flex-wrap:wrap'>"
+            "<label style='display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;"
+              "color:#1a2340;cursor:pointer;user-select:none'>"
+              "<input type='checkbox' id='chk-tts' style='width:16px;height:16px;accent-color:#3a5298'>"
+              "&#x1F50A; Output vocale"
+            "</label>"
+            "<div style='display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;"
+              "font-size:.78rem;font-weight:700'>"
+              "<label id='lbl-browser' style='padding:5px 12px;cursor:pointer;background:#3a5298;color:#fff;"
+                "transition:background .15s'>"
+                "<input type='radio' name='tts-dest' value='browser' checked"
+                  " style='display:none' onchange='ttsDestChange()'>"
+                "&#x1F5A5; Browser"
+              "</label>"
+              "<label id='lbl-board' style='padding:5px 12px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;"
+                "transition:background .15s'>"
+                "<input type='radio' name='tts-dest' value='board'"
+                  " style='display:none' onchange='ttsDestChange()'>"
+                "&#x1F4E1; Board"
+              "</label>"
+            "</div>"
+            "<span id='tts-hint' style='font-size:.7rem;color:#8a9ab5'>"
+              "Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32"
+            "</span>"
+          "</div>"
+          "<div id='desc-status' style='font-size:.7rem;color:#8a9ab5;margin-top:5px'></div>"
+          "<div id='desc-out'></div>"
+        "</div>"
+
         "</div>"
         "<script>"
         "var running=true,last=0,frameCount=0;"
@@ -3492,7 +3589,70 @@ void handleCameraPage() {
         "function setQuality(q){"
           "fetch('/camera/quality?q='+q,{method:'POST'}).catch(function(){});"
         "}"
-        // Spegne la camera quando si lascia la pagina
+        // Carica il prompt salvato al load
+        "fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){"
+          "document.getElementById('desc-prompt').value=d.prompt||'';"
+        "}).catch(function(){});"
+        "function descSavePrompt(){"
+          "var fd=new FormData();"
+          "fd.append('prompt',document.getElementById('desc-prompt').value);"
+          "fetch('/camera/describe/prompt',{method:'POST',body:fd})"
+            ".then(function(r){return r.json();})"
+            ".then(function(d){"
+              "document.getElementById('desc-status').textContent=d.ok?'Salvato.':'Errore.';"
+              "setTimeout(function(){document.getElementById('desc-status').textContent='';},2000);"
+            "});"
+        "}"
+        "function ttsDestChange(){"
+          "var v=document.querySelector('input[name=tts-dest]:checked').value;"
+          "document.getElementById('lbl-browser').style.background=v==='browser'?'#3a5298':'#f0f4f8';"
+          "document.getElementById('lbl-browser').style.color=v==='browser'?'#fff':'#5a6a8a';"
+          "document.getElementById('lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';"
+          "document.getElementById('lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';"
+        "}"
+        "function speakBrowser(text){"
+          "if(!window.speechSynthesis){alert('Web Speech API non supportata in questo browser.');return;}"
+          "window.speechSynthesis.cancel();"
+          "var u=new SpeechSynthesisUtterance(text);"
+          "u.lang=navigator.language||'it-IT';"
+          "window.speechSynthesis.speak(u);"
+        "}"
+        "function speakBoard(text){"
+          "var st=document.getElementById('desc-status');"
+          "st.textContent='Invio a ElevenLabs...';"
+          "var fd=new FormData(); fd.append('text',text);"
+          "fetch('/test/tts',{method:'POST',body:fd})"
+            ".then(function(r){return r.json();})"
+            ".then(function(d){"
+              "st.textContent=d.ok?'In riproduzione sulla board.':'Errore TTS: '+(d.error||'?');"
+              "setTimeout(function(){st.textContent='';},3500);"
+            "})"
+            ".catch(function(){st.textContent='Errore connessione.';});"
+        "}"
+        "function descRun(){"
+          "var btn=document.getElementById('btn-desc');"
+          "var st=document.getElementById('desc-status');"
+          "var out=document.getElementById('desc-out');"
+          "btn.disabled=true; st.textContent='Analisi in corso...'; out.style.display='none';"
+          "fetch('/camera/describe',{method:'POST'})"
+            ".then(function(r){return r.json();})"
+            ".then(function(d){"
+              "btn.disabled=false; st.textContent='';"
+              "if(d.ok){"
+                "out.style.display='block'; out.textContent=d.text;"
+                "if(document.getElementById('chk-tts').checked){"
+                  "var dest=document.querySelector('input[name=tts-dest]:checked').value;"
+                  "if(dest==='browser') speakBrowser(d.text);"
+                  "else speakBoard(d.text);"
+                "}"
+              "} else {"
+                "st.textContent='Errore: '+(d.error||'?');"
+              "}"
+            "})"
+            ".catch(function(){"
+              "btn.disabled=false; st.textContent='Errore connessione.';"
+            "});"
+        "}"
         "window.addEventListener('beforeunload',function(){"
           "navigator.sendBeacon('/camera/off');"
         "});"
@@ -3622,9 +3782,12 @@ void startWebServer() {
         delay(300);
         ESP.restart();
     });
-    server.on("/camera",         HTTP_GET,  handleCameraPage);
-    server.on("/camera/frame",   HTTP_GET,  handleCameraFrame);
-    server.on("/camera/off",     HTTP_POST, handleCameraOff);
+    server.on("/camera",                  HTTP_GET,  handleCameraPage);
+    server.on("/camera/frame",            HTTP_GET,  handleCameraFrame);
+    server.on("/camera/off",              HTTP_POST, handleCameraOff);
+    server.on("/camera/describe",         HTTP_POST, handleCamDescribe);
+    server.on("/camera/describe/prompt",  HTTP_GET,  handleCamDescPromptGet);
+    server.on("/camera/describe/prompt",  HTTP_POST, handleCamDescPromptSave);
     server.on("/camera/quality", HTTP_POST, []() {
         int q = server.arg("q").toInt();
         if (camActive && q >= 4 && q <= 63) {
@@ -4280,8 +4443,19 @@ void camDeinit() {
 // ==========================================
 // SETUP & LOOP
 // ==========================================
+// mbedTLS alloca da PSRAM invece che dall'heap interno
+static void* mbedtls_psram_calloc(size_t n, size_t size) {
+    size_t total = n * size;
+    void* p = heap_caps_malloc(total, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (p) memset(p, 0, total);
+    return p;
+}
+static void mbedtls_psram_free(void* p) { free(p); }
+
 void setup() {
     Serial.begin(115200);
+    // Redirect SSL/TLS allocations to PSRAM — chiamare prima di qualsiasi WiFiClientSecure
+    mbedtls_platform_set_calloc_free(mbedtls_psram_calloc, mbedtls_psram_free);
     setCpuFrequencyMhz(240);
     Serial.println("CPU: " + String(getCpuFrequencyMhz()) + " MHz");
     Serial.println("Heap interno: " + String(ESP.getFreeHeap()) + " B");
@@ -4306,8 +4480,10 @@ void setup() {
     ble_char_uuid_tx    = preferences.getString("ble_char", "dab91383-b5a1-e29c-b041-bcd562613bde");
     serviceUUID      = BLEUUID(ble_service_uuid.c_str());
     charUUID_GPWrite = BLEUUID(ble_char_uuid_tx.c_str());
-    vad_threshold = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);
-    vadEnabled    = preferences.getBool("vad_en",  true);
+    vad_threshold   = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);
+    vadEnabled      = preferences.getBool("vad_en",  true);
+    gCamDescPrompt  = preferences.getString("cam_desc_prompt",
+        "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
     loadBehaviorConfigs();
     loadEventBehaviors();
 

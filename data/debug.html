@@ -16,6 +16,7 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 /* ── desktop: nav-toggle nascosto, drawer laterale fisso ─────────────── */
 @media(min-width:900px){
   .nav-toggle{display:none}
+  .desktop-nav-links{display:flex!important;gap:2px}
   .nav-overlay{display:none!important}
   .nav-drawer{position:static;width:auto;height:auto;background:transparent;
     box-shadow:none;padding:0;display:flex;flex-direction:row;align-items:center;gap:4px}
@@ -288,6 +289,12 @@ function setLang(l){
     <p>Uptime: <span id="db-uptime">—</span> &nbsp;·&nbsp; <span id="hdr-fw-ver" style="opacity:.7">v?</span></p>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <!-- link desktop (nascosti su mobile, visibili da 900px) -->
+    <nav style="display:none" class="desktop-nav-links">
+      <a href="/" style="color:#c8d8f0;text-decoration:none;font-size:.8rem;font-weight:600;padding:5px 11px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='#ffffff22'" onmouseout="this.style.background=''">&#x2302; Home</a>
+      <a href="/debug" style="color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;padding:5px 11px;border-radius:6px;background:#ffffff22">Debug</a>
+      <a href="/camera" style="color:#c8d8f0;text-decoration:none;font-size:.8rem;font-weight:600;padding:5px 11px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='#ffffff22'" onmouseout="this.style.background=''">Camera</a>
+    </nav>
     <button onclick="setLang('it')" id="lang-it" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">IT</button>
     <button onclick="setLang('en')" id="lang-en" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">EN</button>
     <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
@@ -643,12 +650,23 @@ function setLang(l){
 
   <div class="card">
     <h3>Test TTS</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px">Invia testo ad ElevenLabs e riproduci sull'ESP32 (usa la voce corrente)</div>
-    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Ciao, sono un Furby cinico."></textarea>
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn b-grn" onclick="testTtsSend()" style="flex:1">&#x25B6; Riproduci</button>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">Sintetizza testo e riproduci — scegli la destinazione.</div>
+    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.82rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;flex-shrink:0">
+        <label id="tts-lbl-browser" style="padding:6px 14px;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
+          <input type="radio" name="tts-panel-dest" value="browser" checked style="display:none" onchange="ttsPanelDestChange()">
+          &#x1F5A5; Browser
+        </label>
+        <label id="tts-lbl-board" style="padding:6px 14px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
+          <input type="radio" name="tts-panel-dest" value="board" style="display:none" onchange="ttsPanelDestChange()">
+          &#x1F4E1; ESP32
+        </label>
+      </div>
+      <span id="tts-panel-hint" style="font-size:.7rem;color:#8a9ab5">Web Speech API — voce di sistema, nessuna API</span>
+      <button class="btn b-grn" onclick="testTtsSend()" style="margin-left:auto">&#x25B6; Riproduci</button>
     </div>
-    <div id="test-tts-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
+    <div id="test-tts-msg" style="font-size:.72rem;margin-top:6px;color:#5a6a8a"></div>
   </div>
 
   <div class="card">
@@ -944,19 +962,40 @@ function testLlmSend(){
     .catch(function(e){msg.textContent=t('error_conn');});
 }
 
+function ttsPanelDestChange(){
+  var v=document.querySelector('input[name=tts-panel-dest]:checked').value;
+  document.getElementById('tts-lbl-browser').style.background=v==='browser'?'#3a5298':'#f0f4f8';
+  document.getElementById('tts-lbl-browser').style.color=v==='browser'?'#fff':'#5a6a8a';
+  document.getElementById('tts-lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';
+  document.getElementById('tts-lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';
+  document.getElementById('tts-panel-hint').textContent=
+    v==='browser'?'Web Speech API — voce di sistema, nessuna API':'ElevenLabs via ESP32 — usa la voce configurata';
+}
+
 function testTtsSend(){
   var text=document.getElementById('test-tts-text').value.trim();
   if(!text)return;
   var msg=document.getElementById('test-tts-msg');
-  msg.textContent=t('sending_tts');
-  var fd=new FormData(); fd.append('text',text);
-  fetch('/test/tts',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
-      setTimeout(function(){msg.textContent='';},3500);
-    })
-    .catch(function(e){msg.textContent=t('error_conn');});
+  var dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
+  if(dest==='browser'){
+    if(!window.speechSynthesis){msg.textContent='Web Speech API non supportata in questo browser.';return;}
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang=navigator.language||'it-IT';
+    window.speechSynthesis.speak(u);
+    msg.textContent=t('playing');
+    setTimeout(function(){msg.textContent='';},3000);
+  } else {
+    msg.textContent=t('sending_tts');
+    var fd=new FormData(); fd.append('text',text);
+    fetch('/test/tts',{method:'POST',body:fd})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
+        setTimeout(function(){msg.textContent='';},3500);
+      })
+      .catch(function(e){msg.textContent=t('error_conn');});
+  }
 }
 
 function testVoicesLoad(){
