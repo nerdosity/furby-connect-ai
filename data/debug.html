@@ -14,7 +14,8 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .nav-toggle{background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-shrink:0}
 .nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
 /* ── desktop: hamburger nascosto, link inline ─────────────── */
-.desktop-nav{display:none;align-items:center;gap:4px}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}
+.desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}
 .desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
   padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
 .desktop-nav a:hover{background:#ffffff22}
@@ -22,7 +23,6 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 @media(min-width:900px){
   .nav-toggle{display:none}
   .desktop-nav{display:flex}
-  .hdr-right{margin-left:0!important}
 }
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
 .nav-overlay.open{display:block}

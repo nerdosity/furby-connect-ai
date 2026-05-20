@@ -1225,10 +1225,10 @@ function togglePw(id){var i=document.getElementById(id);i.type=i.type==='passwor
 </script>
 <div class="header">
   <div class="logo-wrap">
-    <img src="data:image/png;base64,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" alt="FurbyMind">
+    <img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display='none'">
   </div>
   <div class="header-text">
-    <h1>FurbyMind Connect</h1>
+    <img src="/img/title.png" alt="FurbyMind" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
     <p>IP: %IP% &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">—</span></p>
   </div>
   <nav class="desktop-nav">
@@ -1252,7 +1252,7 @@ function togglePw(id){var i=document.getElementById(id);i.type=i.type==='passwor
         +' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)
         +' | Flash '+d.flash_mb+'MB'+sd;
       var u=document.getElementById('esp-uptime');
-      if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m';}
+      if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=(s<3600?Math.floor(s/60):Math.floor(s/3600)+'h '+Math.floor((s%3600)/60))+'m '+(s%60)+'s';}
     }).catch(function(){});
   }
   load(); setInterval(load,10000);
@@ -1647,7 +1647,8 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .nav-item{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#c8d8f0;
   font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
-.desktop-nav{display:none;align-items:center;gap:4px}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}
+.desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}
 .desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
   padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
 .desktop-nav a:hover{background:#ffffff22}
@@ -1712,10 +1713,10 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
 <div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
 <div class="nav-drawer" id="nav-drawer">
   <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
-  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Configurazione</a>
-  <a class="nav-item active" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg>Debug Furby</a>
-  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
-  <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
+  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Configurazione</a>
+  <a class="nav-item active" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg>Debug Furby</a>
+  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
+  <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
 </div>
 <script>function navOpen(){document.getElementById('nav-drawer').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}function navClose(){document.getElementById('nav-drawer').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}</script>
 
@@ -1725,9 +1726,9 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
   </div>
   <div class="header-text">
     <h1>FurbyMind Debug</h1>
-    <p>Uptime: <span id="db-uptime">—</span></p>
+    <p>IP: <span id="esp-ip">—</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">—</span></p>
   </div>
-  <nav class="desktop-nav" style="margin-left:auto">
+  <nav class="desktop-nav">
     <a href="/">&#x2302; Home</a>
     <a href="/debug" class="active">Debug</a>
     <a href="/camera">Camera</a>
@@ -1735,7 +1736,7 @@ input:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 <div id="sys-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap">carico...</div>
-<script>(function(){function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}function load(){fetch('/sys/info').then(function(r){return r.json();}).then(function(d){var sd=d.sd_total?' | SD '+fkb(d.sd_used)+'/'+fkb(d.sd_total):'';document.getElementById('sys-bar').textContent='CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)+' | PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)+' | Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)+' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)+' | Flash '+d.flash_mb+'MB'+sd;}).catch(function(){});}load();setInterval(load,10000);})();</script>
+<script>(function(){document.getElementById('esp-ip').textContent=window.location.hostname;function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}function load(){fetch('/sys/info').then(function(r){return r.json();}).then(function(d){var sd=d.sd_total?' | SD '+fkb(d.sd_used)+'/'+fkb(d.sd_total):'';document.getElementById('sys-bar').textContent='CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)+' | PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)+' | Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)+' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)+' | Flash '+d.flash_mb+'MB'+sd;var u=document.getElementById('esp-uptime');if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=(s<3600?Math.floor(s/60):Math.floor(s/3600)+'h '+Math.floor((s%3600)/60))+'m '+(s%60)+'s';}}).catch(function(){});}load();setInterval(load,10000);})();</script>
 
 <!-- BLE status bar -->
 <div class="ble-bar">
@@ -3677,9 +3678,19 @@ void handleCamDescribe() {
 // CAMERA PAGE
 // ==========================================
 void handleCameraPage() {
-    // Init camera on-demand quando si apre la pagina
     if (!camActive) camInit();
+    File f = SPIFFS.open("/camera.html", "r");
+    if (f) { server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
+    // fallback minimale se SPIFFS non flashato
+    server.send(200, "text/html", F("<!DOCTYPE html><html><body>"
+        "<p>camera.html non trovato in SPIFFS. Esegui: pio run -t uploadfs</p>"
+        "<p><a href='/'>Home</a></p></body></html>"));
+}
 
+// ==========================================
+// CAMERA PAGE (LEGACY INLINE — NON USATO SE SPIFFS OK)
+// ==========================================
+static void handleCameraPageLegacy() {
     String ip = WiFi.localIP().toString();
     String html = F("<!DOCTYPE html><html lang='it'><head>"
         "<meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -3688,15 +3699,32 @@ void handleCameraPage() {
         "*{box-sizing:border-box;margin:0;padding:0}"
         "body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}"
         ".header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);"
-          "padding:16px 20px;display:flex;align-items:center;gap:14px;"
+          "padding:18px 20px 14px;display:flex;align-items:center;gap:14px;"
           "box-shadow:0 3px 12px rgba(0,0,0,.35)}"
-        ".header h1{color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:.4px}"
-        ".header .desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}"
-        ".header .desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;"
-          "padding:6px 13px;border-radius:7px;transition:background .15s}"
-        ".header .desktop-nav a:hover{background:#ffffff22}"
-        ".header .desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}"
-        "@media(min-width:900px){.header .desktop-nav{display:flex}}"
+        ".logo-wrap{width:52px;height:52px;flex-shrink:0;border-radius:8px;overflow:hidden}"
+        ".logo-wrap img{width:100%;height:100%;object-fit:cover}"
+        ".header-text h1{color:#fff;font-size:1.35rem;font-weight:800;letter-spacing:.5px;line-height:1.1}"
+        ".header-text p{color:#8fb3e8;font-size:.72rem;margin-top:2px;letter-spacing:.3px}"
+        ".nav-toggle{background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0}"
+        ".nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}"
+        ".nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}"
+        ".nav-overlay.open{display:block}"
+        ".nav-drawer{position:fixed;top:0;right:-220px;width:210px;height:100%;background:#1a2340;"
+          "z-index:100;transition:right .22s ease;padding:0;box-shadow:-4px 0 18px rgba(0,0,0,.4)}"
+        ".nav-drawer.open{right:0}"
+        ".nav-header{display:flex;align-items:center;padding:18px 16px 14px;border-bottom:1px solid #2d3f6e}"
+        ".nav-header span{color:#8fb3e8;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}"
+        ".nav-close{background:none;border:none;color:#8fb3e8;font-size:1.2rem;cursor:pointer;margin-left:auto;padding:2px 6px}"
+        ".nav-item{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#c8d8f0;"
+          "font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}"
+        ".nav-item:hover,.nav-item.active{background:#243050;color:#fff}"
+        ".nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}"
+        ".desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}"
+        ".desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;"
+          "padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}"
+        ".desktop-nav a:hover{background:#ffffff22}"
+        ".desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}"
+        "@media(min-width:900px){.nav-toggle{display:none}.desktop-nav{display:flex}}"
         ".wrap{max-width:780px;margin:16px auto;padding:0 16px}"
         ".frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;"
           "background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;"
@@ -3721,17 +3749,34 @@ void handleCameraPage() {
         "#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;"
           "color:#4a6a9a;overflow-x:auto;white-space:nowrap}"
         "</style></head><body>"
+        "<div class='nav-overlay' id='nav-overlay' onclick='navClose()'></div>"
+        "<div class='nav-drawer' id='nav-drawer'>"
+          "<div class='nav-header'><span>Menu</span><button class='nav-close' onclick='navClose()'>&#x2715;</button></div>"
+          "<a class='nav-item' href='/'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>Configurazione</a>"
+          "<a class='nav-item' href='/debug'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='3'/><path d='M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21'/></svg>Debug Furby</a>"
+          "<a class='nav-item active' href='/camera'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/><circle cx='12' cy='13' r='4'/></svg>Camera</a>"
+          "<a class='nav-item' href='#' onclick=\"if(confirm('Riavviare l\\'ESP32?')){fetch('/reset',{method:'POST'});}\" style='color:#ef4444'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='1 4 1 10 7 10'/><path d='M3.51 15a9 9 0 1 0 .49-3.5'/></svg>Reset ESP32</a>"
+        "</div>"
+        "<script>function navOpen(){document.getElementById('nav-drawer').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}function navClose(){document.getElementById('nav-drawer').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}</script>"
         "<div class='header'>"
-          "<h1>&#x1F4F7; Camera</h1>"
+          "<div class='logo-wrap'>"
+            "<img src='data:image/png;base64,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' alt='FurbyMind'>"
+          "</div>"
+          "<div class='header-text'>"
+            "<h1>FurbyMind Camera</h1>"
+            "<p>IP: <span id='esp-ip'>—</span> &nbsp;&#x2022;&nbsp; Uptime: <span id='esp-uptime'>—</span></p>"
+          "</div>"
           "<nav class='desktop-nav'>"
             "<a href='/'>&#x2302; Home</a>"
             "<a href='/debug'>Debug</a>"
             "<a href='/camera' class='active'>Camera</a>"
           "</nav>"
+          "<button class='nav-toggle' onclick='navOpen()'><span></span><span></span><span></span></button>"
         "</div>"
         "<div id='sys-bar'>carico...</div>"
         "<script>"
         "(function(){"
+          "document.getElementById('esp-ip').textContent=window.location.hostname;"
           "function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}"
           "function load(){"
             "fetch('/sys/info').then(function(r){return r.json();}).then(function(d){"
@@ -3742,6 +3787,8 @@ void handleCameraPage() {
                 "+'| Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)"
                 "+'| SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)"
                 "+'| Flash '+d.flash_mb+'MB'+sd;"
+              "var u=document.getElementById('esp-uptime');"
+              "if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=(s<3600?Math.floor(s/60):Math.floor(s/3600)+'h '+Math.floor((s%3600)/60))+'m '+(s%60)+'s';}"
             "}).catch(function(){});}"
           "load();setInterval(load,10000);"
         "})();"

@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html><html lang="it"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FurbyMind</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);
+  padding:14px 24px;display:flex;align-items:center;gap:16px;
+  box-shadow:0 3px 12px rgba(0,0,0,.35)}
+.logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden}
+.logo-wrap img{width:100%;height:100%;object-fit:cover}
+.header-text h1{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
+.header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
+.nav-toggle{background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0}
+.nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}
+.desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}
+.desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
+  padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
+.desktop-nav a:hover{background:#ffffff22}
+.desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
+@media(min-width:900px){.nav-toggle{display:none}.desktop-nav{display:flex}}
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
+.nav-overlay.open{display:block}
+.nav-drawer{position:fixed;top:0;right:-240px;width:220px;height:100%;background:#1a2340;
+  z-index:100;transition:right .22s ease;padding:0;box-shadow:-4px 0 18px rgba(0,0,0,.4)}
+.nav-drawer.open{right:0}
+.nav-header{display:flex;align-items:center;padding:18px 16px 14px;border-bottom:1px solid #2d3f6e}
+.nav-header span{color:#8fb3e8;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.nav-close{background:none;border:none;color:#8fb3e8;font-size:1.2rem;cursor:pointer;margin-left:auto;padding:2px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:13px 18px;color:#c8d8f0;
+  font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
+.nav-item:hover,.nav-item.active{background:#243050;color:#fff}
+#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap}
+.wrap{max-width:780px;margin:24px auto;padding:0 20px}
+.card{background:#fff;border-radius:14px;padding:20px 24px;margin-bottom:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
+.card h3{font-size:.78rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:12px}
+.notice{background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:14px 18px;
+  font-size:.82rem;color:#78350f;line-height:1.5}
+.notice strong{font-size:.85rem;display:block;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
+<div class="nav-drawer" id="nav-drawer">
+  <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
+  <a class="nav-item active" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Configurazione</a>
+  <a class="nav-item" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg>Debug Furby</a>
+  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
+  <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
+</div>
+<script>function navOpen(){document.getElementById('nav-drawer').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}function navClose(){document.getElementById('nav-drawer').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}</script>
+
+<div class="header">
+  <div class="logo-wrap">
+    <img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display='none'">
+  </div>
+  <div class="header-text">
+    <img src="/img/title.png" alt="FurbyMind" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
+    <p>IP: <span id="esp-ip">&#x2014;</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">&#x2014;</span></p>
+  </div>
+  <nav class="desktop-nav">
+    <a href="/" class="active">&#x2302; Home</a>
+    <a href="/debug">Debug</a>
+    <a href="/camera">Camera</a>
+  </nav>
+  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
+</div>
+
+<div id="sys-bar">carico...</div>
+
+<div class="wrap">
+  <div class="notice">
+    <strong>&#x1F6A7; Pagina in refactoring</strong>
+    Questa versione di index.html &egrave; un placeholder. La home reale viene servita dal firmware (HTML_HEAD/HTML_HOME in main.cpp) perch&eacute; contiene dati dinamici (WiFi, BLE, impostazioni) che richiedono un refactoring completo verso fetch API. Non attiva in handleRoot().
+  </div>
+
+  <div class="card">
+    <h3>Stato sistema</h3>
+    <p style="font-size:.82rem;color:#5a6a8a">I dati dinamici (reti WiFi, stato BLE, impostazioni) sono disponibili via <a href="/debug" style="color:#3a5298">Debug Furby</a> oppure dalle API REST:</p>
+    <ul style="margin-top:10px;font-size:.78rem;font-family:monospace;color:#3a5298;list-style:none;display:flex;flex-direction:column;gap:4px">
+      <li><a href="/api/sysinfo" style="color:#3a5298">/api/sysinfo</a> &mdash; uptime, heap, WiFi, BLE</li>
+      <li><a href="/api/sensors" style="color:#3a5298">/api/sensors</a> &mdash; sensori Furby</li>
+      <li><a href="/api/behaviors" style="color:#3a5298">/api/behaviors</a> &mdash; comportamenti configurati</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+document.getElementById('esp-ip').textContent = window.location.hostname;
+(function sysInfoPoll(){
+  fetch('/api/sysinfo').then(r=>r.json()).then(d=>{
+    var s=d.uptime_s;
+    document.getElementById('esp-uptime').textContent=Math.floor(s/60)+'m '+(s%60)+'s';
+    var bar=document.getElementById('sys-bar');
+    bar.textContent='heap: '+d.heap_free+' B free | WiFi: '+d.wifi_ssid+' ('+d.wifi_rssi+' dBm) | IP: '+d.ip;
+  }).catch(function(){});
+  setTimeout(sysInfoPoll,5000);
+})();
+</script>
+</body></html>
