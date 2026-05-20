@@ -31,7 +31,7 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .desktop-nav a:hover{background:#ffffff22}
 .desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
 @media(min-width:900px){.nav-toggle{display:none}.desktop-nav{display:flex}}
-#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap}
+#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap}
 .wrap{max-width:780px;margin:16px auto;padding:0 16px}
 .frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;
   background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
@@ -94,7 +94,7 @@ textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0
         +' | SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)
         +' | Flash '+d.flash_mb+'MB'+sd;
       var u=document.getElementById('esp-uptime');
-      if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=(s<3600?Math.floor(s/60):Math.floor(s/3600)+'h '+Math.floor((s%3600)/60))+'m '+(s%60)+'s';}
+      if(u&&d.uptime_s!=null){var s=d.uptime_s,h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;u.textContent=(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';}
     }).catch(function(){});
   }
   load();setInterval(load,10000);

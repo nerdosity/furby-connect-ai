@@ -31,7 +31,7 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 .nav-item{display:flex;align-items:center;gap:10px;padding:13px 18px;color:#c8d8f0;
   font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
-#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap}
+#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap}
 .wrap{max-width:780px;margin:24px auto;padding:0 20px}
 .card{background:#fff;border-radius:14px;padding:20px 24px;margin-bottom:16px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
@@ -92,8 +92,8 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 document.getElementById('esp-ip').textContent = window.location.hostname;
 (function sysInfoPoll(){
   fetch('/api/sysinfo').then(r=>r.json()).then(d=>{
-    var s=d.uptime_s;
-    document.getElementById('esp-uptime').textContent=Math.floor(s/60)+'m '+(s%60)+'s';
+    var s=d.uptime_s,h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
+    document.getElementById('esp-uptime').textContent=(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';
     var bar=document.getElementById('sys-bar');
     bar.textContent='heap: '+d.heap_free+' B free | WiFi: '+d.wifi_ssid+' ('+d.wifi_rssi+' dBm) | IP: '+d.ip;
   }).catch(function(){});

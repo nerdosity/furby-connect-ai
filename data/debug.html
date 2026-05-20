@@ -290,25 +290,24 @@ function setLang(l){
     <img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display='none'">
   </div>
   <div class="header-text">
-    <img src="/img/title.png" alt="FurbyMind Connect" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
-    <p>Uptime: <span id="db-uptime">—</span> &nbsp;·&nbsp; <span id="hdr-fw-ver" style="opacity:.7">v?</span></p>
+    <img src="/img/title.png" alt="FurbyMind" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
+    <p>IP: <span id="esp-ip">—</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">—</span></p>
   </div>
-  <nav class="desktop-nav" style="margin-left:auto">
+  <nav class="desktop-nav">
     <a href="/">&#x2302; Home</a>
     <a href="/debug" class="active">Debug</a>
     <a href="/camera">Camera</a>
   </nav>
-  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto" class="hdr-right">
-    <button onclick="setLang('it')" id="lang-it" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">IT</button>
-    <button onclick="setLang('en')" id="lang-en" style="background:none;border:1.5px solid #ffffff55;border-radius:6px;color:#c8d8f0;font-size:.75rem;font-weight:700;padding:4px 9px;cursor:pointer">EN</button>
-    <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
-  </div>
+  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
+
+<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap">carico info sistema...</div>
 
 <div class="ble-bar">
   <div class="ble-dot" id="wb-dot"></div>
   <span id="wb-label" style="font-weight:600">BLE: non connesso</span>
   <span id="wb-battery" style="font-size:.68rem;color:#5a6a8a;margin-left:8px"></span>
+  <span id="ble-uptime" style="display:none;font-size:.68rem;color:#5a6a8a;margin-left:4px"></span>
   <div style="margin-left:auto;display:flex;gap:4px">
     <button id="btn-scan"  class="btn"       onclick="dbBleScan()"  style="padding:4px 10px;font-size:.7rem">&#x1F50D; Cerca</button>
     <button id="btn-stop"  class="btn b-red" onclick="dbBleStop()"  style="display:none;padding:4px 10px;font-size:.7rem">&#x23F9; Stop scan</button>
@@ -318,8 +317,6 @@ function setLang(l){
   </div>
 </div>
 <div id="db-ble-list" style="background:#f5f8ff;padding:0 16px;border-bottom:1px solid #e4eaf4"></div>
-
-<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#4a6a9a;overflow-x:auto;white-space:nowrap">carico info sistema...</div>
 
 <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;background:#fff;border-bottom:1px solid #e4eaf4">
   <span style="font-size:.68rem;color:#5a6a8a;flex-shrink:0">&#x1F50A; VOL</span>
@@ -1097,13 +1094,15 @@ function testTtsSend(){
 }
 
 
-function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return(h?h+'h ':'')+(m?m+'m ':'')+ss+'s';}
+function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;var p=ss<10?'0':'';return(h?h+'h ':'')+m+'m '+p+ss+'s';}
 function dbBleApply(d){
   var dot=document.getElementById('wb-dot'),lbl=document.getElementById('wb-label');
   var scan=document.getElementById('btn-scan'),stop=document.getElementById('btn-stop');
   var abort=document.getElementById('btn-abort'),disc=document.getElementById('btn-disc');
   var lst=document.getElementById('db-ble-list');
-  if(d.uptime!==undefined){var u=document.getElementById('db-uptime');if(u)u.textContent=fmtSec(d.uptime)+(d.connected?' | BLE: '+fmtSec(d.ble_uptime):'');}
+  if(d.uptime!==undefined){var u=document.getElementById('esp-uptime');if(u)u.textContent=fmtSec(d.uptime);}
+  var bu=document.getElementById('ble-uptime');
+  if(bu){if(d.connected&&d.ble_uptime){bu.textContent='(conn. '+fmtSec(d.ble_uptime)+')';bu.style.display='';}else{bu.textContent='';bu.style.display='none';}}
   scan.style.display='none';stop.style.display='none';abort.style.display='none';disc.style.display='none';
   var batEl=document.getElementById('wb-battery');
   if(batEl)batEl.textContent=d.battery>=0?'🔋'+d.battery+'%':'';
@@ -1191,9 +1190,7 @@ function sysInfoPoll(){
   fetch('/sys/info').then(r=>r.json()).then(function(d){
     var el=document.getElementById('sys-info-bar');if(!el)return;
     el.textContent=buildSysBarText(d);
-    if(d.fw_version){var fv=document.getElementById('hdr-fw-ver');if(fv)fv.textContent='v'+d.fw_version;}
-    var ut=document.getElementById('db-uptime');
-    if(ut&&d.uptime_s!=null){var s=d.uptime_s;ut.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m';}
+    document.getElementById('esp-ip').textContent=window.location.hostname;
   }).catch(function(){});
 }
 sysInfoPoll();
