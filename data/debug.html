@@ -385,6 +385,39 @@ function setLang(l){
     </div>
     <button class="btn" onclick="sendCustomAction()" style="width:100%">&#x25B6; Esegui</button>
   </div>
+
+  <!-- Pannello test behavior -->
+  <div class="card">
+    <h3>&#x1F9EA; Test behavior (senza Furby)</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:10px">Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px">Trigger</div>
+        <select id="tbeh-trg" onchange="tbehTrgChange()" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340">
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
+        </select>
+      </div>
+      <div id="tbeh-sensor-wrap" style="display:none">
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px">Sensore</div>
+        <select id="tbeh-sensor" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340"></select>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <!-- dry run toggle -->
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;font-weight:600;color:#5a6a8a">
+        <input type="checkbox" id="tbeh-dry" checked style="width:16px;height:16px;accent-color:#3a5298">
+        Dry run <span style="font-weight:400;font-size:.72rem">(skippa azioni BLE)</span>
+      </label>
+      <div id="tbeh-behavior-label" style="font-size:.72rem;color:#8a9ab5;flex:1;text-align:right"></div>
+    </div>
+
+    <button class="btn b-grn" onclick="tbehRun()" style="width:100%">&#x25B6; Simula trigger</button>
+    <div id="tbeh-msg" style="font-size:.72rem;margin-top:8px;color:#5a6a8a;min-height:1.2em"></div>
+  </div>
 </div>
 
 <!-- TAB: Controllo -->
@@ -1192,6 +1225,78 @@ function sendCustomAction(){
     +document.getElementById('ap-in').value,+document.getElementById('ap-ix').value,
     +document.getElementById('ap-sx').value,+document.getElementById('ap-sp').value]);
 }
+
+// ── Test behavior ───────────────────────────────────────────────────────────
+function tbehTrgChange(){
+  var trg=parseInt(document.getElementById('tbeh-trg').value);
+  var wrap=document.getElementById('tbeh-sensor-wrap');
+  wrap.style.display=(trg===2)?'block':'none';
+  if(trg===2){
+    var sel=document.getElementById('tbeh-sensor');
+    var prev=sel.value; sel.innerHTML='';
+    SENSOR_KEYS.forEach(function(k,i){
+      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
+    });
+    if(prev)sel.value=prev;
+  }
+  tbehUpdateLabel();
+}
+
+function tbehUpdateLabel(){
+  var trg=parseInt(document.getElementById('tbeh-trg').value);
+  var sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
+  // cerca il behavior che matcherebbe questo trigger tra quelli configurati
+  var lbl='';
+  if(typeof gEventBehaviors!=='undefined'){
+    for(var i=0;i<gEventBehaviors.length;i++){
+      var b=gEventBehaviors[i];
+      if(b.trigger!==trg)continue;
+      if(trg===2&&b.sensor_id!==sid)continue;
+      lbl='→ "'+b.name+'" ('+b.consequence_count+' cons.)';
+      break;
+    }
+  }
+  if(!lbl)lbl='→ nessun behavior configurato, verrà usato il default';
+  document.getElementById('tbeh-behavior-label').textContent=lbl;
+}
+
+function tbehRun(){
+  var trg=parseInt(document.getElementById('tbeh-trg').value);
+  var sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
+  var dry=document.getElementById('tbeh-dry').checked;
+  var msg=document.getElementById('tbeh-msg');
+  msg.style.color='#5a6a8a';
+  msg.textContent='Invio trigger...';
+  var fd=new FormData();
+  fd.append('trigger',trg);
+  fd.append('sensor_id',sid);
+  fd.append('dry_run',dry?'1':'0');
+  fetch('/test/behavior',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        msg.style.color='#16a34a';
+        msg.textContent=(dry?'[DRY RUN] ':'')+'Trigger inviato — guarda la console seriale per il log completo.';
+      } else {
+        msg.style.color='#dc2626';
+        msg.textContent='Errore: '+(d.error||'?');
+      }
+    })
+    .catch(function(){msg.style.color='#dc2626';msg.textContent='Errore connessione.';});
+}
+
+// init selector sensori al caricamento
+(function(){
+  var sel=document.getElementById('tbeh-sensor');
+  if(sel&&SENSOR_KEYS){
+    SENSOR_KEYS.forEach(function(k,i){
+      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
+    });
+  }
+  // aggiorna label quando cambia il sensore selezionato
+  var ss=document.getElementById('tbeh-sensor');
+  if(ss)ss.addEventListener('change',tbehUpdateLabel);
+})();
 
 function updateRgb(){
   var r=document.getElementById('r').value,g=document.getElementById('g').value,b=document.getElementById('b').value;

@@ -389,6 +389,7 @@ volatile EventType      pendingEvent    = EVT_VAD;
 volatile bool isSpeaking      = false;
 volatile bool wakeUpTriggered = false;
 volatile bool isProcessing    = false; // processStimulus in corso su task separato
+volatile bool gDryRun         = false; // se true, salta azioni BLE (test senza Furby)
 volatile int  currentAmplitude = 0;
 
 // VAD (Voice Activity Detection)
@@ -2658,8 +2659,8 @@ void handleApiTest() {
         }
     } else if (type == "el") {
         if (elevenlabs_api_key.length() == 0) { server.send(200,"application/json","{\"ok\":false,\"error\":\"token assente\"}"); return; }
-        Serial.println("API test ElevenLabs, key: " + elevenlabs_api_key);
-        http.begin(client, "https://api.elevenlabs.io/v1/user");
+        Serial.println("API test ElevenLabs (via /voices), key: " + elevenlabs_api_key);
+        http.begin(client, "https://api.elevenlabs.io/v1/voices");
         http.addHeader("xi-api-key", elevenlabs_api_key);
         int code = http.GET();
         ok = (code == 200);
@@ -3137,6 +3138,36 @@ void handleTestVoices() {
     http.end();
 }
 
+// POST /test/behavior  (form: trigger, sensor_id, dry_run)
+// Simula un trigger come se fosse arrivato dal VAD/button/sensore.
+// dry_run=1 → esegue LLM+TTS ma skippa azioni BLE verso il Furby.
+void handleTestBehavior() {
+    if (isProcessing || isSpeaking) {
+        server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
+    }
+    int trg      = server.arg("trigger").toInt();
+    int sid      = server.arg("sensor_id").toInt();
+    bool dry     = server.arg("dry_run") == "1";
+    if (trg < 0 || trg > 2) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger non valido\"}"); return;
+    }
+    server.send(200, "application/json", "{\"ok\":true}");
+    Serial.printf("[TEST-BEH] trigger=%d sensor_id=%d dry_run=%s\n", trg, sid, dry ? "si" : "no");
+
+    struct Args { TriggerType trg; uint8_t sid; bool dry; };
+    Args* a = new Args{ (TriggerType)trg, (uint8_t)sid, dry };
+    xTaskCreatePinnedToCore([](void* p) {
+        Args* a = (Args*)p;
+        gDryRun     = a->dry;
+        isProcessing = true;
+        processStimulus(a->trg, a->sid);
+        isProcessing = false;
+        gDryRun      = false;
+        delete a;
+        vTaskDelete(NULL);
+    }, "beh_test", 16384, a, 1, NULL, 1);
+}
+
 // ==========================================
 // DEBUG HANDLERS
 // ==========================================
@@ -3450,16 +3481,23 @@ void handleCamDescPromptSave() {
 
 // POST /camera/describe  →  cattura frame + LLM + {"ok":true,"text":"..."}
 void handleCamDescribe() {
+    Serial.printf("[CAM-DESCRIBE] richiesta (heap interno libero: %u B, PSRAM libera: %u B)\n",
+        esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     if (!camActive && !camInit()) {
+        Serial.println("[CAM-DESCRIBE] ERRORE: camera non disponibile");
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"camera non disponibile\"}"); return;
     }
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
+        Serial.println("[CAM-DESCRIBE] ERRORE: frame non disponibile");
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"frame non disponibile\"}"); return;
     }
+    Serial.printf("[CAM-DESCRIBE] frame catturato: %u byte JPEG\n", fb->len);
     String b64 = base64Encode(fb->buf, fb->len);
     esp_camera_fb_return(fb);
+    Serial.printf("[CAM-DESCRIBE] base64: %u char, prompt: \"%s\"\n", b64.length(), gCamDescPrompt.c_str());
     String answer = callLLM(b64, gCamDescPrompt, "Descrivi cosa vedi.");
+    Serial.printf("[CAM-DESCRIBE] risposta LLM (%u char): \"%s\"\n", answer.length(), answer.c_str());
     String safe;
     for (char c : answer) {
         if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c;
@@ -3813,6 +3851,7 @@ void startWebServer() {
     server.on("/test/llm",             HTTP_POST, handleTestLlm);
     server.on("/test/tts",             HTTP_POST, handleTestTts);
     server.on("/test/voices",          HTTP_GET,  handleTestVoices);
+    server.on("/test/behavior",        HTTP_POST, handleTestBehavior);
     server.on("/debug/tone",       HTTP_POST, handleDebugTone);
     server.on("/debug/mic/record", HTTP_POST, handleDebugMicRecord);
     server.on("/fs/list",    HTTP_GET,  handleFsList);
@@ -4006,9 +4045,11 @@ String getNextFilename() {
 }
 
 void playAudioSD(String filename) {
-    if (!sdAvailable) return;
+    if (!sdAvailable) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
+    Serial.printf("[AUDIO-SD] riproduco: /%s\n", filename.c_str());
     File file = SD_MMC.open("/" + filename);
-    if (!file) return;
+    if (!file) { Serial.printf("[AUDIO-SD] ERRORE: file /%s non trovato\n", filename.c_str()); return; }
+    Serial.printf("[AUDIO-SD] file aperto: %u byte\n", file.size());
     setAmplifier(true);
     isSpeaking = true;
     size_t bytesRead;
@@ -4029,6 +4070,7 @@ void playAudioSD(String filename) {
 
 void generateAndPlayTTS_SD(String text) {
     String filename = getNextFilename();
+    Serial.printf("[TTS-SD] testo: \"%s\" -> file: %s\n", text.c_str(), filename.c_str());
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
@@ -4036,9 +4078,20 @@ void generateAndPlayTTS_SD(String text) {
     http.addHeader("xi-api-key", elevenlabs_api_key);
     JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
     String payload; serializeJson(doc, payload);
-    if (http.POST(payload) == 200) {
+    int code = http.POST(payload);
+    Serial.printf("[TTS-SD] HTTP %d\n", code);
+    if (code == 200) {
         File file = SD_MMC.open("/" + filename, FILE_WRITE);
-        if (file) { http.writeToStream(&file); file.close(); updateCacheJSON(filename, text); playAudioSD(filename); }
+        if (file) {
+            http.writeToStream(&file); file.close();
+            Serial.printf("[TTS-SD] salvato su SD, aggiorno cache e riproduco\n");
+            updateCacheJSON(filename, text);
+            playAudioSD(filename);
+        } else {
+            Serial.printf("[TTS-SD] ERRORE: impossibile aprire /%s in scrittura\n", filename.c_str());
+        }
+    } else {
+        Serial.printf("[TTS-SD] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
     }
     http.end();
 }
@@ -4047,6 +4100,7 @@ void generateAndPlayTTS_SD(String text) {
 // AUDIO LOGIC (MODALITA' RAM FALLBACK)
 // ==========================================
 void streamAndPlayTTS_RAM(String text) {
+    Serial.printf("[TTS-RAM] testo: \"%s\" voce: %s\n", text.c_str(), elevenlabs_voice_id.c_str());
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
@@ -4054,13 +4108,18 @@ void streamAndPlayTTS_RAM(String text) {
     http.addHeader("xi-api-key", elevenlabs_api_key);
     JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
     String payload; serializeJson(doc, payload);
-    if (http.POST(payload) == 200) {
+    int code = http.POST(payload);
+    Serial.printf("[TTS-RAM] HTTP %d\n", code);
+    if (code == 200) {
         WiFiClient* stream = http.getStreamPtr();
         uint8_t buffer[1024];
         setAmplifier(true); isSpeaking = true;
+        Serial.println("[TTS-RAM] streaming audio -> I2S");
+        int totalBytes = 0;
         while (http.connected() || stream->available()) {
             if (stream->available()) {
                 int n = stream->readBytes(buffer, sizeof(buffer));
+                totalBytes += n;
                 int16_t* pcm = (int16_t*)buffer;
                 int ns = n / 2; long sum = 0;
                 for (int i = 0; i < ns; i++) sum += abs(pcm[i]);
@@ -4069,9 +4128,12 @@ void streamAndPlayTTS_RAM(String text) {
             }
             delay(1);
         }
+        Serial.printf("[TTS-RAM] fine streaming, %d byte PCM riprodotti\n", totalBytes);
         i2s_zero_dma_buffer(I2S_NUM);
         isSpeaking = false; currentAmplitude = 0;
         setAmplifier(false);
+    } else {
+        Serial.printf("[TTS-RAM] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
     }
     http.end();
 }
@@ -4141,6 +4203,10 @@ String base64Encode(uint8_t* data, size_t length) {
 
 // Costruisce il payload JSON in PSRAM e lo invia; restituisce solo il testo risposta
 String callLLM(const String& base64Img, const String& systemPrompt, const String& userText) {
+    Serial.printf("[LLM] provider=%s model=%s img=%u char heap=%u PSRAM=%u\n",
+        llm_provider.c_str(), llm_model.c_str(), base64Img.length(),
+        esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     String answer;
@@ -4150,11 +4216,13 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         size_t len = body.length();
         uint8_t* buf = (uint8_t*)heap_caps_malloc(len + 1, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         if (!buf) buf = (uint8_t*)malloc(len + 1);
-        if (buf) memcpy(buf, body.c_str(), len + 1);
+        if (!buf) Serial.printf("[LLM] ERRORE: malloc payload %u byte fallito\n", len + 1);
+        else memcpy(buf, body.c_str(), len + 1);
         return buf;
     };
 
     if (llm_provider == "openai") {
+        Serial.println("[LLM] -> OpenAI /v1/chat/completions");
         http.begin(client, "https://api.openai.com/v1/chat/completions");
         http.addHeader("Content-Type", "application/json");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
@@ -4166,19 +4234,26 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         String body = "{\"model\":\"" + llm_model + "\",\"messages\":["
             "{\"role\":\"system\",\"content\":\"" + systemPrompt + "\"},"
             "{\"role\":\"user\",\"content\":" + userContent + "}]}";
+        Serial.printf("[LLM] payload %u byte\n", body.length());
         uint8_t* buf = makePsramPayload(body);
-        body = ""; // libera subito la String dall'heap interno
+        body = "";
         if (buf) {
-            if (http.POST(buf, strlen((char*)buf)) == 200) {
+            int code = http.POST(buf, strlen((char*)buf));
+            Serial.printf("[LLM] HTTP %d\n", code);
+            if (code == 200) {
                 String res = http.getString();
                 int s = res.indexOf("\"content\": \"") + 12;
                 int e = res.indexOf("\"", s);
                 if (s > 11) answer = res.substring(s, e);
+                else Serial.printf("[LLM] ERRORE parsing risposta: %s\n", res.substring(0, 200).c_str());
+            } else {
+                Serial.printf("[LLM] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
             }
             free(buf);
         }
 
     } else if (llm_provider == "claude") {
+        Serial.println("[LLM] -> Anthropic /v1/messages");
         http.begin(client, "https://api.anthropic.com/v1/messages");
         http.addHeader("Content-Type", "application/json");
         http.addHeader("x-api-key", claude_api_key);
@@ -4191,21 +4266,30 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         String body = "{\"model\":\"" + llm_model + "\",\"max_tokens\":128,"
             "\"system\":\"" + systemPrompt + "\","
             "\"messages\":[{\"role\":\"user\",\"content\":" + claudeContent + "}]}";
+        Serial.printf("[LLM] payload %u byte\n", body.length());
         uint8_t* buf = makePsramPayload(body);
         body = "";
         if (buf) {
-            if (http.POST(buf, strlen((char*)buf)) == 200) {
+            int code = http.POST(buf, strlen((char*)buf));
+            Serial.printf("[LLM] HTTP %d\n", code);
+            if (code == 200) {
                 String res = http.getString();
                 int s = res.indexOf("\"text\": \"") + 9;
                 int e = res.indexOf("\"", s);
                 if (s > 8) answer = res.substring(s, e);
+                else Serial.printf("[LLM] ERRORE parsing risposta: %s\n", res.substring(0, 200).c_str());
+            } else {
+                Serial.printf("[LLM] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
             }
             free(buf);
         }
+    } else {
+        Serial.printf("[LLM] ERRORE: provider sconosciuto \"%s\"\n", llm_provider.c_str());
     }
 
     http.end();
     answer.replace("\\n", ""); answer.trim();
+    Serial.printf("[LLM] risposta finale: \"%s\"\n", answer.c_str());
     return answer;
 }
 
@@ -4302,33 +4386,49 @@ const FurbyActionDef* findFurbyAction(const char* id) {
 }
 
 static void speakText(const String& text) {
+    Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
     if (sdAvailable) generateAndPlayTTS_SD(text);
     else             streamAndPlayTTS_RAM(text);
 }
 
 void executeConsequence(const Consequence& csq, const String& base64Img) {
+    Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
     switch (csq.type) {
         case CSQ_FURBY_ACTION: {
             const FurbyActionDef* act = findFurbyAction(csq.action_id);
-            if (act) { furbyWrite(act->cmd, act->len); delay(1500); }
+            if (act) {
+                if (gDryRun) {
+                    Serial.printf("[CSQ] DRY RUN — azione Furby SKIPPATA: %s\n", act->label);
+                } else {
+                    Serial.printf("[CSQ] azione Furby: %s\n", act->label);
+                    furbyWrite(act->cmd, act->len); delay(1500);
+                }
+            } else {
+                Serial.printf("[CSQ] ERRORE: azione \"%s\" non trovata\n", csq.action_id);
+            }
             break;
         }
         case CSQ_TTS_FIXED: {
             String t = String(csq.text); t.trim();
+            Serial.printf("[CSQ] TTS fisso: \"%s\"\n", t.c_str());
             if (t.length() > 0) speakText(t);
             break;
         }
         case CSQ_PROMPT_FIXED: {
             String img = csq.snapshot ? base64Img : "";
+            Serial.printf("[CSQ] prompt fisso (img=%s): \"%s\"\n", csq.snapshot ? "si" : "no", csq.text);
             String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
             if (answer.length() > 0) speakText(answer);
+            else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
             break;
         }
         case CSQ_PROMPT_LLM: {
             String img = csq.snapshot ? base64Img : "";
+            Serial.printf("[CSQ] prompt LLM (img=%s, reazioni=%d): \"%s\"\n", csq.snapshot ? "si" : "no", csq.reaction_count, csq.text);
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
                 if (answer.length() > 0) speakText(answer);
+                else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
             } else {
                 String reactList;
                 for (int r = 0; r < csq.reaction_count; r++) {
@@ -4340,29 +4440,37 @@ void executeConsequence(const Consequence& csq, const String& base64Img) {
                     "{\"action\":\"id_o_null\",\"speech_before\":\"...\",\"speech_after\":\"...\"}."
                     " Frasi max 6 parole o null. Azioni disponibili:\n" + reactList;
                 String answer = callLLM(img, sys, String(csq.text));
+                Serial.printf("[CSQ] risposta JSON: \"%s\"\n", answer.c_str());
                 String speechBefore, speechAfter, actionId;
                 JsonDocument rdoc;
                 if (deserializeJson(rdoc, answer) == DeserializationError::Ok) {
                     speechBefore = rdoc["speech_before"] | "";
                     speechAfter  = rdoc["speech_after"]  | "";
                     actionId     = rdoc["action"]         | "";
+                    Serial.printf("[CSQ] JSON parsato: before=\"%s\" action=\"%s\" after=\"%s\"\n",
+                        speechBefore.c_str(), actionId.c_str(), speechAfter.c_str());
                 } else {
+                    Serial.println("[CSQ] parsing JSON fallito, uso risposta come testo");
                     speechBefore = answer;
                 }
                 if (speechBefore.length() > 0 && speechBefore != "null") speakText(speechBefore);
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
-                    if (act) { furbyWrite(act->cmd, act->len); delay(1500); }
+                    if (act) { Serial.printf("[CSQ] eseguo azione: %s\n", act->label); furbyWrite(act->cmd, act->len); delay(1500); }
+                    else Serial.printf("[CSQ] ERRORE: azione \"%s\" non trovata\n", actionId.c_str());
                 }
                 if (speechAfter.length() > 0 && speechAfter != "null") speakText(speechAfter);
             }
             break;
         }
-        default: break;
+        default:
+            Serial.printf("[CSQ] tipo sconosciuto: %d\n", csq.type);
+            break;
     }
 }
 
 void processStimulusDefault(const String& base64Img) {
+    Serial.printf("[STIMULUS-DEFAULT] SD=%s img=%u char\n", sdAvailable ? "si" : "no", base64Img.length());
     String sysPrompt, userText;
     if (sdAvailable) {
         String cacheJSON = getCacheJSON();
@@ -4373,25 +4481,37 @@ void processStimulusDefault(const String& base64Img) {
         userText  = "Commenta quello che vedi.";
     }
     String answer = callLLM(base64Img, sysPrompt, userText);
-    if (answer.length() == 0) return;
+    if (answer.length() == 0) { Serial.println("[STIMULUS-DEFAULT] ERRORE: LLM risposta vuota, stop"); return; }
+    Serial.printf("[STIMULUS-DEFAULT] LLM: \"%s\"\n", answer.c_str());
     if (sdAvailable) {
-        if (answer.startsWith("NEW:"))    generateAndPlayTTS_SD(answer.substring(4));
-        else if (answer.endsWith(".pcm")) playAudioSD(answer);
-        else                              generateAndPlayTTS_SD(answer);
+        if (answer.startsWith("NEW:"))    { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD nuovo"); generateAndPlayTTS_SD(answer.substring(4)); }
+        else if (answer.endsWith(".pcm")) { Serial.printf("[STIMULUS-DEFAULT] -> cache SD: %s\n", answer.c_str()); playAudioSD(answer); }
+        else                              { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD (no prefix)"); generateAndPlayTTS_SD(answer); }
     } else {
         if (answer.startsWith("NEW:")) answer = answer.substring(4);
+        Serial.println("[STIMULUS-DEFAULT] -> TTS-RAM");
         streamAndPlayTTS_RAM(answer);
     }
 }
 
 void processStimulus(TriggerType trg, uint8_t sensorId) {
+    Serial.printf("[STIMULUS] trigger=%d sensorId=%d behaviors=%d heap=%u PSRAM=%u\n",
+        trg, sensorId, gEventBehaviorCount, esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
     String base64Img;
     if (camActive || camInit()) {
         camera_fb_t* fb = esp_camera_fb_get();
-        if (fb) { base64Img = base64Encode(fb->buf, fb->len); esp_camera_fb_return(fb); }
+        if (fb) {
+            Serial.printf("[STIMULUS] frame catturato: %u byte\n", fb->len);
+            base64Img = base64Encode(fb->buf, fb->len);
+            esp_camera_fb_return(fb);
+        } else {
+            Serial.println("[STIMULUS] WARN: esp_camera_fb_get() restituito NULL");
+        }
+    } else {
+        Serial.println("[STIMULUS] WARN: camera non disponibile, procedo senza immagine");
     }
 
-    // Cerca comportamento che matcha trigger (e sensor_id per TRG_SENSOR)
     EventBehavior* beh = nullptr;
     for (int i = 0; i < gEventBehaviorCount; i++) {
         EventBehavior& b = gEventBehaviors[i];
@@ -4401,8 +4521,12 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
         break;
     }
 
-    if (!beh) { processStimulusDefault(base64Img); return; }
-
+    if (!beh) {
+        Serial.println("[STIMULUS] nessun behavior configurato -> default");
+        processStimulusDefault(base64Img);
+        return;
+    }
+    Serial.printf("[STIMULUS] behavior trovato: \"%s\" (%d conseguenze)\n", beh->name, beh->consequence_count);
     for (int c = 0; c < beh->consequence_count; c++)
         executeConsequence(beh->consequences[c], base64Img);
 }
