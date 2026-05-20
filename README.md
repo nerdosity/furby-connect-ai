@@ -34,7 +34,7 @@ Pressione tasto → cattura immagine → GPT-4o-mini (vision)
 | Multi-provider LLM | `████████░░` 80% | OpenAI ok; Claude da testare più a fondo |
 | BLE scan + connect | `████████░░` 80% | Connessione stabile ma a volte lenta |
 | Lipsync BLE | `████░░░░░░` 40% | Movimenti bocca grossolani, tuning in corso |
-| Cache audio SD card | `███████░░░` 70% | Funziona; index JSON da ottimizzare |
+| Cache audio SD card + prefix | `████████░░` 80% | Cache hit: prefisso cinico generato 1 volta (1 call LLM + 1 TTS), poi tutto da SD |
 | Web UI debug | `████████░░` 80% | Funzionale; UX mobile/desktop ancora ruvida |
 | Decodifica MP3 (ESP32) | `██████░░░░` 60% | Integrato ma poco testato su lungo periodo |
 | Captive portal config | `█████████░` 90% | Stabile al primo avvio |
@@ -45,7 +45,7 @@ Pressione tasto → cattura immagine → GPT-4o-mini (vision)
 - Sintesi vocale multilingua (ElevenLabs) — MP3 per account free, PCM per pro
 - Lipsync bocca via BLE in tempo reale (in tuning)
 - VAD (rilevamento parlato) con filtro passa-alto 250Hz per ignorare rumori meccanici
-- Cache audio su SD card: le risposte già sentite non vengono rigenerate
+- Cache audio su SD card: le risposte già sentite non vengono rigenerate; alla seconda richiesta viene generato un prefisso cinico ("come ti avevo già detto…") con 1 sola call LLM+TTS, poi salvato — dalla terza in poi tutto da SD, zero token
 - Web UI di debug su `http://furby.local`
 - Configurazione WiFi via captive portal (AP `Furby_Config`)
 - Multi-WiFi (fino a 5 reti salvate, priorità configurabile)

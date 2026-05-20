@@ -4147,13 +4147,63 @@ String getCacheJSON() {
     return data;
 }
 
+// Restituisce JSON semplificato {filename: "testo"} da passare all'LLM (esclude campo prefix)
+String getCacheSummaryJSON() {
+    JsonDocument full;
+    deserializeJson(full, getCacheJSON());
+    JsonDocument summary;
+    for (JsonPair kv : full.as<JsonObject>()) {
+        JsonVariant v = kv.value();
+        if (v.is<JsonObject>()) summary[kv.key()] = v["text"].as<String>();
+        else                    summary[kv.key()] = v.as<String>(); // retrocompat
+    }
+    String out; serializeJson(summary, out); return out;
+}
+
+void saveCacheIndex(JsonDocument& doc) {
+    File f = SD_MMC.open("/index.json", FILE_WRITE);
+    if (f) { serializeJson(doc, f); f.close(); }
+}
+
 void updateCacheJSON(String newFilename, String text) {
     if (!sdAvailable) return;
     JsonDocument doc;
     deserializeJson(doc, getCacheJSON());
-    doc[newFilename] = text;
-    File f = SD_MMC.open("/index.json", FILE_WRITE);
-    if (f) { serializeJson(doc, f); f.close(); }
+    // nuovo formato: oggetto {text, prefix}
+    JsonObject entry = doc[newFilename].to<JsonObject>();
+    entry["text"]   = text;
+    entry["prefix"] = "";
+    saveCacheIndex(doc);
+}
+
+// Restituisce il filename del prefix per audioFile, o "" se non ancora generato
+String getCachedPrefix(const String& audioFile) {
+    JsonDocument doc;
+    deserializeJson(doc, getCacheJSON());
+    JsonVariant v = doc[audioFile];
+    if (v.is<JsonObject>()) {
+        String p = v["prefix"].as<String>();
+        if (p.length() > 0) return p;
+    }
+    return "";
+}
+
+// Salva il filename del prefix per audioFile nell'index
+void setCachedPrefix(const String& audioFile, const String& prefixFile) {
+    if (!sdAvailable) return;
+    JsonDocument doc;
+    deserializeJson(doc, getCacheJSON());
+    JsonVariant v = doc[audioFile];
+    if (v.is<JsonObject>()) {
+        v["prefix"] = prefixFile;
+    } else {
+        // vecchio formato stringa: migra
+        String oldText = v.as<String>();
+        JsonObject entry = doc[audioFile].to<JsonObject>();
+        entry["text"]   = oldText;
+        entry["prefix"] = prefixFile;
+    }
+    saveCacheIndex(doc);
 }
 
 String getNextFilename() {
@@ -4208,6 +4258,35 @@ static void playMp3FromStream(WiFiClient* stream, HTTPClient& http) {
     delete mp3; delete src; delete out; free(buf);
 }
 
+// Genera TTS, salva su SD, restituisce filename (o "" in caso di errore). Non riproduce.
+String generateAndSaveTTS_SD(const String& text) {
+    bool mp3mode = (el_audio_fmt == "mp3");
+    String ext = mp3mode ? ".mp3" : ".pcm";
+    String filename = getNextFilename();
+    if (mp3mode) filename = filename.substring(0, filename.lastIndexOf('.')) + ext;
+    Serial.printf("[TTS-SAVE] fmt=%s \"%s\" -> %s\n", el_audio_fmt.c_str(), text.c_str(), filename.c_str());
+    WiFiClientSecure client; client.setInsecure();
+    HTTPClient http;
+    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id
+               + "?output_format=" + elOutputFormat());
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("xi-api-key", elevenlabs_api_key);
+    JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
+    String payload; serializeJson(doc, payload);
+    int code = http.POST(payload);
+    Serial.printf("[TTS-SAVE] HTTP %d\n", code);
+    if (code == 200) {
+        File f = SD_MMC.open("/" + filename, FILE_WRITE);
+        if (f) { http.writeToStream(&f); f.close(); }
+        else { Serial.printf("[TTS-SAVE] ERRORE apertura /%s\n", filename.c_str()); http.end(); return ""; }
+    } else {
+        Serial.printf("[TTS-SAVE] ERRORE HTTP %d\n", code);
+        http.end(); return "";
+    }
+    http.end();
+    return filename;
+}
+
 void playAudioSD(String filename) {
     if (!sdAvailable) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
     Serial.printf("[AUDIO-SD] riproduco: /%s\n", filename.c_str());
@@ -4247,58 +4326,43 @@ void playAudioSD(String filename) {
     }
 }
 
-
-void generateAndPlayTTS_SD(String text) {
-    bool mp3mode = (el_audio_fmt == "mp3");
-    String ext = mp3mode ? ".mp3" : ".pcm";
-    String filename = getNextFilename();
-    // sostituisce estensione se MP3
-    if (mp3mode) filename = filename.substring(0, filename.lastIndexOf('.')) + ext;
-    Serial.printf("[TTS-SD] fmt=%s testo: \"%s\" -> %s\n", el_audio_fmt.c_str(), text.c_str(), filename.c_str());
-    WiFiClientSecure client; client.setInsecure();
-    HTTPClient http;
-    http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id
-               + "?output_format=" + elOutputFormat());
-    http.addHeader("Content-Type", "application/json");
-    http.addHeader("xi-api-key", elevenlabs_api_key);
-    JsonDocument doc; doc["text"] = text; doc["model_id"] = "eleven_multilingual_v2";
-    String payload; serializeJson(doc, payload);
-    int code = http.POST(payload);
-    Serial.printf("[TTS-SD] HTTP %d\n", code);
-    if (code == 200) {
-        File file = SD_MMC.open("/" + filename, FILE_WRITE);
-        if (file) {
-            http.writeToStream(&file); file.close();
-            Serial.printf("[TTS-SD] salvato su SD\n");
-            updateCacheJSON(filename, text);
-            if (mp3mode) {
-                // rilegge da SD e decodifica
-                File f = SD_MMC.open("/" + filename);
-                if (f) {
-                    size_t sz = f.size();
-                    uint8_t* buf = (uint8_t*)heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-                    if (buf) {
-                        f.read(buf, sz); f.close();
-                        AudioFileSourceBuffer* src = new AudioFileSourceBuffer(
-                            new AudioFileSourcePROGMEM(buf, sz), 4096);
-                        AudioGeneratorMP3* mp3 = new AudioGeneratorMP3();
-                        AudioOutputI2SDirect* out = new AudioOutputI2SDirect();
-                        out->begin(); mp3->begin(src, out);
-                        while (mp3->isRunning()) { if (!mp3->loop()) { mp3->stop(); break; } }
-                        out->stop();
-                        delete mp3; delete src; delete out; free(buf);
-                    } else { f.close(); Serial.println("[TTS-SD] ERRORE malloc MP3"); }
-                }
-            } else {
-                playAudioSD(filename);
+// Riproduce un file dalla cache SD con prefix lazy:
+// - se prefix già esiste in index → riproduce prefix + main
+// - se prefix non esiste → genera prefix via LLM+TTS, salva, aggiorna index, poi riproduce
+void playAudioSDWithPrefix(const String& filename) {
+    String prefixFile = getCachedPrefix(filename);
+    if (prefixFile.length() == 0) {
+        // prima volta che questo file viene riprodotto dalla cache: genera il prefisso
+        Serial.printf("[CACHE-PREFIX] genero prefisso per %s\n", filename.c_str());
+        // Chiamata LLM leggera: solo testo, nessuna immagine
+        String sysP = "Sei un Furby cinico e scocciato. Genera UNA SOLA frase breve (max 10 parole) "
+                      "per introdurre una risposta che hai già dato in precedenza. "
+                      "Solo la frase, nessun'altra parola.";
+        String prefixText = callLLM("", sysP, "");
+        prefixText.trim();
+        if (prefixText.length() > 0) {
+            Serial.printf("[CACHE-PREFIX] testo: \"%s\"\n", prefixText.c_str());
+            prefixFile = generateAndSaveTTS_SD(prefixText);
+            if (prefixFile.length() > 0) {
+                setCachedPrefix(filename, prefixFile);
+                Serial.printf("[CACHE-PREFIX] salvato come %s\n", prefixFile.c_str());
+                playAudioSD(prefixFile);
             }
         } else {
-            Serial.printf("[TTS-SD] ERRORE apertura /%s\n", filename.c_str());
+            Serial.println("[CACHE-PREFIX] LLM risposta vuota, salto prefisso");
         }
     } else {
-        Serial.printf("[TTS-SD] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());
+        Serial.printf("[CACHE-PREFIX] prefix esistente: %s\n", prefixFile.c_str());
+        playAudioSD(prefixFile);
     }
-    http.end();
+    playAudioSD(filename);
+}
+
+void generateAndPlayTTS_SD(String text) {
+    String filename = generateAndSaveTTS_SD(text);
+    if (filename.length() == 0) return;
+    updateCacheJSON(filename, text);
+    playAudioSD(filename);
 }
 
 // ==========================================
@@ -4684,7 +4748,7 @@ void processStimulusDefault(const String& base64Img) {
     Serial.printf("[STIMULUS-DEFAULT] SD=%s img=%u char\n", sdAvailable ? "si" : "no", base64Img.length());
     String sysPrompt, userText;
     if (sdAvailable) {
-        String cacheJSON = getCacheJSON();
+        String cacheJSON = getCacheSummaryJSON();
         sysPrompt = gPersonalityPrompt + " Ti passo un JSON con la cache audio. Se una frase in cache va bene, rispondi SOLO con la sua chiave (es. '1.pcm'). Se NESSUNA va bene, genera una nuova frase BREVISSIMA (max 8 parole) anteponendo 'NEW:'.";
         userText  = "Cache JSON: " + cacheJSON;
     } else {
@@ -4696,7 +4760,7 @@ void processStimulusDefault(const String& base64Img) {
     Serial.printf("[STIMULUS-DEFAULT] LLM: \"%s\"\n", answer.c_str());
     if (sdAvailable) {
         if (answer.startsWith("NEW:"))    { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD nuovo"); generateAndPlayTTS_SD(answer.substring(4)); }
-        else if (answer.endsWith(".pcm") || answer.endsWith(".mp3")) { Serial.printf("[STIMULUS-DEFAULT] -> cache SD: %s\n", answer.c_str()); playAudioSD(answer); }
+        else if (answer.endsWith(".pcm") || answer.endsWith(".mp3")) { Serial.printf("[STIMULUS-DEFAULT] -> cache SD: %s (con prefix)\n", answer.c_str()); playAudioSDWithPrefix(answer); }
         else                              { Serial.println("[STIMULUS-DEFAULT] -> TTS-SD (no prefix)"); generateAndPlayTTS_SD(answer); }
     } else {
         if (answer.startsWith("NEW:")) answer = answer.substring(4);
