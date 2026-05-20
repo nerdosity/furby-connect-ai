@@ -616,8 +616,14 @@ function setLang(l){
     <h3>Personalità base</h3>
     <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px">System prompt LLM — definisce carattere e tono del Furby</div>
     <textarea id="pers-prompt" style="width:100%;height:90px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Sei un giocattolo cinico..."></textarea>
-    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 2px">ElevenLabs Voice ID</div>
-    <input type="text" id="pers-voice" style="width:100%;font-size:.75rem;font-family:monospace" placeholder="pNInz6obpgDQGcFmaJcg">
+    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 3px">Voce ElevenLabs</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="pers-voice" style="flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.82rem;background:#f5f8ff;color:#1a2340">
+        <option value="">— carica voci —</option>
+      </select>
+      <button class="btn" onclick="voiceLoad()" id="btn-voice-load" style="padding:7px 13px;white-space:nowrap">&#x21BB; Carica</button>
+    </div>
+    <div id="voice-load-msg" style="font-size:.68rem;margin-top:3px;color:#8a9ab5"></div>
     <div style="display:flex;gap:6px;margin-top:10px">
       <button class="btn b-grn" onclick="persSave()" style="flex:1">Salva personalità</button>
     </div>
@@ -702,15 +708,6 @@ function setLang(l){
     <div id="test-tts-msg" style="font-size:.72rem;margin-top:6px;color:#5a6a8a"></div>
   </div>
 
-  <div class="card">
-    <h3>Voci ElevenLabs</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">Voci disponibili nel tuo account — clicca "Usa" per impostare la Voice ID nel campo Personalità</div>
-    <div class="btn-row" style="margin-bottom:10px">
-      <button class="btn b-tel" onclick="testVoicesLoad()" id="btn-voices-load">&#x21BB; Carica voci</button>
-    </div>
-    <div id="test-voices-list"></div>
-    <div id="test-voices-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
-  </div>
 </div>
 
 <script>
@@ -727,10 +724,45 @@ function showTab(id,el){
 // ======================= PERSONALITÀ =======================
 var gBehaviors=[]; var gActions=[]; var gEditIdx=-1;
 
+// ID voce corrente — tenuto in memoria per rimetterlo nella select dopo il caricamento
+var gCurrentVoiceId='';
+
+function voiceLoad(){
+  var btn=document.getElementById('btn-voice-load');
+  var msg=document.getElementById('voice-load-msg');
+  var sel=document.getElementById('pers-voice');
+  btn.disabled=true; btn.textContent='...'; msg.textContent='';
+  fetch('/test/voices')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      btn.disabled=false; btn.textContent='↻ Carica';
+      if(!d.ok){msg.style.color='#dc2626';msg.textContent='Errore: '+(d.error||'?');return;}
+      if(!d.voices||!d.voices.length){msg.textContent='Nessuna voce trovata.';return;}
+      var prev=sel.value||gCurrentVoiceId;
+      sel.innerHTML='';
+      d.voices.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.id;
+        o.textContent=v.name+(v.category?' ('+v.category+')':'');
+        sel.appendChild(o);
+      });
+      if(prev) sel.value=prev;
+      msg.style.color='#16a34a';
+      msg.textContent=d.voices.length+' voci caricate.';
+      setTimeout(function(){msg.textContent='';},2500);
+    })
+    .catch(function(){
+      btn.disabled=false;btn.textContent='↻ Carica';
+      msg.style.color='#dc2626';msg.textContent='Errore connessione.';
+    });
+}
+
 function persLoad(){
   fetch('/personality').then(r=>r.json()).then(d=>{
     document.getElementById('pers-prompt').value=d.prompt||'';
-    document.getElementById('pers-voice').value=d.voice_id||'';
+    gCurrentVoiceId=d.voice_id||'';
+    // carica le voci e poi seleziona quella corrente
+    voiceLoad();
   });
   fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
   behLoad();
@@ -752,9 +784,12 @@ function behLoad(){
     // aggiorna anche personalità se non ancora caricata
     if(d.personality){
       var pp=document.getElementById('pers-prompt');
-      var pv=document.getElementById('pers-voice');
       if(pp&&!pp.value)pp.value=d.personality.prompt||'';
-      if(pv&&!pv.value)pv.value=d.personality.voice_id||'';
+      if(d.personality.voice_id&&!gCurrentVoiceId){
+        gCurrentVoiceId=d.personality.voice_id;
+        var pv=document.getElementById('pers-voice');
+        if(pv)pv.value=gCurrentVoiceId; // funziona se le voci sono già caricate
+      }
     }
     behRender();
   });
@@ -1031,38 +1066,6 @@ function testTtsSend(){
   }
 }
 
-function testVoicesLoad(){
-  var btn=document.getElementById('btn-voices-load');
-  var list=document.getElementById('test-voices-list');
-  var msg=document.getElementById('test-voices-msg');
-  btn.disabled=true; btn.textContent=t('sending'); list.innerHTML=''; msg.textContent='';
-  fetch('/test/voices')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      btn.disabled=false; btn.textContent=t('test.voices_load');
-      if(!d.ok){msg.textContent=t('error')+' '+(d.error||'?');return;}
-      if(!d.voices||!d.voices.length){list.innerHTML='<div style="color:#8a9ab5;font-size:.82rem">'+t('test.voices_none')+'</div>';return;}
-      list.innerHTML=d.voices.map(function(v){
-        var cat=v.category?'<span style="font-size:.7rem;color:#5a6a8a;background:#e4eaf4;border-radius:4px;padding:1px 6px;margin-left:6px">'+v.category+'</span>':'';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e4eaf4">'
-          +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:.88rem;font-weight:600;color:#1a2340">'+esc(v.name)+cat+'</div>'
-          +'<div style="font-size:.72rem;color:#8a9ab5;font-family:monospace;margin-top:2px">'+v.id+'</div>'
-          +'</div>'
-          +'<button class="btn b-grn" style="padding:5px 12px;font-size:.78rem;white-space:nowrap" onclick="testVoiceUse(\''+v.id+'\',\''+esc(v.name)+'\')">'+t('test.voices_use')+'</button>'
-          +'</div>';
-      }).join('');
-    })
-    .catch(function(e){btn.disabled=false;btn.textContent=t('test.voices_load');msg.textContent=t('error_conn');});
-}
-
-function testVoiceUse(id,name){
-  document.getElementById('pers-voice').value=id;
-  var msg=document.getElementById('test-voices-msg');
-  msg.textContent=t('voice_set')+' '+name;
-  setTimeout(function(){msg.textContent='';},2500);
-  document.getElementById('pers-voice').scrollIntoView({behavior:'smooth',block:'center'});
-}
 
 function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return(h?h+'h ':'')+(m?m+'m ':'')+ss+'s';}
 function dbBleApply(d){

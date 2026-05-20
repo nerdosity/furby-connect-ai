@@ -2579,20 +2579,20 @@ void handleApiConfig() {
     bool changed = false;
     if (server.hasArg("openai_key") && server.arg("openai_key").length()) {
         openai_api_key = server.arg("openai_key");
-        preferences.putString("openai_key", openai_api_key);
-        Serial.println("CFG: openai_key aggiornato");
+        preferences.putString("openai", openai_api_key);
+        Serial.println("CFG: openai aggiornato");
         changed = true;
     }
     if (server.hasArg("claude_key") && server.arg("claude_key").length()) {
         claude_api_key = server.arg("claude_key");
-        preferences.putString("claude_key", claude_api_key);
-        Serial.println("CFG: claude_key aggiornato");
+        preferences.putString("claude", claude_api_key);
+        Serial.println("CFG: claude aggiornato");
         changed = true;
     }
     if (server.hasArg("el_key") && server.arg("el_key").length()) {
         elevenlabs_api_key = server.arg("el_key");
-        preferences.putString("11labs_key", elevenlabs_api_key);
-        Serial.println("CFG: el_key aggiornato");
+        preferences.putString("11labs", elevenlabs_api_key);
+        Serial.println("CFG: 11labs aggiornato");
         changed = true;
     }
     if (server.hasArg("el_vid") && server.arg("el_vid").length()) {
