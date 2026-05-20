@@ -2514,15 +2514,23 @@ void handleApiModels() {
     String provider = server.arg("provider");
     if (provider.length() == 0) provider = llm_provider;
 
+    Serial.printf("[API-MODELS] provider=%s openai_key_len=%u claude_key_len=%u\n",
+        provider.c_str(), openai_api_key.length(), claude_api_key.length());
+
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     String result = "[";
 
     if (provider == "openai") {
-        if (openai_api_key.length() == 0) { server.send(200, "application/json", "[]"); return; }
+        if (openai_api_key.length() == 0) {
+            Serial.println("[API-MODELS] openai_api_key vuota -> ritorno []");
+            server.send(200, "application/json", "[]"); return;
+        }
         http.begin(client, "https://api.openai.com/v1/models");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
-        if (http.GET() == 200) {
+        int oaCode = http.GET();
+        Serial.printf("[API-MODELS] OpenAI /models HTTP %d\n", oaCode);
+        if (oaCode == 200) {
             // Filtra solo i modelli GPT (esclude embedding, tts, dall-e, whisper, ecc.)
             String body = http.getString();
             int pos = 0;
@@ -2659,16 +2667,18 @@ void handleApiTest() {
         }
     } else if (type == "el") {
         if (elevenlabs_api_key.length() == 0) { server.send(200,"application/json","{\"ok\":false,\"error\":\"token assente\"}"); return; }
-        Serial.println("API test ElevenLabs (via /voices), key: " + elevenlabs_api_key);
-        http.begin(client, "https://api.elevenlabs.io/v1/voices");
+        // Usa TTS con testo minimo — funziona su qualsiasi account, anche free senza voices_read
+        Serial.println("API test ElevenLabs (via TTS probe)");
+        http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
+        http.addHeader("Content-Type", "application/json");
         http.addHeader("xi-api-key", elevenlabs_api_key);
-        int code = http.GET();
+        int code = http.POST("{\"text\":\"ok\",\"model_id\":\"eleven_multilingual_v2\"}");
         ok = (code == 200);
         if (ok) {
-            info = "ElevenLabs OK";
+            info = "ElevenLabs OK (voce: " + elevenlabs_voice_id + ")";
         } else {
             info = "HTTP " + String(code);
-            err  = http.getString();
+            err  = http.getString().substring(0, 300);
         }
         http.end();
         Serial.println("API test ElevenLabs: " + info + (err.length() ? " | " + err : ""));
@@ -3109,15 +3119,43 @@ void handleTestTts() {
     }, "tts_test", 16384, new String(text), 1, NULL, 1);
 }
 
-// GET /test/voices  →  lista voci ElevenLabs (proxy)
+// Voci pre-caricate ElevenLabs disponibili su tutti gli account (incluso free)
+static const char EL_BUILTIN_VOICES[] PROGMEM =
+    "{\"ok\":true,\"builtin\":true,\"voices\":["
+    "{\"id\":\"21m00Tcm4TlvDq8ikWAM\",\"name\":\"Rachel\",\"category\":\"premade\"},"
+    "{\"id\":\"AZnzlk1XvdvUeBnXmlld\",\"name\":\"Domi\",\"category\":\"premade\"},"
+    "{\"id\":\"EXAVITQu4vr4xnSDxMaL\",\"name\":\"Bella\",\"category\":\"premade\"},"
+    "{\"id\":\"ErXwobaYiN019PkySvjV\",\"name\":\"Antoni\",\"category\":\"premade\"},"
+    "{\"id\":\"MF3mGyEYCl7XYWbV9V6O\",\"name\":\"Elli\",\"category\":\"premade\"},"
+    "{\"id\":\"TxGEqnHWrfWFTfGW9XjX\",\"name\":\"Josh\",\"category\":\"premade\"},"
+    "{\"id\":\"VR6AewLTigWG4xSOukaG\",\"name\":\"Arnold\",\"category\":\"premade\"},"
+    "{\"id\":\"pNInz6obpgDQGcFmaJcg\",\"name\":\"Adam\",\"category\":\"premade\"},"
+    "{\"id\":\"yoZ06aMxZJJ28mfd3POQ\",\"name\":\"Sam\",\"category\":\"premade\"},"
+    "{\"id\":\"JBFqnCBsd6RMkjVDRZzb\",\"name\":\"George\",\"category\":\"premade\"},"
+    "{\"id\":\"iP95p4xoKVk53GoZ742B\",\"name\":\"Chris\",\"category\":\"premade\"},"
+    "{\"id\":\"onwK4e9ZLuTAKqWW03F9\",\"name\":\"Daniel\",\"category\":\"premade\"},"
+    "{\"id\":\"XB0fDUnXU5powFXDhCwa\",\"name\":\"Charlotte\",\"category\":\"premade\"},"
+    "{\"id\":\"Xb7hH8MSUJpSbSDYk0k2\",\"name\":\"Alice\",\"category\":\"premade\"},"
+    "{\"id\":\"nPczCjzI2devNBz1zQrb\",\"name\":\"Brian\",\"category\":\"premade\"},"
+    "{\"id\":\"cgSgspJ2msm6clMCkdW9\",\"name\":\"Jessica\",\"category\":\"premade\"},"
+    "{\"id\":\"FGY2WhTYpPnrIDTdsKH5\",\"name\":\"Laura\",\"category\":\"premade\"},"
+    "{\"id\":\"TX3LPaxmHKxFdv7VOQHJ\",\"name\":\"Liam\",\"category\":\"premade\"}"
+    "]}";
+
+// GET /test/voices  →  lista voci ElevenLabs; fallback a lista built-in se account senza voices_read
 void handleTestVoices() {
+    if (elevenlabs_api_key.length() == 0) {
+        server.send(200, "application/json", FPSTR(EL_BUILTIN_VOICES)); return;
+    }
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/voices");
     http.addHeader("xi-api-key", elevenlabs_api_key);
     int code = http.GET();
+    Serial.printf("[VOICES] GET /v1/voices HTTP %d\n", code);
     if (code == 200) {
         String raw = http.getString();
+        http.end();
         JsonDocument doc;
         String out = "{\"ok\":true,\"voices\":[";
         bool first = true;
@@ -3133,9 +3171,11 @@ void handleTestVoices() {
         out += "]}";
         server.send(200, "application/json", out);
     } else {
-        server.send(502, "application/json", "{\"ok\":false,\"error\":\"ElevenLabs " + String(code) + "\"}");
+        http.end();
+        // 403 = mancano permessi voices_read (account free) → lista built-in
+        Serial.printf("[VOICES] fallback a lista built-in (HTTP %d)\n", code);
+        server.send(200, "application/json", FPSTR(EL_BUILTIN_VOICES));
     }
-    http.end();
 }
 
 // POST /test/behavior  (form: trigger, sensor_id, dry_run)
@@ -4597,8 +4637,14 @@ void setup() {
     llm_provider        = preferences.getString("llm_prov",  "openai");
     llm_model           = preferences.getString("llm_model", "gpt-4o-mini");
     openai_api_key      = preferences.getString("openai",    "");
+    if (openai_api_key.length() == 0)
+        openai_api_key  = preferences.getString("openai_key", ""); // fallback vecchia chiave
     claude_api_key      = preferences.getString("claude",    "");
+    if (claude_api_key.length() == 0)
+        claude_api_key  = preferences.getString("claude_key", "");
     elevenlabs_api_key  = preferences.getString("11labs",    "");
+    if (elevenlabs_api_key.length() == 0)
+        elevenlabs_api_key = preferences.getString("11labs_key", "");
     elevenlabs_voice_id = preferences.getString("11labs_vid","pNInz6obpgDQGcFmaJcg");
     ble_service_uuid    = preferences.getString("ble_svc",  "dab91435-b5a1-e29c-b041-bcd562613bde");
     ble_char_uuid_tx    = preferences.getString("ble_char", "dab91383-b5a1-e29c-b041-bcd562613bde");
