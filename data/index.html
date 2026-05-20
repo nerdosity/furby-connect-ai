@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html><html lang="it"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FurbyMind</title>
+<title>FurbyMind Connect</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
@@ -9,7 +9,6 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
   box-shadow:0 3px 12px rgba(0,0,0,.35)}
 .logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden}
 .logo-wrap img{width:100%;height:100%;object-fit:cover}
-.header-text h1{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
 .header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
 .nav-toggle{background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0}
 .nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
@@ -32,14 +31,52 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
   font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
 .nav-item:hover,.nav-item.active{background:#243050;color:#fff}
 #sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap}
-.wrap{max-width:780px;margin:24px auto;padding:0 20px}
-.card{background:#fff;border-radius:14px;padding:20px 24px;margin-bottom:16px;
+.container{max-width:640px;margin:0 auto;padding:16px}
+@media(min-width:900px){body{font-size:16px}.container{max-width:860px;padding:24px}}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;color:#5a6a8a;margin:20px 0 8px;padding-left:2px}
+.sec-title .ico{width:18px;height:18px;opacity:.7}
+.card{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:10px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
-.card h3{font-size:.78rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
-  letter-spacing:1.2px;margin-bottom:12px}
-.notice{background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:14px 18px;
-  font-size:.82rem;color:#78350f;line-height:1.5}
-.notice strong{font-size:.85rem;display:block;margin-bottom:4px}
+.status-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-ok  {background:#22c55e;box-shadow:0 0 6px #22c55e88}
+.dot-warn{background:#f59e0b;box-shadow:0 0 6px #f59e0b88}
+.dot-err {background:#ef4444;box-shadow:0 0 6px #ef444488}
+.status-label{font-size:.82rem;font-weight:600;color:#1a2340}
+.status-sub{font-size:.72rem;color:#8a9ab5;margin-left:auto}
+label{display:block;font-size:.72rem;font-weight:600;color:#5a6a8a;
+  margin-bottom:4px;margin-top:12px;text-transform:uppercase;letter-spacing:.5px}
+input[type=text],input[type=password],select{
+  width:100%;padding:10px 13px;background:#f5f8ff;color:#1a2340;
+  border:1.5px solid #d0d9ee;border-radius:9px;font-size:.88rem;
+  transition:border-color .15s,box-shadow .15s;appearance:none}
+input:focus,select:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 3px #3a529822}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a8a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 16px;border:none;border-radius:9px;cursor:pointer;
+  font-size:.82rem;font-weight:700;letter-spacing:.3px;transition:all .15s;width:100%;margin-top:10px}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.btn:active{transform:none}
+.btn-blue {background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff}
+.btn-green{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff}
+.btn-red  {background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.btn-amber{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.btn-ghost{background:#f0f4f8;color:#3a5298;border:1.5px solid #d0d9ee}
+.btn-sm   {padding:7px 12px;font-size:.75rem;width:auto;margin-top:0}
+.btn-row  {display:flex;gap:8px;margin-top:10px}
+.btn-row .btn{flex:1}
+table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:4px}
+th{text-align:left;padding:8px 10px;background:#f5f8ff;color:#8a9ab5;
+   font-weight:600;font-size:.68rem;text-transform:uppercase;letter-spacing:.8px}
+td{padding:8px 10px;border-bottom:1px solid #eef2fa;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.ssid-name{font-weight:600;color:#1a2340}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
+.badge-ok{background:#dcfce7;color:#16a34a}
+.divider{border:none;border-top:1px solid #eef2fa;margin:14px 0}
 </style>
 </head>
 <body>
@@ -66,38 +103,354 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
     <a href="/debug">Debug</a>
     <a href="/camera">Camera</a>
   </nav>
+  <select onchange="localStorage.setItem('furby_lang',this.value)" style="background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0"><option value="it">IT</option><option value="en">EN</option></select>
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 
 <div id="sys-bar">carico...</div>
 
-<div class="wrap">
-  <div class="notice">
-    <strong>&#x1F6A7; Pagina in refactoring</strong>
-    Questa versione di index.html &egrave; un placeholder. La home reale viene servita dal firmware (HTML_HEAD/HTML_HOME in main.cpp) perch&eacute; contiene dati dinamici (WiFi, BLE, impostazioni) che richiedono un refactoring completo verso fetch API. Non attiva in handleRoot().
-  </div>
+<div class="container">
 
-  <div class="card">
-    <h3>Stato sistema</h3>
-    <p style="font-size:.82rem;color:#5a6a8a">I dati dinamici (reti WiFi, stato BLE, impostazioni) sono disponibili via <a href="/debug" style="color:#3a5298">Debug Furby</a> oppure dalle API REST:</p>
-    <ul style="margin-top:10px;font-size:.78rem;font-family:monospace;color:#3a5298;list-style:none;display:flex;flex-direction:column;gap:4px">
-      <li><a href="/api/sysinfo" style="color:#3a5298">/api/sysinfo</a> &mdash; uptime, heap, WiFi, BLE</li>
-      <li><a href="/api/sensors" style="color:#3a5298">/api/sensors</a> &mdash; sensori Furby</li>
-      <li><a href="/api/behaviors" style="color:#3a5298">/api/behaviors</a> &mdash; comportamenti configurati</li>
-    </ul>
+<!-- WiFi -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+  Rete Wi-Fi
+</div>
+<div class="card">
+  <div class="status-row">
+    <div class="status-dot" id="wifi-dot"></div>
+    <span class="status-label" id="wifi-label">carico...</span>
+    <span class="status-sub" id="wifi-ip"></span>
   </div>
+  <table><thead><tr><th>#</th><th>SSID</th><th>Priorità</th><th></th></tr></thead>
+  <tbody id="wifi-rows"><tr><td colspan="4" style="color:#aaa">carico...</td></tr></tbody></table>
+  <div class="btn-row" style="margin-top:12px">
+    <form action="/wifi/connect" method="POST" style="flex:1">
+      <button type="submit" class="btn btn-blue">&#x26A1; Connetti ora</button>
+    </form>
+    <form action="/wifi/scan" method="POST" style="flex:1">
+      <button type="submit" class="btn btn-ghost">&#x1F50D; Scansiona</button>
+    </form>
+  </div>
+  <div id="wifi-scan-results"></div>
+  <hr class="divider">
+  <form action="/wifi/add" method="POST">
+    <label>SSID</label><input type="text" name="ssid" placeholder="Nome rete" required>
+    <label>Password</label><input type="password" name="pass" placeholder="Password (lascia vuoto se aperta)">
+    <label>Priorità (0 = massima)</label><input type="text" name="prio" value="0">
+    <button type="submit" class="btn btn-blue">+ Aggiungi / Aggiorna rete</button>
+  </form>
 </div>
 
+<!-- LLM -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+  Configurazione LLM
+</div>
+<div class="card">
+  <form action="/llm/save" method="POST">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label>Fornitore</label>
+        <select name="provider" id="prov" onchange="onProvChange()">
+          <option value="openai">openai</option>
+          <option value="claude">claude</option>
+        </select>
+      </div>
+      <div style="flex:2">
+        <label>Modello <span id="mdl-st" style="font-weight:400;color:#8a9ab5;text-transform:none"></span></label>
+        <select name="model" id="mdl"></select>
+      </div>
+    </div>
+    <label id="tok-lbl">Token API</label>
+    <input type="text" name="api_key" id="tok" placeholder="...">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button type="submit" class="btn btn-blue" style="flex:2">Salva configurazione AI</button>
+      <button type="button" class="btn btn-ghost" style="flex:1" onclick="testLlm()">&#x1F9EA; Test</button>
+    </div>
+    <div id="llm-test-result" style="font-size:.72rem;margin-top:6px"></div>
+  </form>
+</div>
+
+<!-- ElevenLabs -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+  ElevenLabs TTS
+</div>
+<div class="card">
+  <form action="/el/save" method="POST">
+    <label>Token API ElevenLabs</label>
+    <input type="text" name="el_key" id="el-key" placeholder="API key...">
+    <label>Voce</label>
+    <select name="el_vid" id="el-voice-sel" style="width:100%"></select>
+    <label style="margin-top:10px;display:block">Formato audio</label>
+    <div style="display:flex;gap:16px;margin-top:6px;align-items:center">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.82rem;font-weight:600;color:#1a2340">
+        <input type="radio" name="el_fmt" value="pcm" id="fmt-pcm" style="accent-color:#3a5298"> PCM
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.82rem;font-weight:600;color:#1a2340">
+        <input type="radio" name="el_fmt" value="mp3" id="fmt-mp3" style="accent-color:#3a5298"> MP3
+      </label>
+    </div>
+    <p id="fmt-hint" style="font-size:.68rem;color:#8a9ab5;margin-top:4px"></p>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button type="submit" class="btn btn-blue" style="flex:2">Salva ElevenLabs</button>
+      <button type="button" class="btn btn-ghost" style="flex:1" onclick="testEl()">&#x1F9EA; Test</button>
+    </div>
+    <div id="el-test-result" style="font-size:.72rem;margin-top:6px"></div>
+  </form>
+</div>
+
+<!-- SD -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v6h10V2M7 7h3M7 11h10M7 15h10M7 19h10"/></svg>
+  Scheda SD
+</div>
+<div class="card">
+  <div class="status-row" id="sd-status-row">
+    <div class="status-dot dot-warn"></div>
+    <span class="status-label">carico...</span>
+  </div>
+  <div id="sd-btn"></div>
+</div>
+
+<!-- VAD / STT -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+  Microfoni / Rilevamento voce
+</div>
+<div class="card">
+  <div class="status-row">
+    <div class="status-dot" id="vad-dot"></div>
+    <span class="status-label" id="vad-label">carico...</span>
+  </div>
+  <form action="/vad/save" method="POST">
+    <label>Soglia sensibilità (RMS 0–32767, default 800)</label>
+    <input type="text" name="threshold" id="vad-thresh">
+    <div class="btn-row">
+      <button type="submit" name="enabled" value="1" class="btn btn-green">&#x1F3A4; Abilita</button>
+      <button type="submit" name="enabled" value="0" class="btn btn-amber">&#x1F507; Disabilita</button>
+    </div>
+  </form>
+</div>
+<div class="card">
+  <div class="status-row">
+    <div class="status-dot" id="stt-dot"></div>
+    <span class="status-label" id="stt-label">carico...</span>
+  </div>
+  <p style="font-size:.75rem;color:#5a6a8a;margin:4px 0 8px">Trascrive il parlato con Whisper prima di passarlo all'LLM. Richiede chiave OpenAI. +~1-2s di latenza.</p>
+  <form action="/vad/save" method="POST">
+    <div class="btn-row">
+      <button type="submit" name="stt_enabled" value="1" class="btn btn-green">Abilita STT</button>
+      <button type="submit" name="stt_enabled" value="0" class="btn btn-amber">Disabilita STT</button>
+    </div>
+  </form>
+</div>
+
+<!-- BLE -->
+<div class="sec-title">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+  Bluetooth Furby
+</div>
+<div class="card">
+  <div class="status-row">
+    <div class="status-dot" id="ble-dot"></div>
+    <span class="status-label" id="ble-label">carico...</span>
+    <span class="status-sub" id="ble-device"></span>
+  </div>
+  <div id="ble-uptime-row" style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px;display:none">
+    connesso da: <span id="ble-uptime"></span>
+  </div>
+  <div class="btn-row" style="margin-top:10px">
+    <button type="button" class="btn btn-green" id="btn-scan" onclick="bleScan()">&#x1F50D; Cerca Furby</button>
+    <button type="button" class="btn btn-red"   id="btn-stop" onclick="bleStop()" style="display:none">&#x23F9; Stop scan</button>
+    <button type="button" class="btn btn-amber"  id="btn-disc" onclick="bleDisc()" style="display:none">&#x26D4; Disconnetti</button>
+  </div>
+  <div id="ble-scanning" style="display:none;font-size:.75rem;color:#f59e0b;margin-top:8px">&#x231B; Scansione in corso...</div>
+  <div id="ble-list" style="margin-top:8px"></div>
+  <hr class="divider">
+  <form action="/ble/save" method="POST">
+    <label>Service UUID</label>
+    <input type="text" name="svc_uuid" id="ble-svc-uuid">
+    <label>Characteristic UUID TX</label>
+    <input type="text" name="char_uuid" id="ble-char-uuid">
+    <button type="submit" class="btn btn-blue">Salva UUID</button>
+  </form>
+</div>
+
+</div><!-- /container -->
+<div style="text-align:center;padding:10px 0 18px;font-size:.72rem;color:#aab;display:flex;justify-content:center;gap:20px">
+  <a href="/debug" style="color:#6b8abb;text-decoration:none">&#x1F50D; Debug</a>
+  <a href="/camera" style="color:#6b8abb;text-decoration:none">&#x1F4F7; Camera</a>
+</div>
+</body>
+
 <script>
-document.getElementById('esp-ip').textContent = window.location.hostname;
-(function sysInfoPoll(){
-  fetch('/api/sysinfo').then(r=>r.json()).then(d=>{
-    var s=d.uptime_s,h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
-    document.getElementById('esp-uptime').textContent=(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';
-    var bar=document.getElementById('sys-bar');
-    bar.textContent='heap: '+d.heap_free+' B free | WiFi: '+d.wifi_ssid+' ('+d.wifi_rssi+' dBm) | IP: '+d.ip;
+// ── utils ────────────────────────────────────────────────────────────────────
+function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;var p=ss<10?'0':'';return(h?h+'h ':'')+m+'m '+p+ss+'s';}
+function fmtKB(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
+
+// ── sys-bar + uptime ─────────────────────────────────────────────────────────
+document.getElementById('esp-ip').textContent=window.location.hostname;
+(function sysLoop(){
+  fetch('/sys/info').then(function(r){return r.json();}).then(function(d){
+    var sd=d.sd_total?' | SD '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total):'';
+    document.getElementById('sys-bar').textContent=
+      'CPU '+d.cpu_mhz+'MHz'
+      +' | Heap '+fmtKB(d.heap_free)+'/'+fmtKB(d.heap_total)
+      +' | PSRAM '+fmtKB(d.psram_free)+'/'+fmtKB(d.psram_total)
+      +' | Sketch '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
+      +' | SPIFFS '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
+      +' | Flash '+d.flash_mb+'MB'+sd;
+    if(d.uptime_s!=null){var s=d.uptime_s,h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
+      document.getElementById('esp-uptime').textContent=(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';}
   }).catch(function(){});
-  setTimeout(sysInfoPoll,5000);
+  setTimeout(sysLoop,10000);
 })();
+
+// ── home data ────────────────────────────────────────────────────────────────
+function applyHome(d){
+  // WiFi
+  var wdot=document.getElementById('wifi-dot');
+  wdot.className='status-dot '+(d.wifi_connected?'dot-ok':'dot-err');
+  document.getElementById('wifi-label').textContent=d.wifi_connected?'Connesso: '+d.wifi_ssid:'Non connesso';
+  document.getElementById('wifi-ip').textContent=d.ip||'';
+  var rows='';
+  if(d.wifi_nets&&d.wifi_nets.length){
+    d.wifi_nets.forEach(function(n,i){
+      var cur=d.wifi_connected&&n.ssid===d.wifi_ssid;
+      rows+='<tr><td>'+i+'</td><td class="ssid-name">'+n.ssid+(cur?' <span class="badge badge-ok">attiva</span>':'')+'</td><td>';
+      if(i>0)rows+='<form action="/wifi/up" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-ghost btn-sm">&#x25B2;</button></form> ';
+      if(i<d.wifi_nets.length-1)rows+='<form action="/wifi/down" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-ghost btn-sm">&#x25BC;</button></form>';
+      rows+='</td><td><form action="/wifi/del" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-red btn-sm">Rimuovi</button></form></td></tr>';
+    });
+  } else {
+    rows='<tr><td colspan="4" style="color:#aaa">Nessuna rete salvata</td></tr>';
+  }
+  document.getElementById('wifi-rows').innerHTML=rows;
+
+  // LLM
+  var prov=document.getElementById('prov');
+  prov.value=d.llm_provider||'openai';
+  document.getElementById('tok').value=d.cur_key||'';
+  loadModels(d.llm_model);
+
+  // ElevenLabs
+  document.getElementById('el-key').value=d.el_key||'';
+  var fmt=d.el_fmt||'mp3';
+  document.getElementById('fmt-pcm').checked=(fmt==='pcm');
+  document.getElementById('fmt-mp3').checked=(fmt==='mp3');
+  document.getElementById('fmt-hint').textContent=fmt==='mp3'
+    ?'MP3 22kHz 32kbps — funziona con account free, ~4x più leggero in cache'
+    :'PCM 16kHz mono — qualità alta, solo account Pro';
+  loadVoices(d.el_vid||'');
+
+  // SD
+  var sdRow=document.getElementById('sd-status-row');
+  var sdBtn=document.getElementById('sd-btn');
+  if(d.sd_present){
+    sdRow.innerHTML='<div class="status-dot dot-ok"></div><span class="status-label">SD presente</span><span class="status-sub">'+d.sd_used_mb+' / '+d.sd_total_mb+' MB</span>';
+    sdBtn.innerHTML='<form action="/sd/format" method="POST"><button type="submit" class="btn btn-red" onclick="return confirm(\'Cancellare tutta la cache SD?\')">&#x1F5D1; Inizializza / Reset cache SD</button></form>';
+  } else {
+    sdRow.innerHTML='<div class="status-dot dot-warn"></div><span class="status-label">SD assente</span><span class="status-sub">Modalità RAM streaming</span>';
+    sdBtn.innerHTML='';
+  }
+
+  // VAD / STT
+  document.getElementById('vad-dot').className='status-dot '+(d.vad_enabled?'dot-ok':'dot-warn');
+  document.getElementById('vad-label').textContent='VAD '+(d.vad_enabled?'attivo':'disabilitato');
+  document.getElementById('vad-thresh').value=d.vad_threshold||'';
+  document.getElementById('stt-dot').className='status-dot '+(d.stt_enabled?'dot-ok':'dot-warn');
+  document.getElementById('stt-label').textContent='STT (Whisper) '+(d.stt_enabled?'attivo':'disabilitato');
+
+  // BLE UUID
+  document.getElementById('ble-svc-uuid').value=d.ble_svc_uuid||'';
+  document.getElementById('ble-char-uuid').value=d.ble_char_uuid||'';
+}
+
+fetch('/api/home').then(function(r){return r.json();}).then(applyHome).catch(function(){});
+
+// ── BLE poll ─────────────────────────────────────────────────────────────────
+function bleApply(d){
+  var dot=document.getElementById('ble-dot'),lbl=document.getElementById('ble-label'),dev=document.getElementById('ble-device');
+  var scan=document.getElementById('btn-scan'),stop=document.getElementById('btn-stop'),disc=document.getElementById('btn-disc');
+  var msg=document.getElementById('ble-scanning'),lst=document.getElementById('ble-list');
+  var upRow=document.getElementById('ble-uptime-row');
+  if(d.uptime!==undefined){var s=d.uptime,h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
+    document.getElementById('esp-uptime').textContent=(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';}
+  if(d.connected){document.getElementById('ble-uptime').textContent=fmtSec(d.ble_uptime);upRow.style.display='';}
+  else{upRow.style.display='none';}
+  if(d.connected){
+    dot.className='status-dot dot-ok';lbl.textContent='Connesso';dev.textContent=d.name||'';
+    scan.style.display='none';stop.style.display='none';disc.style.display='';msg.style.display='none';lst.innerHTML='';
+  } else if(d.connecting){
+    dot.className='status-dot dot-warn';lbl.textContent='Connessione...';dev.textContent='';
+    scan.style.display='none';stop.style.display='none';disc.style.display='none';msg.style.display='none';
+    setTimeout(blePoll,1000);
+  } else if(d.scanning){
+    dot.className='status-dot dot-warn';lbl.textContent='Scansione...';dev.textContent='';
+    scan.style.display='none';stop.style.display='';disc.style.display='none';msg.style.display='block';
+    if(d.devices&&d.devices.length){
+      var h2='<div style="font-size:.72rem;color:#5a6a8a;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Trovati finora:</div>';
+      d.devices.forEach(function(dv){h2+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4"><span style="flex:1;font-size:.82rem">'+dv.name+' <small style="color:#8a9ab5">'+dv.addr+'</small></span><button class="btn btn-green" style="padding:4px 10px;font-size:.72rem;width:auto;margin-top:0" onclick="bleConn(\''+dv.addr+'\')">Connetti</button></div>';});
+      lst.innerHTML=h2;
+    }
+    setTimeout(blePoll,1500);
+  } else {
+    dot.className='status-dot dot-err';lbl.textContent='Non connesso';dev.textContent='';
+    scan.style.display='';stop.style.display='none';disc.style.display='none';msg.style.display='none';
+    if(d.devices&&d.devices.length){
+      var h2='<div style="font-size:.72rem;color:#5a6a8a;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Furby trovati:</div>';
+      d.devices.forEach(function(dv){h2+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4"><span style="flex:1;font-size:.82rem">'+dv.name+' <small style="color:#8a9ab5">'+dv.addr+'</small></span><button class="btn btn-green" style="padding:4px 10px;font-size:.72rem;width:auto;margin-top:0" onclick="bleConn(\''+dv.addr+'\')">Connetti</button></div>';});
+      lst.innerHTML=h2;
+    } else {lst.innerHTML='';}
+  }
+}
+function blePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(bleApply).catch(function(){});}
+function bleScan(){document.getElementById('ble-list').innerHTML='';bleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
+function bleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){bleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});bleConnPoll();}).catch(function(){});}
+function bleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){bleApply(d);if(d.connecting)setTimeout(bleConnPoll,800);}).catch(function(){setTimeout(bleConnPoll,1000);});}
+function bleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(blePoll).catch(function(){});}
+function bleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(blePoll).catch(function(){});}
+blePoll();
+setInterval(blePoll,5000);
+
+// ── LLM ──────────────────────────────────────────────────────────────────────
+var FALLBACK={openai:['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1','o3-mini'],claude:['claude-opus-4-7','claude-sonnet-4-6','claude-haiku-4-5-20251001']};
+var PH={openai:'sk-...  (OpenAI)',claude:'sk-ant-...  (Anthropic)'};
+function fillSelect(list,cur){
+  var sel=document.getElementById('mdl');sel.innerHTML='';var found=false;
+  list.forEach(function(m){var o=document.createElement('option');o.value=m;o.text=m;if(m===cur){o.selected=true;found=true;}sel.appendChild(o);});
+  if(!found){var o=document.createElement('option');o.value=cur;o.text=cur+' (corrente)';o.selected=true;sel.insertBefore(o,sel.firstChild);}
+}
+function loadModels(cur){
+  var p=document.getElementById('prov').value,st=document.getElementById('mdl-st');
+  st.textContent='carico...';
+  fetch('/api/models?provider='+p).then(function(r){return r.json();}).then(function(d){
+    var list=Array.isArray(d)?d:(d.models||[]);
+    if(!d.ok&&d.error==='no_key'){fillSelect(FALLBACK[p]||[cur],cur);st.textContent='token non salvato — lista predefinita';}
+    else if(!list.length){fillSelect(FALLBACK[p]||[cur],cur);st.textContent='nessun modello — lista predefinita';}
+    else{list.sort();fillSelect(list,cur||list[0]);st.textContent=list.length+' disponibili';}
+  }).catch(function(){fillSelect(FALLBACK[p]||[cur||''],cur||'');st.textContent='offline — lista predefinita';});
+}
+function onProvChange(){
+  var p=document.getElementById('prov').value;
+  document.getElementById('tok').placeholder=PH[p]||'Token API';
+  document.getElementById('tok').value='';
+  loadModels('');
+}
+function testLlm(){var el=document.getElementById('llm-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=llm').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';if(d.ok)loadModels('');}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
+function testEl(){var el=document.getElementById('el-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=el').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
+
+// ── ElevenLabs voices ────────────────────────────────────────────────────────
+function loadVoices(curVid){
+  fetch('/api/voices').then(function(r){return r.json();}).then(function(voices){
+    var sel=document.getElementById('el-voice-sel');
+    if(!voices||!voices.length){sel.innerHTML='<option value="'+curVid+'">'+curVid+'</option>';return;}
+    sel.innerHTML='';
+    voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name+' ('+v.id+')';if(v.id===curVid)o.selected=true;sel.appendChild(o);});
+    if(!sel.value&&curVid){var o=document.createElement('option');o.value=curVid;o.textContent=curVid;o.selected=true;sel.insertBefore(o,sel.firstChild);}
+  }).catch(function(){document.getElementById('el-voice-sel').innerHTML='<option value="">—</option>';});
+}
 </script>
-</body></html>
+</html>

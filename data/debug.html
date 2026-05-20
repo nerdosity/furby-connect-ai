@@ -239,8 +239,7 @@ function t(k){return (TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[
 function setLang(l){
   gLang=l;
   localStorage.setItem('furby_lang',l);
-  document.getElementById('lang-it').style.background=(l==='it')?'#ffffff33':'none';
-  document.getElementById('lang-en').style.background=(l==='en')?'#ffffff33':'none';
+  var sel=document.getElementById('lang-sel');if(sel)sel.value=l;
   // aggiorna tutti gli elementi data-i18n
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var k=el.getAttribute('data-i18n');
@@ -298,6 +297,7 @@ function setLang(l){
     <a href="/debug" class="active">Debug</a>
     <a href="/camera">Camera</a>
   </nav>
+  <select id="lang-sel" onchange="setLang(this.value)" style="background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0"><option value="it">IT</option><option value="en">EN</option></select>
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 

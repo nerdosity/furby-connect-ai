@@ -2394,14 +2394,18 @@ String buildWifiRows() {
 // HANDLERS WEB
 // ==========================================
 void handleRoot() {
+    File f = SPIFFS.open("/index.html", "r");
+    if (f) {
+        server.sendHeader("Cache-Control", "no-cache, must-revalidate");
+        server.streamFile(f, "text/html; charset=utf-8");
+        f.close();
+        return;
+    }
+    // fallback: vecchia home PROGMEM se SPIFFS non flashato
     String ip = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
-
-    // Invia la pagina a chunk per non allocare un'unica String da 30-50KB sull'heap interno
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
     server.send(200, "text/html", "");
-
     auto sendChunk = [&](String s) { server.sendContent(s); };
-
     String head = FPSTR(HTML_HEAD);
     head.replace("%IP%", ip);
     sendChunk(head);
@@ -4022,6 +4026,42 @@ void handleSysInfo() {
     server.send(200, "application/json", j);
 }
 
+// GET /api/home — tutti i dati dinamici della home page
+void handleApiHome() {
+    bool wifiOk = (WiFi.status() == WL_CONNECTED);
+    String ip = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
+    String j = "{";
+    j += "\"wifi_connected\":" + String(wifiOk ? "true" : "false") + ",";
+    j += "\"wifi_ssid\":\""    + (wifiOk ? WiFi.SSID() : String("")) + "\",";
+    j += "\"ip\":\""           + ip + "\",";
+    j += "\"wifi_nets\":[";
+    for (int i = 0; i < wifiNetCount; i++) {
+        if (i) j += ",";
+        j += "{\"ssid\":\"" + wifiNets[i].ssid + "\"}";
+    }
+    j += "],";
+    j += "\"llm_provider\":\"" + llm_provider + "\",";
+    j += "\"llm_model\":\""    + llm_model + "\",";
+    j += "\"cur_key\":\""      + (llm_provider == "claude" ? claude_api_key : openai_api_key) + "\",";
+    j += "\"el_key\":\""       + elevenlabs_api_key + "\",";
+    j += "\"el_vid\":\""       + elevenlabs_voice_id + "\",";
+    j += "\"el_fmt\":\""       + el_audio_fmt + "\",";
+    j += "\"sd_present\":"     + String(sdAvailable ? "true" : "false") + ",";
+    if (sdAvailable) {
+        j += "\"sd_used_mb\":"  + String(SD_MMC.usedBytes()  / (1024*1024)) + ",";
+        j += "\"sd_total_mb\":" + String(SD_MMC.totalBytes() / (1024*1024)) + ",";
+    } else {
+        j += "\"sd_used_mb\":0,\"sd_total_mb\":0,";
+    }
+    j += "\"vad_enabled\":"    + String(vadEnabled  ? "true" : "false") + ",";
+    j += "\"vad_threshold\":"  + String(vad_threshold) + ",";
+    j += "\"stt_enabled\":"    + String(sttEnabled  ? "true" : "false") + ",";
+    j += "\"ble_svc_uuid\":\""  + ble_service_uuid  + "\",";
+    j += "\"ble_char_uuid\":\"" + ble_char_uuid_tx  + "\"";
+    j += "}";
+    server.send(200, "application/json", j);
+}
+
 void startWebServer() {
     server.on("/",                           HTTP_GET,  handleRoot);
     server.on("/hotspot-detect.html",        HTTP_GET,  handleCaptiveRedirect);
@@ -4062,6 +4102,7 @@ void startWebServer() {
     server.on("/ble/reset",      HTTP_POST, handleBleReset);
     server.on("/ble/save",       HTTP_POST, handleBleSave);
     server.on("/sys/info",       HTTP_GET,  handleSysInfo);
+    server.on("/api/home",       HTTP_GET,  handleApiHome);
     server.on("/reset", HTTP_POST, []() {
         server.send(200, "text/plain", "ok");
         if (bleScanning) { BLEDevice::getScan()->stop(); delay(200); }
