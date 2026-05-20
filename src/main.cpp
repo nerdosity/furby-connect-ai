@@ -370,10 +370,11 @@ void generateAndPlayTTS_SD(String text);
 void streamAndPlayTTS_RAM(String text);
 String base64Encode(uint8_t* data, size_t length);
 String callLLM(const String& base64Img, const String& systemPrompt, const String& userText);
+String transcribeAudio();
 void loadEventBehaviors();
 void saveEventBehaviors();
 const FurbyActionDef* findFurbyAction(const char* id);
-void executeConsequence(const Consequence& csq, const String& base64Img);
+void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText = "");
 void processStimulusDefault(const String& base64Img);
 void processStimulus(TriggerType trg, uint8_t sensorId);
 
@@ -405,6 +406,13 @@ volatile int  micRmsLive   = 0;  // RMS MIC1 (canale L)
 volatile int  micRmsLive2  = 0;  // RMS MIC2 (canale R)
 volatile bool micVadActive  = false; // true se VAD ha rilevato parlato in corso
 volatile bool micTestActive = false; // blocca vadTask durante test mic
+
+// STT (Speech-to-Text via Whisper)
+// Buffer PSRAM: max 8s @ 16kHz mono int16 = 256000 byte
+#define STT_BUF_MAX_SAMPLES  128000   // 8s @ 16kHz mono
+static int16_t* gSttBuf       = nullptr; // allocato in setup() da PSRAM
+static volatile int gSttLen   = 0;       // campioni mono validi nel buffer
+bool sttEnabled = false;                 // disabilitato di default — richiede chiave OpenAI
 
 // Risultati ultimo scan WiFi (HTML pronto)
 String wifiScanResultsHTML = "";
@@ -660,6 +668,7 @@ void vadTask(void* pvParameters) {
             vTaskDelay(100 / portTICK_PERIOD_MS);
             speechStart = 0; silenceStart = 0; inSpeech = false;
             hpL = hpR = prevL = prevR = 0;
+            gSttLen = 0;
             continue;
         }
 
@@ -691,9 +700,16 @@ void vadTask(void* pvParameters) {
         uint32_t now = millis();
 
         if (rms > vad_threshold) {
-            if (!inSpeech) { inSpeech = true; speechStart = now; }
+            if (!inSpeech) { inSpeech = true; speechStart = now; gSttLen = 0; }
             silenceStart = now;
             micVadActive = true;
+            // Accumula canale L (mono) nel buffer STT se abilitato
+            if (sttEnabled && gSttBuf) {
+                for (int i = 0; i < n; i += 2) {
+                    if (gSttLen < STT_BUF_MAX_SAMPLES)
+                        gSttBuf[gSttLen++] = buf[i];
+                }
+            }
         } else {
             if (inSpeech) {
                 uint32_t speechLen  = now - speechStart;
@@ -701,7 +717,7 @@ void vadTask(void* pvParameters) {
                 if (speechLen >= VAD_SPEECH_MS && silenceLen >= VAD_SILENCE_MS) {
                     inSpeech = false;
                     micVadActive = false;
-                    Serial.println("VAD: parlato rilevato -> trigger");
+                    Serial.printf("VAD: parlato rilevato -> trigger (STT buf=%d samples)\n", (int)gSttLen);
                     pendingTrigger = TRG_VAD;
                     pendingSensorId = 0;
                     pendingEvent = EVT_VAD;
@@ -1400,15 +1416,15 @@ static const char HTML_ELEVENLABS[] PROGMEM = R"rawliteral(
       <option value="%EL_VID%">%EL_VID%</option>
     </select>
     <label style="margin-top:10px;display:block">Formato audio</label>
-    <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;width:fit-content">
-      <label id="el-lbl-pcm" style="padding:6px 16px;cursor:pointer;transition:background .15s;background:%EL_PCM_BG%;color:%EL_PCM_FG%">
-        <input type="radio" name="el_fmt" value="pcm" style="display:none" %EL_PCM_CHK% onchange="elFmtChange()"> PCM
+    <div style="display:flex;gap:16px;margin-top:6px;align-items:center">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.82rem;font-weight:600;color:#1a2340">
+        <input type="radio" name="el_fmt" value="pcm" %EL_PCM_CHK% style="accent-color:#3a5298"> PCM
       </label>
-      <label id="el-lbl-mp3" style="padding:6px 16px;cursor:pointer;transition:background .15s;background:%EL_MP3_BG%;color:%EL_MP3_FG%">
-        <input type="radio" name="el_fmt" value="mp3" style="display:none" %EL_MP3_CHK% onchange="elFmtChange()"> MP3
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.82rem;font-weight:600;color:#1a2340">
+        <input type="radio" name="el_fmt" value="mp3" %EL_MP3_CHK% style="accent-color:#3a5298"> MP3
       </label>
     </div>
-    <div id="el-fmt-hint" style="font-size:.68rem;color:#8a9ab5;margin-top:3px">%EL_FMT_HINT%</div>
+    <p style="font-size:.68rem;color:#8a9ab5;margin-top:4px">%EL_FMT_HINT%</p>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button type="submit" class="btn btn-blue" style="flex:2">Salva ElevenLabs</button>
       <button type="button" class="btn btn-ghost" style="flex:1" onclick="testEl()">&#x1F9EA; Test</button>
@@ -1431,15 +1447,6 @@ static const char HTML_ELEVENLABS[] PROGMEM = R"rawliteral(
     });
   }).catch(function(){});
 })();
-function elFmtChange(){
-  var v=document.querySelector('input[name=el_fmt]:checked').value;
-  document.getElementById('el-lbl-pcm').style.background=v==='pcm'?'#3a5298':'#f0f4f8';
-  document.getElementById('el-lbl-pcm').style.color=v==='pcm'?'#fff':'#5a6a8a';
-  document.getElementById('el-lbl-mp3').style.background=v==='mp3'?'#3a5298':'#f0f4f8';
-  document.getElementById('el-lbl-mp3').style.color=v==='mp3'?'#fff':'#5a6a8a';
-  document.getElementById('el-fmt-hint').textContent=
-    v==='pcm'?'PCM 16kHz mono — qualità alta, solo account Pro':'MP3 22kHz 32kbps — funziona con account free, ~4x più leggero in cache';
-}
 </script>
 )rawliteral";
 
@@ -1473,6 +1480,19 @@ static const char HTML_VAD[] PROGMEM = R"rawliteral(
     </div>
   </form>
 </div>
+<div class="card">
+  <div class="status-row">
+    <div class="status-dot %STT_DOT%"></div>
+    <span class="status-label">STT (Whisper) %STT_LABEL%</span>
+  </div>
+  <p style="font-size:.75rem;color:#5a6a8a;margin:4px 0 8px">Trascrive il parlato con Whisper prima di passarlo all'LLM. Richiede chiave OpenAI. +~1-2s di latenza.</p>
+  <form action="/vad/save" method="POST">
+    <div class="btn-row">
+      <button type="submit" name="stt_enabled" value="1" class="btn btn-green">Abilita STT</button>
+      <button type="submit" name="stt_enabled" value="0" class="btn btn-amber">Disabilita STT</button>
+    </div>
+  </form>
+</div>
 )rawliteral";
 
 static const char HTML_BLE[] PROGMEM = R"rawliteral(
@@ -1486,8 +1506,8 @@ static const char HTML_BLE[] PROGMEM = R"rawliteral(
     <span class="status-label" id="ble-label">%BLE_STATUS_LABEL%</span>
     <span class="status-sub" id="ble-device">%BLE_DEVICE%</span>
   </div>
-  <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px">
-    BLE connesso da: <span id="ble-uptime">—</span>
+  <div id="ble-uptime-row" style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px;display:none">
+    connesso da: <span id="ble-uptime"></span>
   </div>
   <div class="btn-row" style="margin-top:10px">
     <button type="button" class="btn btn-green" id="btn-scan" onclick="bleScan()">&#x1F50D; Cerca Furby</button>
@@ -1517,7 +1537,9 @@ function bleApplyState(d) {
   var msg  = document.getElementById('ble-scanning');
   var lst  = document.getElementById('ble-list');
   if(d.uptime!==undefined) document.getElementById('esp-uptime').textContent=fmtSec(d.uptime);
-  document.getElementById('ble-uptime').textContent=d.connected?fmtSec(d.ble_uptime):'—';
+  var upRow=document.getElementById('ble-uptime-row');
+  if(d.connected){document.getElementById('ble-uptime').textContent=fmtSec(d.ble_uptime);if(upRow)upRow.style.display='';}
+  else{if(upRow)upRow.style.display='none';}
   if (d.connected) {
     dot.className='status-dot dot-ok'; lbl.textContent='Connesso'; dev.textContent=d.name||'';
     scan.style.display='none'; stop.style.display='none'; disc.style.display=''; msg.style.display='none';
@@ -2406,10 +2428,6 @@ void handleRoot() {
     el.replace("%EL_KEY%", elevenlabs_api_key);
     el.replace("%EL_VID%", elevenlabs_voice_id);
     bool elMp3 = (el_audio_fmt == "mp3");
-    el.replace("%EL_PCM_BG%", elMp3 ? "#f0f4f8" : "#3a5298");
-    el.replace("%EL_PCM_FG%", elMp3 ? "#5a6a8a" : "#fff");
-    el.replace("%EL_MP3_BG%", elMp3 ? "#3a5298" : "#f0f4f8");
-    el.replace("%EL_MP3_FG%", elMp3 ? "#fff"    : "#5a6a8a");
     el.replace("%EL_PCM_CHK%", elMp3 ? ""        : "checked");
     el.replace("%EL_MP3_CHK%", elMp3 ? "checked" : "");
     el.replace("%EL_FMT_HINT%", elMp3
@@ -2442,6 +2460,8 @@ void handleRoot() {
     vad.replace("%VAD_DOT%",    vadEnabled ? "dot-ok" : "dot-warn");
     vad.replace("%VAD_LABEL%",  vadEnabled ? "attivo" : "disabilitato");
     vad.replace("%VAD_THRESH%", String(vad_threshold));
+    vad.replace("%STT_DOT%",    sttEnabled ? "dot-ok" : "dot-warn");
+    vad.replace("%STT_LABEL%",  sttEnabled ? "attivo" : "disabilitato");
     sendChunk(vad);
 
     String ble = FPSTR(HTML_BLE);
@@ -2615,11 +2635,18 @@ void handleApiModels() {
             int pos = 0;
             bool first = true;
             while (true) {
-                int idx = body.indexOf("\"id\":\"", pos);
-                if (idx < 0) break;
-                idx += 6;
-                int end = body.indexOf("\"", idx);
-                String id = body.substring(idx, end);
+                // OpenAI risponde con "id": "..." (spazio dopo i due punti)
+                int idx  = body.indexOf("\"id\":\"",  pos);
+                int idx2 = body.indexOf("\"id\": \"", pos);
+                if (idx < 0 && idx2 < 0) break;
+                int useIdx;
+                if      (idx < 0)        useIdx = idx2 + 7;
+                else if (idx2 < 0)       useIdx = idx  + 6;
+                else if (idx2 < idx)     useIdx = idx2 + 7;
+                else                     useIdx = idx  + 6;
+                int end = body.indexOf("\"", useIdx);
+                if (end < 0) break;
+                String id = body.substring(useIdx, end);
                 bool isText = id.startsWith("gpt-") || id.startsWith("o1") ||
                               id.startsWith("o3")   || id.startsWith("o4") ||
                               id.startsWith("chatgpt-");
@@ -2879,6 +2906,11 @@ void handleVadSave() {
     if (en.length() > 0) {
         vadEnabled = (en == "1");
         preferences.putBool("vad_en", vadEnabled);
+    }
+    String stt = server.arg("stt_enabled");
+    if (stt.length() > 0) {
+        sttEnabled = (stt == "1");
+        preferences.putBool("stt_en", sttEnabled);
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
@@ -4618,6 +4650,109 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
     return answer;
 }
 
+// Invia gSttBuf (gSttLen campioni mono int16 @ 16kHz) a Whisper e ritorna la trascrizione.
+// Costruisce il WAV header on-the-fly, usa multipart/form-data.
+// Ritorna "" in caso di errore.
+String transcribeAudio() {
+    if (!gSttBuf || gSttLen <= 0) return "";
+    String key = openai_api_key;
+    if (key.length() == 0) key = preferences.getString("openai", "");
+    if (key.length() == 0) { Serial.println("[STT] nessuna chiave OpenAI"); return ""; }
+
+    size_t pcmBytes = (size_t)gSttLen * 2;
+    // WAV header: 44 byte fissi, PCM mono 16bit 16kHz
+    uint8_t wav[44];
+    uint32_t dataSize   = (uint32_t)pcmBytes;
+    uint32_t chunkSize  = 36 + dataSize;
+    uint32_t sampleRate = 16000;
+    uint16_t channels   = 1;
+    uint16_t bitsPerSample = 16;
+    uint32_t byteRate   = sampleRate * channels * bitsPerSample / 8;
+    uint16_t blockAlign = channels * bitsPerSample / 8;
+    memcpy(wav,      "RIFF", 4);
+    memcpy(wav+4,  &chunkSize,    4);
+    memcpy(wav+8,    "WAVE", 4);
+    memcpy(wav+12,   "fmt ", 4);
+    uint32_t subchunk1 = 16; memcpy(wav+16, &subchunk1, 4);
+    uint16_t audioFmt  = 1;  memcpy(wav+20, &audioFmt,  2);
+    memcpy(wav+22, &channels,      2);
+    memcpy(wav+24, &sampleRate,    4);
+    memcpy(wav+28, &byteRate,      4);
+    memcpy(wav+32, &blockAlign,    2);
+    memcpy(wav+34, &bitsPerSample, 2);
+    memcpy(wav+36,   "data", 4);
+    memcpy(wav+40, &dataSize,      4);
+
+    // Boundary multipart
+    String boundary = "----WavBnd7210";
+    String head = "--" + boundary + "\r\n"
+                  "Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\r\n"
+                  "Content-Type: audio/wav\r\n\r\n";
+    String modelPart = "\r\n--" + boundary + "\r\n"
+                       "Content-Disposition: form-data; name=\"model\"\r\n\r\n"
+                       "whisper-1"
+                       "\r\n--" + boundary + "--\r\n";
+
+    size_t totalLen = head.length() + 44 + pcmBytes + modelPart.length();
+
+    WiFiClientSecure cli;
+    cli.setInsecure();
+    if (!cli.connect("api.openai.com", 443)) {
+        Serial.println("[STT] connessione fallita");
+        return "";
+    }
+    // Request headers
+    cli.printf("POST /v1/audio/transcriptions HTTP/1.1\r\n"
+               "Host: api.openai.com\r\n"
+               "Authorization: Bearer %s\r\n"
+               "Content-Type: multipart/form-data; boundary=%s\r\n"
+               "Content-Length: %u\r\n"
+               "Connection: close\r\n\r\n",
+               key.c_str(), boundary.c_str(), (unsigned)totalLen);
+    cli.print(head);
+    cli.write(wav, 44);
+    // Invia PCM a chunk di 4096 byte per non saturare il buffer TCP
+    const size_t CHUNK = 4096;
+    uint8_t* pcmPtr = (uint8_t*)gSttBuf;
+    size_t sent = 0;
+    while (sent < pcmBytes) {
+        size_t toSend = min(CHUNK, pcmBytes - sent);
+        cli.write(pcmPtr + sent, toSend);
+        sent += toSend;
+    }
+    cli.print(modelPart);
+
+    // Leggi risposta HTTP
+    unsigned long t0 = millis();
+    while (!cli.available() && millis() - t0 < 15000) delay(50);
+    String resp;
+    while (cli.available()) resp += (char)cli.read();
+    cli.stop();
+
+    // Estrai body JSON (dopo doppio \r\n)
+    int bodyStart = resp.indexOf("\r\n\r\n");
+    if (bodyStart < 0) { Serial.println("[STT] risposta malformata"); return ""; }
+    String body = resp.substring(bodyStart + 4);
+    // HTTP chunked: il body potrebbe iniziare con la dimensione hex del chunk
+    // Se il primo carattere è esadecimale, saltiamo la prima riga
+    if (body.length() > 0 && isxdigit(body[0])) {
+        int nl = body.indexOf("\r\n");
+        if (nl >= 0) body = body.substring(nl + 2);
+    }
+    Serial.printf("[STT] body: %s\n", body.c_str());
+
+    // Estrai campo "text" dal JSON
+    JsonDocument doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok) {
+        Serial.println("[STT] JSON parse error");
+        return "";
+    }
+    String text = doc["text"].as<String>();
+    text.trim();
+    Serial.printf("[STT] trascrizione: \"%s\"\n", text.c_str());
+    return text;
+}
+
 // ==========================================
 // SISTEMA EVENTI / COMPORTAMENTI
 // ==========================================
@@ -4716,7 +4851,7 @@ static void speakText(const String& text) {
     else             streamAndPlayTTS_RAM(text);
 }
 
-void executeConsequence(const Consequence& csq, const String& base64Img) {
+void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText) {
     Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
     switch (csq.type) {
         case CSQ_FURBY_ACTION: {
@@ -4741,17 +4876,25 @@ void executeConsequence(const Consequence& csq, const String& base64Img) {
         }
         case CSQ_PROMPT_FIXED: {
             String img = csq.snapshot ? base64Img : "";
-            Serial.printf("[CSQ] prompt fisso (img=%s): \"%s\"\n", csq.snapshot ? "si" : "no", csq.text);
-            String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
+            // Se c'è trascrizione STT, la anteponiamo al prompt fisso per dare contesto
+            String userMsg = sttText.length() > 0
+                ? "L'utente ha detto: \"" + sttText + "\". " + String(csq.text)
+                : String(csq.text);
+            Serial.printf("[CSQ] prompt fisso (img=%s): \"%s\"\n", csq.snapshot ? "si" : "no", userMsg.c_str());
+            String answer = callLLM(img, gPersonalityPrompt, userMsg);
             if (answer.length() > 0) speakText(answer);
             else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
             break;
         }
         case CSQ_PROMPT_LLM: {
             String img = csq.snapshot ? base64Img : "";
-            Serial.printf("[CSQ] prompt LLM (img=%s, reazioni=%d): \"%s\"\n", csq.snapshot ? "si" : "no", csq.reaction_count, csq.text);
+            // STT disponibile: sostituisce il testo del behavior con la trascrizione reale
+            String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
+            Serial.printf("[CSQ] prompt LLM (img=%s, reazioni=%d, stt=%s): \"%s\"\n",
+                csq.snapshot ? "si" : "no", csq.reaction_count,
+                sttText.length() > 0 ? "si" : "no", userMsg.c_str());
             if (csq.reaction_count == 0) {
-                String answer = callLLM(img, gPersonalityPrompt, String(csq.text));
+                String answer = callLLM(img, gPersonalityPrompt, userMsg);
                 if (answer.length() > 0) speakText(answer);
                 else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
             } else {
@@ -4764,7 +4907,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img) {
                     " Rispondi SOLO con JSON valido (niente altro testo): "
                     "{\"action\":\"id_o_null\",\"speech_before\":\"...\",\"speech_after\":\"...\"}."
                     " Frasi max 6 parole o null. Azioni disponibili:\n" + reactList;
-                String answer = callLLM(img, sys, String(csq.text));
+                String answer = callLLM(img, sys, userMsg);
                 Serial.printf("[CSQ] risposta JSON: \"%s\"\n", answer.c_str());
                 String speechBefore, speechAfter, actionId;
                 JsonDocument rdoc;
@@ -4823,6 +4966,14 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
     Serial.printf("[STIMULUS] trigger=%d sensorId=%d behaviors=%d heap=%u PSRAM=%u\n",
         trg, sensorId, gEventBehaviorCount, esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
+    // STT: trascrivi il buffer audio accumulato dal VAD prima di fare qualsiasi altra cosa
+    String sttText;
+    if (trg == TRG_VAD && sttEnabled && gSttLen > 0) {
+        Serial.printf("[STIMULUS] STT: trascrivo %d samples\n", (int)gSttLen);
+        sttText = transcribeAudio();
+        gSttLen = 0;
+    }
+
     String base64Img;
     if (camActive || camInit()) {
         camera_fb_t* fb = esp_camera_fb_get();
@@ -4853,7 +5004,7 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
     }
     Serial.printf("[STIMULUS] behavior trovato: \"%s\" (%d conseguenze)\n", beh->name, beh->consequence_count);
     for (int c = 0; c < beh->consequence_count; c++)
-        executeConsequence(beh->consequences[c], base64Img);
+        executeConsequence(beh->consequences[c], base64Img, sttText);
 }
 
 void IRAM_ATTR isrWakeUp() { pendingTrigger = TRG_BUTTON; pendingSensorId = 0; pendingEvent = EVT_BUTTON; wakeUpTriggered = true; }
@@ -4938,6 +5089,7 @@ void setup() {
     charUUID_GPWrite = BLEUUID(ble_char_uuid_tx.c_str());
     vad_threshold   = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);
     vadEnabled      = preferences.getBool("vad_en",  true);
+    sttEnabled      = preferences.getBool("stt_en",  false);
     gCamDescPrompt  = preferences.getString("cam_desc_prompt",
         "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
     loadBehaviorConfigs();
@@ -5010,6 +5162,11 @@ void setup() {
     if (!isConfigMode) {
         BLEDevice::init("");
         BLEDevice::getScan()->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+
+        // Buffer STT in PSRAM: 8s @ 16kHz mono int16 = 256KB
+        gSttBuf = (int16_t*)heap_caps_malloc(STT_BUF_MAX_SAMPLES * 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (gSttBuf) Serial.println("STT: buffer PSRAM allocato");
+        else          Serial.println("STT: WARN buffer PSRAM non allocato, STT disabilitato");
 
         xTaskCreatePinnedToCore(lipSyncTask,   "LipSync",   2048, NULL, 1, NULL, 0);
         xTaskCreatePinnedToCore(keepAliveTask, "KeepAlive", 2048, NULL, 1, NULL, 0);
