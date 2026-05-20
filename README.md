@@ -8,7 +8,7 @@ Il Furby guarda con la camera, pensa con GPT-4o-mini (o Claude), risponde a voce
 
 ```
 Pressione tasto → cattura immagine → GPT-4o-mini (vision)
-  → testo → ElevenLabs TTS → audio PCM 16kHz
+  → testo → ElevenLabs TTS → audio MP3/PCM
   → I2S (ES8311 DAC) + lipsync BLE → bocca Furby
 ```
 
@@ -19,32 +19,37 @@ Pressione tasto → cattura immagine → GPT-4o-mini (vision)
 - **Microfoni**: codec ES7210 (4 mic array) via I2S
 - **Furby**: qualsiasi Furby Connect (2016) con BLE
 
+## Stato del progetto
+
+> Aggiornato a maggio 2026. Le barre indicano il completamento reale, non quello desiderato.
+
+| Componente | Progresso | Note |
+|---|---|---|
+| Camera + vision AI | `████████░░` 80% | Funziona. Latenza alta su immagini grandi |
+| ElevenLabs TTS | `███████░░░` 70% | MP3 funziona (free); PCM solo account pro |
+| ES8311 DAC (speaker) | `█████████░` 90% | Stabile |
+| ES7210 ADC (microfoni) | `████████░░` 80% | VAD funziona, sensibilità da affinare |
+| VAD con filtro 250Hz | `███████░░░` 70% | Falsi negativi con parlato sottovocce |
+| Multi-WiFi (5 reti) | `█████████░` 90% | Stabile, mesh-compatible |
+| Multi-provider LLM | `████████░░` 80% | OpenAI ok; Claude da testare più a fondo |
+| BLE scan + connect | `████████░░` 80% | Connessione stabile ma a volte lenta |
+| Lipsync BLE | `████░░░░░░` 40% | Movimenti bocca grossolani, tuning in corso |
+| Cache audio SD card | `███████░░░` 70% | Funziona; index JSON da ottimizzare |
+| Web UI debug | `████████░░` 80% | Funzionale; UX mobile/desktop ancora ruvida |
+| Decodifica MP3 (ESP32) | `██████░░░░` 60% | Integrato ma poco testato su lungo periodo |
+| Captive portal config | `█████████░` 90% | Stabile al primo avvio |
+
 ## Funzionalità
 
 - Risposta contestuale con visione camera (GPT-4o-mini / Claude)
-- Sintesi vocale multilingua (ElevenLabs)
-- Lipsync bocca via BLE in tempo reale
+- Sintesi vocale multilingua (ElevenLabs) — MP3 per account free, PCM per pro
+- Lipsync bocca via BLE in tempo reale (in tuning)
 - VAD (rilevamento parlato) con filtro passa-alto 250Hz per ignorare rumori meccanici
 - Cache audio su SD card: le risposte già sentite non vengono rigenerate
 - Web UI di debug su `http://furby.local`
 - Configurazione WiFi via captive portal (AP `Furby_Config`)
-- Multi-WiFi (fino a 5 reti salvate in flash, priorità configurabile)
+- Multi-WiFi (fino a 5 reti salvate, priorità configurabile)
 - Multi-provider LLM: OpenAI o Anthropic Claude
-
-## Stato del progetto
-
-| Componente | Stato |
-|---|---|
-| Camera + GPT-4o-mini vision | funzionante |
-| ElevenLabs TTS + audio I2S | funzionante |
-| ES8311 DAC (speaker) | funzionante |
-| ES7210 ADC (microfoni) | funzionante |
-| VAD con filtro frequenziale | funzionante |
-| BLE scan + connect Furby | funzionante |
-| Lipsync BLE | parziale (in tuning) |
-| Cache SD card | funzionante |
-| Web UI debug | funzionante |
-| Multi-WiFi | funzionante |
 
 ## Build e flash
 
@@ -62,7 +67,7 @@ Al primo avvio (o senza WiFi salvato) il dispositivo crea l'AP `Furby_Config`: c
 
 ## Configurazione
 
-Le credenziali vengono salvate in flash via `Preferences` e non escono dal dispositivo.
+Le credenziali vengono salvate in flash via `Preferences`.
 
 | Parametro | Dove |
 |---|---|
@@ -70,5 +75,10 @@ Le credenziali vengono salvate in flash via `Preferences` e non escono dal dispo
 | OpenAI API key | web UI → Impostazioni |
 | Anthropic API key | web UI → Impostazioni |
 | ElevenLabs API key + Voice ID | web UI → Impostazioni |
+| Formato TTS (MP3/PCM) | web UI → Impostazioni |
 | Provider LLM (openai/claude) | web UI → Impostazioni |
 | Soglia VAD | web UI → Audio |
+
+## README in inglese
+
+[README.en.md](README.en.md)
