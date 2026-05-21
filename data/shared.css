@@ -131,7 +131,3 @@ body { background: var(--fb-bg); }
 
 /* misc */
 .fb-raw { font-size:.72rem; color:var(--fb-muted); margin-top:8px; font-family:monospace; }
-.mood-row { display:grid; grid-template-columns:90px 1fr 28px; gap:4px 10px; align-items:center; font-size:.82rem; margin-bottom:6px; }
-.rgb-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-.rgb-row span { color:var(--fb-muted); font-size:.78rem; width:14px; flex-shrink:0; }
-.rgb-prev { width:26px; height:26px; border-radius:6px; border:1.5px solid #d0d9ee; flex-shrink:0; }

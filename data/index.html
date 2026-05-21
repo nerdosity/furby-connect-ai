@@ -224,10 +224,15 @@ function applyHome(d){
   if(d.wifi_nets&&d.wifi_nets.length){
     d.wifi_nets.forEach(function(n,i){
       var cur=d.wifi_connected&&n.ssid===d.wifi_ssid;
-      rows+='<tr><td>'+i+'</td><td class="ssid-name">'+n.ssid+(cur?' <span class="badge badge-ok">'+T('wifi.active')+'</span>':'')+'</td><td>';
-      if(i>0)rows+='<form action="/wifi/up" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-outline-secondary btn-sm py-0"><i class="bi bi-arrow-up"></i></button></form> ';
-      if(i<d.wifi_nets.length-1)rows+='<form action="/wifi/down" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-outline-secondary btn-sm py-0"><i class="bi bi-arrow-down"></i></button></form>';
-      rows+='</td><td><form action="/wifi/del" method="POST" style="display:inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-danger btn-sm py-0"><i class="bi bi-trash3"></i></button></form></td></tr>';
+      var upBtn=i>0?'<form action="/wifi/up" method="POST" class="d-inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-outline-secondary btn-sm p-0 px-1"><i class="bi bi-arrow-up"></i></button></form>':'<button class="btn btn-outline-secondary btn-sm p-0 px-1" disabled><i class="bi bi-arrow-up"></i></button>';
+      var dnBtn=i<d.wifi_nets.length-1?'<form action="/wifi/down" method="POST" class="d-inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-outline-secondary btn-sm p-0 px-1"><i class="bi bi-arrow-down"></i></button></form>':'<button class="btn btn-outline-secondary btn-sm p-0 px-1" disabled><i class="bi bi-arrow-down"></i></button>';
+      var delBtn='<form action="/wifi/del" method="POST" class="d-inline"><input type="hidden" name="idx" value="'+i+'"><button class="btn btn-danger btn-sm p-0 px-1"><i class="bi bi-trash3"></i></button></form>';
+      rows+='<tr>'
+        +'<td class="text-muted small align-middle">'+(i+1)+'</td>'
+        +'<td class="align-middle">'+n.ssid+(cur?' <span class="badge bg-success">'+T('wifi.active')+'</span>':'')+'</td>'
+        +'<td class="text-muted small align-middle text-center">'+(n.prio!==undefined?n.prio:i)+'</td>'
+        +'<td class="align-middle text-end"><div class="d-flex gap-1 justify-content-end">'+upBtn+dnBtn+delBtn+'</div></td>'
+        +'</tr>';
     });
   } else {
     rows='<tr><td colspan="4" class="text-muted">'+T('wifi.no_nets')+'</td></tr>';

@@ -34,7 +34,7 @@ var TRANSLATIONS={
     'act.trigger_err':'Errore: ','act.trigger_sending':'Invio trigger...',
     'tbeh.trg.0':'VAD (parlato)','tbeh.trg.1':'Pulsante ESP32','tbeh.trg.2':'Sensore Furby',
     'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Imposta',
-    'ctrl.eyes_on':'<i class="bi bi-eye"></i> Occhi ON','ctrl.eyes_off':'<i class="bi bi-eye-slash"></i> Occhi OFF',
+    'ctrl.eyes_on':'Occhi ON','ctrl.eyes_off':'Occhi OFF',
     'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Imposta mood',
     'ctrl.system':'Sistema','ctrl.dlc':'DLC slot',
     'aud.amp':'Amplificatore & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
@@ -161,7 +161,7 @@ var TRANSLATIONS={
     'act.trigger_err':'Error: ','act.trigger_sending':'Sending trigger...',
     'tbeh.trg.0':'VAD (speech)','tbeh.trg.1':'ESP32 button','tbeh.trg.2':'Furby sensor',
     'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Set',
-    'ctrl.eyes_on':'<i class="bi bi-eye"></i> Eyes ON','ctrl.eyes_off':'<i class="bi bi-eye-slash"></i> Eyes OFF',
+    'ctrl.eyes_on':'Eyes ON','ctrl.eyes_off':'Eyes OFF',
     'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Set mood',
     'ctrl.system':'System','ctrl.dlc':'DLC slot',
     'aud.amp':'Amplifier & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
@@ -408,28 +408,29 @@ function setLang(l){
 
 <!-- TAB: Controllo -->
 <div class="fb-tab-pane" id="t-control">
+  <!-- LED -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
-    <div class="rgb-row"><span>R</span><input type="range" id="r" min="0" max="255" value="0" oninput="updateRgb()"><span id="rv" class="small" style="width:28px">0</span></div>
-    <div class="rgb-row"><span>G</span><input type="range" id="g" min="0" max="255" value="255" oninput="updateRgb()"><span id="gv" class="small" style="width:28px">255</span></div>
-    <div class="rgb-row"><span>B</span><input type="range" id="b" min="0" max="255" value="0" oninput="updateRgb()"><span id="bv" class="small" style="width:28px">0</span></div>
-    <div class="d-flex align-items-center gap-2 mt-2">
-      <div class="rgb-prev" id="rgb-prev"></div>
+    <div class="d-flex align-items-center gap-3">
+      <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px;height:40px;padding:2px">
       <button class="btn btn-success flex-fill" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
-    </div>
-    <div class="d-flex gap-2 mt-2">
-      <button class="btn btn-success flex-fill" onclick="wbCmd('occhi-on',[0xcd,0x01])" data-i18n="ctrl.eyes_on"><i class="bi bi-eye"></i> Occhi ON</button>
-      <button class="btn btn-outline-secondary flex-fill" onclick="wbCmd('occhi-off',[0xcd,0x00])" data-i18n="ctrl.eyes_off"><i class="bi bi-eye-slash"></i> Occhi OFF</button>
+      <button class="btn btn-outline-secondary" id="btn-eyes" onclick="eyesToggle()" style="min-width:110px"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
     </div>
   </div></div>
+  <!-- Mood -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.mood">Mood (0x24)</h6>
-    <div class="mood-row"><span>Wellness</span><input type="range" id="m-well" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <div class="mood-row"><span>Fullness</span><input type="range" id="m-full" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <div class="mood-row"><span>Tiredness</span><input type="range" id="m-tire" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <div class="mood-row"><span>Excitedness</span><input type="range" id="m-exci" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <button class="btn btn-primary w-100 mt-2" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
+    <div class="row g-2 mb-2">
+      <div class="col-6"><label class="form-label small mb-1">Wellness</label><input type="number" class="form-control form-control-sm" id="m-well" min="0" max="7" value="4"></div>
+      <div class="col-6"><label class="form-label small mb-1">Fullness</label><input type="number" class="form-control form-control-sm" id="m-full" min="0" max="7" value="4"></div>
+      <div class="col-6"><label class="form-label small mb-1">Tiredness</label><input type="number" class="form-control form-control-sm" id="m-tire" min="0" max="7" value="4"></div>
+      <div class="col-6"><label class="form-label small mb-1">Excitedness</label><input type="number" class="form-control form-control-sm" id="m-exci" min="0" max="7" value="4"></div>
+    </div>
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-primary" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
+    </div>
   </div></div>
+  <!-- Sistema + DLC -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
     <div class="d-flex gap-2 flex-wrap mb-3">
@@ -438,15 +439,21 @@ function setLang(l){
       <button class="btn btn-outline-secondary btn-sm" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button>
     </div>
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-      <input type="number" class="form-control form-control-sm" id="dlc-slot" min="0" max="13" value="0" style="width:60px">
+    <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+      <div class="input-group input-group-sm" style="width:auto">
+        <span class="input-group-text">Slot</span>
+        <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0" style="width:60px">
+      </div>
       <button class="btn btn-success btn-sm" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
       <button class="btn btn-primary btn-sm" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button>
       <button class="btn btn-outline-secondary btn-sm" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button>
       <button class="btn btn-danger btn-sm" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button>
-      <button class="btn btn-primary btn-sm" onclick="espCmd('dlc-info',[0x72])"><i class="bi bi-info-circle"></i> Info all</button>
-      <button class="btn btn-primary btn-sm" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
     </div>
+    <div class="d-flex gap-2 flex-wrap mb-2">
+      <button class="btn btn-outline-info btn-sm flex-fill" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
+      <button class="btn btn-outline-info btn-sm flex-fill" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
+    </div>
+    <div id="dlc-log" class="fb-log" style="display:none;max-height:120px"></div>
   </div></div>
 </div>
 
@@ -1044,10 +1051,13 @@ function simRun(){
   var ss=document.getElementById('tbeh-sensor');if(ss)ss.addEventListener('change',tbehUpdateLabel);
 })();
 
-function updateRgb(){var r=document.getElementById('r').value,g=document.getElementById('g').value,b=document.getElementById('b').value;document.getElementById('rv').textContent=r;document.getElementById('gv').textContent=g;document.getElementById('bv').textContent=b;document.getElementById('rgb-prev').style.background='rgb('+r+','+g+','+b+')';}
-function sendRgb(){wbCmd('antenna',[0x14,+document.getElementById('r').value,+document.getElementById('g').value,+document.getElementById('b').value]);}
+function syncColorPicker(){} // color picker is source of truth
+function sendRgb(){var hex=document.getElementById('rgb-picker').value;var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);wbCmd('antenna',[0x14,r,g,b]);}
+var _eyesOn=true;
+function eyesToggle(){_eyesOn=!_eyesOn;if(_eyesOn)wbCmd('occhi-on',[0xcd,0x01]);else wbCmd('occhi-off',[0xcd,0x00]);document.getElementById('eyes-icon').className=_eyesOn?'bi bi-eye':'bi bi-eye-slash';document.getElementById('eyes-label').innerHTML=t(_eyesOn?'ctrl.eyes_on':'ctrl.eyes_off');}
 function sendMood(){wbCmd('mood',[0x24,+document.getElementById('m-well').value,+document.getElementById('m-full').value,+document.getElementById('m-tire').value,+document.getElementById('m-exci').value]);}
-function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;if(code===0x61)espCmd('dlc-activate',[code]);else espCmd('dlc-'+code.toString(16),[code,s]);}
+function dlcLog(msg){var el=document.getElementById('dlc-log');el.style.display='block';el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
+function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;var label='dlc-'+code.toString(16);var bytes=code===0x61?[code]:[code,s];var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));if(code===0x61)fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||'')));if(d.response)dlcLog(d.response);});}
 function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().split(/\s+/),bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});if(!bytes.length){log(t('raw.no_bytes'));return;}if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);}
 
 var cfgEditIdx=-1;
