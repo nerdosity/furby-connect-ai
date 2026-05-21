@@ -1097,7 +1097,7 @@ static void handleDebugMicRms() {
 static void handleDebugAmp() {
     HTTP_LOG();
     if (server.method() == HTTP_POST) setAmplifier(server.arg("on") == "1");
-    bool on = (ch32PortState >> 4) & 1;
+    bool on = (ch32PortState >> 6) & 1;
     server.send(200, "application/json", "{\"ok\":true,\"on\":" + String(on ? "true" : "false") + "}");
 }
 

@@ -100,15 +100,14 @@ void ch32Init() {
     Serial.printf("IO exp init mode: written=%d err=%d\n", written, err);
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
-    ch32SetBit(6, true);
-    ch32SetBit(4, true);
-    Serial.println("IO expander: init OK, IO6+IO4=1");
+    ch32SetBit(6, true);  // PA enable on
+    Serial.println("IO expander: init OK, IO6=1");
 }
 
 void setAmplifier(bool enable) {
     Serial.printf("setAmplifier(%s) port sarà 0x%02X\n", enable?"ON":"OFF",
-        enable ? (ch32PortState | (1<<4)) : (ch32PortState & ~(1<<4)));
-    ch32SetBit(4, enable);
+        enable ? (ch32PortState | (1<<6)) : (ch32PortState & ~(1<<6)));
+    ch32SetBit(6, enable);
 }
 
 int readBatteryMv() {

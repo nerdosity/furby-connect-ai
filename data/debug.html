@@ -431,8 +431,8 @@ function setLang(l){
       <div class="col-6"><label class="form-label small mb-1">Tiredness</label><input type="number" class="form-control form-control-sm" id="m-tire" min="0" max="7" value="4"></div>
       <div class="col-6"><label class="form-label small mb-1">Excitedness</label><input type="number" class="form-control form-control-sm" id="m-exci" min="0" max="7" value="4"></div>
     </div>
-    <div class="d-flex justify-content-end">
-      <button class="btn btn-primary" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-primary px-3" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
     </div>
   </div></div>
   <!-- Sistema + DLC -->
@@ -629,7 +629,7 @@ function setLang(l){
     <div class="d-flex gap-2 flex-wrap mt-2">
       <button class="btn btn-success px-3" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
       <button class="btn btn-primary px-3" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
-      <label class="btn btn-warning btn-sm mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+      <label class="btn btn-warning px-3 mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
     </div>
     <div id="beh-msg" class="small mt-2 text-muted"></div>
   </div></div>
@@ -656,7 +656,9 @@ function setLang(l){
       </div>
     </div>
     <div id="csq-list"></div>
-    <button class="btn btn-success px-3 mt-2" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
+    <div class="d-grid d-sm-flex mt-2" id="csq-add-btn-wrap">
+      <button class="btn btn-success px-3" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
+    </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-3">
       <button class="btn btn-primary px-3" onclick="behSave()" data-i18n="beh.save"><i class="bi bi-floppy"></i> Salva</button>
       <button class="btn btn-outline-secondary px-3" onclick="behEditorClose()" data-i18n="beh.cancel"><i class="bi bi-x-lg"></i> Annulla</button>
@@ -723,7 +725,7 @@ function setLang(l){
         <label class="btn btn-outline-primary btn-sm" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
       </div>
       <span id="tts-panel-hint" class="text-muted small" data-i18n="tts_browser_hint">Web Speech API</span>
-      <button class="btn btn-success btn-sm ms-auto" onclick="testTtsSend()" data-i18n="test.tts_play"><i class="bi bi-play-fill"></i> Riproduci</button>
+      <button class="btn btn-success px-3 ms-auto" onclick="testTtsSend()" data-i18n="test.tts_play"><i class="bi bi-play-fill"></i> Riproduci</button>
     </div>
     <div id="test-tts-msg" class="small mt-2 text-muted"></div>
   </div></div>
@@ -865,7 +867,7 @@ var gEditCsqs=[];
 function csqRender(){
   var el=document.getElementById('csq-list');el.innerHTML='';
   gEditCsqs.forEach(function(c,i){el.appendChild(csqCard(c,i));});
-  document.getElementById('csq-add-btn').style.display=gEditCsqs.length>=3?'none':'';
+  document.getElementById('csq-add-btn-wrap').style.display=gEditCsqs.length>=3?'none':'';
 }
 function csqCard(c,i){
   var wrap=document.createElement('div');wrap.className='border rounded p-2 mb-2 bg-light';
@@ -1137,7 +1139,7 @@ function pollSensors(){
 }
 
 var ampOn=false;
-function ampApply(on){ampOn=on;var btn=document.getElementById('btn-amp'),st=document.getElementById('amp-status');if(on){btn.textContent='ON';btn.className='btn btn-success btn-sm';st.textContent=t('aud.amp_on');}else{btn.textContent='OFF';btn.className='btn btn-danger btn-sm';st.textContent=t('aud.amp_off');}}
+function ampApply(on){ampOn=on;var btn=document.getElementById('btn-amp'),st=document.getElementById('amp-status');if(on){btn.innerHTML='<i class="bi bi-volume-up-fill"></i> ON';btn.className='btn btn-success px-3';st.textContent=t('aud.amp_on');}else{btn.innerHTML='<i class="bi bi-volume-mute-fill"></i> OFF';btn.className='btn btn-outline-secondary px-3';st.textContent=t('aud.amp_off');}}
 function ampToggle(){var fd=new FormData();fd.append('on',ampOn?'0':'1');fetch('/debug/amp',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){if(d.ok)ampApply(d.on);});}
 function ampLoad(){fetch('/debug/amp').then(r=>r.json()).then(function(d){ampApply(d.on);}).catch(function(){});}
 function volChange(v){document.getElementById('vol-val').textContent=v+'%';var b=document.getElementById('vol-bar');if(b){b.value=v;document.getElementById('vol-bar-val').textContent=v+'%';}}
