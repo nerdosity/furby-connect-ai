@@ -1210,7 +1210,7 @@ function fmUpload(){
   }).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 
-updateRgb();cfgLoad();setInterval(pollSensors,500);pollSensors();
+cfgLoad();setInterval(pollSensors,500);pollSensors();
 setLang(gLang);
 </script>
 </body></html>

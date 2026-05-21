@@ -86,12 +86,11 @@ public:
 
     // chiamato dal decoder quando cambia sample rate (es. MP3 a 22050 Hz)
     bool SetRate(int hz) override {
-        i2s_set_clk(I2S_NUM, hz, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
+        i2s_set_clk(I2S_NUM, hz, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
         return true;
     }
 
     bool ConsumeSample(int16_t sample[2]) override {
-        // mix stereo→mono
         int16_t mono = (int16_t)(((int32_t)sample[0] + sample[1]) / 2);
         currentAmplitude = (int)abs(mono);
         i2s_write_mono(&mono, 1);
@@ -100,14 +99,12 @@ public:
     bool stop() override {
         i2s_zero_dma_buffer(I2S_NUM);
         isSpeaking = false; currentAmplitude = 0;
-        // ripristina 16kHz per il microfono
-        i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
+        i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
         setAmplifier(false); return true;
     }
 };
 
 void i2s_write_mono(const int16_t* buf, int samples) {
-    // Il driver I2S vuole frame stereo (L+R) anche in ONLY_LEFT — duplichiamo ogni campione
     const int CHUNK = 128;
     int16_t stereo[CHUNK * 2];
     size_t written;
