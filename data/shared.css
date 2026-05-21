@@ -1,5 +1,21 @@
 /* shared.css — solo ciò che Bootstrap non copre */
 
+/* page loader */
+#fb-loader {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--fb-navy, #1a2340);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .25s ease;
+}
+#fb-loader.fb-loader-done { opacity: 0; pointer-events: none; }
+#fb-loader .fb-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid #ffffff22;
+  border-top-color: #8fb3e8;
+  animation: fb-spin .7s linear infinite;
+}
+@keyframes fb-spin { to { transform: rotate(360deg); } }
+
 /* desktop layout: container più ampio, font più grandi */
 .fb-page { max-width: 860px; }
 @media(min-width:900px){

@@ -362,12 +362,20 @@ function _updateSysBar(d){
   }
 }
 
+function _loaderDone(){
+  var l=document.getElementById('fb-loader');
+  if(!l)return;
+  l.classList.add('fb-loader-done');
+  setTimeout(function(){if(l.parentNode)l.parentNode.removeChild(l);},300);
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   var ipEl=document.getElementById('esp-ip');
   if(ipEl)ipEl.textContent=window.location.hostname;
   if(_bootRef){_uptimeTimer=setInterval(_uptimeTick,1000);_uptimeTick();}
 
   applyI18n();
+  _loaderDone();
 
   var _sysTimer=null;
   function scheduleSys(ms){
