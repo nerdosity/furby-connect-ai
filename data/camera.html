@@ -28,10 +28,10 @@ textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0
 <div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
 <div class="nav-drawer" id="nav-drawer">
   <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
-  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Configurazione</a>
-  <a class="nav-item" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg>Debug Furby</a>
-  <a class="nav-item active" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
-  <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
+  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-i18n="nav.config">Configurazione</span></a>
+  <a class="nav-item" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg><span data-i18n="nav.debug">Debug Furby</span></a>
+  <a class="nav-item active" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="nav.camera">Camera</span></a>
+  <a class="nav-item" href="#" onclick="if(confirm(T('nav.confirm_reset'))){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span data-i18n="nav.reset">Reset ESP32</span></a>
 </div>
 <script src="/shared.js"></script>
 
@@ -44,51 +44,51 @@ textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0
     <p>IP: <span id="esp-ip">&#x2014;</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">&#x2014;</span></p>
   </div>
   <nav class="desktop-nav">
-    <a href="/">&#x2302; Home</a>
-    <a href="/debug">Debug</a>
-    <a href="/camera" class="active">Camera</a>
+    <a href="/">&#x2302; <span data-i18n="nav.config">Configurazione</span></a>
+    <a href="/debug"><span data-i18n="nav.debug">Debug</span></a>
+    <a href="/camera" class="active"><span data-i18n="nav.camera">Camera</span></a>
   </nav>
-  <select onchange="localStorage.setItem('furby_lang',this.value)" style="width:auto;background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0;appearance:none"><option value="it">IT</option><option value="en">EN</option></select>
+  <select id="lang-sel-shared" onchange="setSharedLang(this.value)" style="width:auto;background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0;appearance:none"><option value="it">IT</option><option value="en">EN</option></select>
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 
-<div id="sys-bar">carico...</div>
+<div id="sys-bar" data-i18n="sys.loading">carico...</div>
 
 <div class="wrap">
 <div class="frame-box">
   <img id="camimg" src="/camera/stream" alt="camera">
 </div>
-<div class="status" id="status">Streaming MJPEG attivo</div>
+<div class="status" id="status" data-i18n="cam.streaming">Streaming MJPEG attivo</div>
 <div class="controls">
-  <button class="btn" id="btn-tog" onclick="toggleStream()">&#x23F8; Pausa</button>
-  <button class="btn" onclick="setQuality(12)">Qualit&#224; alta</button>
-  <button class="btn" onclick="setQuality(25)">Qualit&#224; bassa</button>
+  <button class="btn" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause">&#x23F8; Pausa</button>
+  <button class="btn" onclick="setQuality(12)" data-i18n="cam.quality_high">Qualit&#224; alta</button>
+  <button class="btn" onclick="setQuality(25)" data-i18n="cam.quality_low">Qualit&#224; bassa</button>
 </div>
 
 <div class="card">
-  <h3>&#x1F9E0; Descrivi frame con LLM</h3>
-  <div style="font-size:.72rem;color:#8a9ab5;margin-bottom:8px">
+  <h3 data-i18n="cam.describe_title">&#x1F9E0; Descrivi frame con LLM</h3>
+  <div style="font-size:.72rem;color:#8a9ab5;margin-bottom:8px" data-i18n="cam.describe_hint">
     Cattura un frame e chiedi all'LLM configurato di descriverlo con il prompt qui sotto.
   </div>
   <textarea id="desc-prompt" rows="4" placeholder="Sei un Furby maleducato..."></textarea>
   <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-    <button class="btn b-tel" onclick="descSavePrompt()" style="flex:1">&#x1F4BE; Salva prompt</button>
-    <button class="btn b-grn" onclick="descRun()" id="btn-desc" style="flex:1">&#x1F50D; Descrivi ora</button>
+    <button class="btn b-tel" onclick="descSavePrompt()" style="flex:1" data-i18n="cam.save_prompt">&#x1F4BE; Salva prompt</button>
+    <button class="btn b-grn" onclick="descRun()" id="btn-desc" style="flex:1" data-i18n="cam.describe_now">&#x1F50D; Descrivi ora</button>
   </div>
   <div style="margin-top:12px;padding:10px 12px;background:#f5f8ff;border:1.5px solid #e4eaf4;border-radius:9px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
     <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:#1a2340;cursor:pointer;user-select:none">
       <input type="checkbox" id="chk-tts" style="width:16px;height:16px;accent-color:#3a5298">
-      &#x1F50A; Output vocale
+      <span data-i18n="cam.tts_voice">&#x1F50A; Output vocale</span>
     </label>
     <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.78rem;font-weight:700">
       <label id="lbl-browser" style="padding:5px 12px;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
-        <input type="radio" name="tts-dest" value="browser" checked style="display:none" onchange="ttsDestChange()">&#x1F5A5; Browser
+        <input type="radio" name="tts-dest" value="browser" checked style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_browser">&#x1F5A5; Browser</span>
       </label>
       <label id="lbl-board" style="padding:5px 12px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
-        <input type="radio" name="tts-dest" value="board" style="display:none" onchange="ttsDestChange()">&#x1F4E1; Board
+        <input type="radio" name="tts-dest" value="board" style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_board">&#x1F4E1; Board</span>
       </label>
     </div>
-    <span style="font-size:.7rem;color:#8a9ab5">Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32</span>
+    <span style="font-size:.7rem;color:#8a9ab5" data-i18n="cam.tts_hint">Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32</span>
   </div>
   <div id="desc-status" style="font-size:.7rem;color:#8a9ab5;margin-top:5px"></div>
   <div id="desc-out"></div>
@@ -101,13 +101,14 @@ function toggleStream(){
   running=!running;
   var img=document.getElementById('camimg');
   var st=document.getElementById('status');
-  document.getElementById('btn-tog').textContent=running?'⏸ Pausa':'▶ Riprendi';
+  var btn=document.getElementById('btn-tog');
+  btn.textContent=running?T('cam.pause'):T('cam.resume');
   if(running){
     img.src='/camera/stream';
-    st.textContent='Streaming MJPEG attivo';
+    st.textContent=T('cam.streaming');
   } else {
     img.src='';
-    st.textContent='In pausa';
+    st.textContent=T('cam.paused');
   }
 }
 function setQuality(q){fetch('/camera/quality?q='+q,{method:'POST'}).catch(function(){});}
@@ -121,7 +122,7 @@ function descSavePrompt(){
     .then(function(r){return r.json();})
     .then(function(d){
       var st=document.getElementById('desc-status');
-      st.textContent=d.ok?'Salvato.':'Errore.';
+      st.textContent=d.ok?T('cam.saved'):T('cam.error');
       setTimeout(function(){st.textContent='';},2000);
     });
 }
@@ -133,7 +134,7 @@ function ttsDestChange(){
   document.getElementById('lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';
 }
 function speakBrowser(text){
-  if(!window.speechSynthesis){alert('Web Speech API non supportata in questo browser.');return;}
+  if(!window.speechSynthesis){alert(T('cam.speech_unsupported'));return;}
   window.speechSynthesis.cancel();
   var u=new SpeechSynthesisUtterance(text);
   u.lang=navigator.language||'it-IT';
@@ -141,21 +142,21 @@ function speakBrowser(text){
 }
 function speakBoard(text){
   var st=document.getElementById('desc-status');
-  st.textContent='Invio a ElevenLabs...';
+  st.textContent=T('cam.tts_sending');
   var fd=new FormData(); fd.append('text',text);
   fetch('/test/tts',{method:'POST',body:fd})
     .then(function(r){return r.json();})
     .then(function(d){
-      st.textContent=d.ok?'In riproduzione sulla board.':'Errore TTS: '+(d.error||'?');
+      st.textContent=d.ok?T('cam.tts_playing'):T('cam.tts_err')+(d.error||'?');
       setTimeout(function(){st.textContent='';},3500);
     })
-    .catch(function(){st.textContent='Errore connessione.';});
+    .catch(function(){st.textContent=T('cam.error_conn');});
 }
 function descRun(){
   var btn=document.getElementById('btn-desc');
   var st=document.getElementById('desc-status');
   var out=document.getElementById('desc-out');
-  btn.disabled=true; st.textContent='Analisi in corso...'; out.style.display='none';
+  btn.disabled=true; st.textContent=T('cam.sending'); out.style.display='none';
   fetch('/camera/describe',{method:'POST'})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -169,14 +170,19 @@ function descRun(){
           else speakBoard(d.text);
         }
       } else {
-        st.textContent='Errore: '+(d.error||'?');
+        st.textContent=T('cam.error')+' '+(d.error||'?');
       }
     })
-    .catch(function(){btn.disabled=false; st.textContent='Errore connessione.';});
+    .catch(function(){btn.disabled=false; st.textContent=T('cam.error_conn');});
 }
 window.addEventListener('beforeunload',function(){
   document.getElementById('camimg').src='';
   navigator.sendBeacon('/camera/off');
 });
+// sync lang selector on load
+(function(){
+  var sel=document.getElementById('lang-sel-shared');
+  if(sel)sel.value=localStorage.getItem('furby_lang')||'it';
+})();
 </script>
 </body></html>

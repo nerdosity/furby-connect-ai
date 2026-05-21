@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Connessione WiFi…</title>
+<title>Connecting…</title>
 <link rel="stylesheet" href="/shared.css">
 <style>
 .wrap{display:flex;align-items:center;justify-content:center;min-height:60vh}
@@ -18,12 +18,13 @@
 </style>
 </head>
 <body>
+<script src="/shared.js"></script>
 <div class="wrap">
   <div class="box">
     <div class="spinner" id="spin"></div>
-    <p class="msg" id="msg">Connessione in corso…</p>
+    <p class="msg" id="msg" data-i18n="wc.connecting">Connessione in corso…</p>
     <p class="detail" id="detail"></p>
-    <a class="back-link" id="back" href="/" style="display:none">Torna alla home</a>
+    <a class="back-link" id="back" href="/" style="display:none" data-i18n="wc.back">Torna alla home</a>
   </div>
 </div>
 <script>
@@ -33,13 +34,13 @@
       if(d.state===2){
         clearInterval(t);
         document.getElementById('spin').style.borderTopColor='#22c55e';
-        document.getElementById('msg').textContent='Connesso!';
+        document.getElementById('msg').textContent=T('wc.connected');
         document.getElementById('detail').textContent=(d.ssid||'')+' — '+(d.ip||'');
         setTimeout(function(){location.href='http://'+d.ip+'/';},800);
       } else if(d.state===3){
         clearInterval(t);
         document.getElementById('spin').style.borderTopColor='#ef4444';
-        document.getElementById('msg').textContent='Connessione fallita';
+        document.getElementById('msg').textContent=T('wc.failed');
         document.getElementById('back').style.display='inline-block';
       }
     }).catch(function(){});

@@ -94,6 +94,86 @@ var TRANSLATIONS={
     'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
     'tab.configs':'Configurazioni','tab.raw':'Raw / Log','tab.audio':'Audio',
     'tab.files':'File SPIFFS','tab.persona':'Personalità',
+    // sensori
+    'sen.title':'Stato sensori','sen.ant_l':'Antenna sx','sen.ant_r':'Antenna dx',
+    'sen.ant_f':'Antenna avanti','sen.ant_b':'Antenna indietro',
+    'sen.tickle_head':'Tickle testa','sen.tickle_tummy':'Tickle pancia',
+    'sen.tickle_r':'Tickle dx','sen.tickle_l':'Tickle sx',
+    'sen.pull_tail':'Tira coda','sen.push_tongue':'Spingi lingua',
+    'sen.upright':'Dritto','sen.upside_down':'Capovolto',
+    'sen.side_r':'Lato dx','sen.side_l':'Lato sx',
+    'sen.lean_back':'Inclinato back','sen.tilt_r':'Inclinato dx','sen.tilt_l':'Inclinato sx',
+    // azioni
+    'act.direct':'Interazione diretta','act.notes':'Note musicali (input 71)',
+    'act.world':'World App / Personalità','act.custom':'Azione personalizzata',
+    'act.custom_run':'▶ Esegui',
+    'act.test_title':'🧪 Test behavior (senza Furby)',
+    'act.test_desc':'Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.',
+    'act.test_trigger':'Trigger','act.test_sensor':'Sensore',
+    'act.test_dry':'Dry run','act.test_dry_sub':'(skippa azioni BLE)',
+    'act.test_run':'▶ Simula trigger',
+    'act.no_behavior':'→ nessun behavior configurato, verrà usato il default',
+    'act.trigger_sent':'Trigger inviato — guarda la console seriale per il log completo.',
+    'act.trigger_sent_dry':'[DRY RUN] Trigger inviato — guarda la console seriale per il log completo.',
+    'act.trigger_err':'Errore: ','act.trigger_sending':'Invio trigger...',
+    'tbeh.trg.0':'VAD (parlato)','tbeh.trg.1':'Pulsante ESP32','tbeh.trg.2':'Sensore Furby',
+    // controllo
+    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'💡 Imposta',
+    'ctrl.eyes_on':'👁 Occhi ON','ctrl.eyes_off':'💤 Occhi OFF',
+    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'😊 Imposta mood',
+    'ctrl.system':'Sistema',
+    'ctrl.dlc':'DLC slot',
+    // audio
+    'aud.amp':'Amplificatore & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
+    'aud.amp_on':'amplificatore attivo','aud.amp_off':'amplificatore spento',
+    'aud.tone':'Test casse (sine wave)',
+    'aud.tone_dur':'Durata (ms) — tutte le frequenze',
+    'aud.tone_freq':'Frequenza personalizzata (Hz)',
+    'aud.tone_play':'▶ Play',
+    'aud.mic':'Microfoni live','aud.mic_desc':'RMS live — L=MIC1, R=MIC2',
+    'aud.vad_speech':'Parlato rilevato','aud.vad_noise':'Rumore','aud.vad_silence':'Silenzio',
+    'aud.rec':'Registra e riproduci (3 secondi)',
+    'aud.rec_desc':'Parla per 3 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
+    'aud.rec_btn':'🎤 Registra 3s e riproduci',
+    'aud.rec_running':'Registrazione 3s in corso...','aud.rec_countdown':'Registrazione... ',
+    'aud.rec_playing':'Riproduzione in corso...','aud.rec_done':'Fatto.',
+    'aud.tone_sending':'Invio tono...',
+    'aud.tts_browser_hint':'Web Speech API — voce di sistema, nessuna API',
+    'aud.tts_board_hint':'ElevenLabs via ESP32 — usa la voce configurata',
+    'aud.loading':'Carico config...',
+    'aud.el_nokey':'API key ElevenLabs non configurata.',
+    'aud.el_synth':'Sintesi in corso...','aud.el_playing':'▶ Riproduzione in corso...',
+    // file
+    'fm.refresh':'↻ Aggiorna','fm.header_name':'File','fm.header_size':'Dim.',
+    'fm.loading':'carico...','fm.no_files':'Nessun file','fm.net_err':'Errore di rete',
+    'fm.save':'💾 Salva','fm.close':'Chiudi',
+    'fm.upload_title':'Carica file',
+    'fm.upload_path':'Percorso (es. /config.json)',
+    'fm.upload_file':'File da PC','fm.upload_btn':'⬆ Carica',
+    'fm.upload_missing':'Inserisci percorso e seleziona file.',
+    'fm.upload_ok':'Caricato in ','fm.saving':'Salvo...',
+    'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete',
+    'fm.del_confirm':'Eliminare',
+    // cfg
+    'cfg.title':'Configurazioni comportamento',
+    'cfg.new_placeholder':'Nome nuova configurazione',
+    'cfg.new_btn':'+ Nuova','cfg.rules_label':'Regole — ',
+    'cfg.rule_add':'+ Aggiungi regola','cfg.activate':'Attiva',
+    'cfg.del_confirm':'Eliminare questa configurazione?',
+    'cfg.new_default':'Nuova config',
+    // raw
+    'raw.title':'Comando raw (hex bytes separati da spazio)',
+    'raw.placeholder':'es. 13 00 27 03 08 01',
+    'raw.log':'Log','raw.no_bytes':'raw: nessun byte valido',
+    // ble bar
+    'ble_bar.connected':'Connesso: ','ble_bar.connecting':'Connessione...',
+    'ble_bar.scanning':'Scansione BLE...','ble_bar.not_connected':'BLE: non connesso',
+    'ble_bar.found_so_far':'Trovati finora:','ble_bar.furby_found':'Furby trovati:',
+    'ble_bar.conn_btn':'Connetti',
+    'ble_bar.reset_confirm':'Reset completo stack BLE? La connessione verrà persa.',
+    'tts_browser_hint':'Web Speech API — voce di sistema, nessuna API',
+    'tts_board_hint':'ElevenLabs via ESP32 — usa la voce configurata',
+    'voices_loaded':' voci caricate.',
     'ble.not_connected':'BLE: non connesso','ble.connected':'Connesso','ble.connecting':'Connessione...',
     'ble.scanning':'Scansione BLE...','ble.scan':'Cerca','ble.stop':'Stop scan',
     'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Trovati finora:',
@@ -146,6 +226,86 @@ var TRANSLATIONS={
     'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
     'tab.configs':'Configs','tab.raw':'Raw / Log','tab.audio':'Audio',
     'tab.files':'SPIFFS Files','tab.persona':'Personality',
+    // sensors
+    'sen.title':'Sensor state','sen.ant_l':'Antenna left','sen.ant_r':'Antenna right',
+    'sen.ant_f':'Antenna forward','sen.ant_b':'Antenna back',
+    'sen.tickle_head':'Tickle head','sen.tickle_tummy':'Tickle tummy',
+    'sen.tickle_r':'Tickle right','sen.tickle_l':'Tickle left',
+    'sen.pull_tail':'Pull tail','sen.push_tongue':'Push tongue',
+    'sen.upright':'Upright','sen.upside_down':'Upside down',
+    'sen.side_r':'Right side','sen.side_l':'Left side',
+    'sen.lean_back':'Lean back','sen.tilt_r':'Tilt right','sen.tilt_l':'Tilt left',
+    // actions
+    'act.direct':'Direct interaction','act.notes':'Musical notes (input 71)',
+    'act.world':'World App / Personality','act.custom':'Custom action',
+    'act.custom_run':'▶ Run',
+    'act.test_title':'🧪 Behavior test (without Furby)',
+    'act.test_desc':'Simulate a trigger and execute LLM + TTS as in production. With "Dry run" BLE actions toward Furby are skipped.',
+    'act.test_trigger':'Trigger','act.test_sensor':'Sensor',
+    'act.test_dry':'Dry run','act.test_dry_sub':'(skip BLE actions)',
+    'act.test_run':'▶ Simulate trigger',
+    'act.no_behavior':'→ no behavior configured, default will be used',
+    'act.trigger_sent':'Trigger sent — check serial console for full log.',
+    'act.trigger_sent_dry':'[DRY RUN] Trigger sent — check serial console for full log.',
+    'act.trigger_err':'Error: ','act.trigger_sending':'Sending trigger...',
+    'tbeh.trg.0':'VAD (speech)','tbeh.trg.1':'ESP32 button','tbeh.trg.2':'Furby sensor',
+    // control
+    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'💡 Set',
+    'ctrl.eyes_on':'👁 Eyes ON','ctrl.eyes_off':'💤 Eyes OFF',
+    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'😊 Set mood',
+    'ctrl.system':'System',
+    'ctrl.dlc':'DLC slot',
+    // audio
+    'aud.amp':'Amplifier & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
+    'aud.amp_on':'amplifier active','aud.amp_off':'amplifier off',
+    'aud.tone':'Speaker test (sine wave)',
+    'aud.tone_dur':'Duration (ms) — all frequencies',
+    'aud.tone_freq':'Custom frequency (Hz)',
+    'aud.tone_play':'▶ Play',
+    'aud.mic':'Live microphones','aud.mic_desc':'Live RMS — L=MIC1, R=MIC2',
+    'aud.vad_speech':'Speech detected','aud.vad_noise':'Noise','aud.vad_silence':'Silence',
+    'aud.rec':'Record and play back (3 seconds)',
+    'aud.rec_desc':'Speak for 3 seconds. The ESP32 records and plays back through speakers (MIC1+MIC2 mix).',
+    'aud.rec_btn':'🎤 Record 3s and play',
+    'aud.rec_running':'Recording 3s...','aud.rec_countdown':'Recording... ',
+    'aud.rec_playing':'Playing back...','aud.rec_done':'Done.',
+    'aud.tone_sending':'Sending tone...',
+    'aud.tts_browser_hint':'Web Speech API — system voice, no API needed',
+    'aud.tts_board_hint':'ElevenLabs via ESP32 — uses configured voice',
+    'aud.loading':'Loading config...',
+    'aud.el_nokey':'ElevenLabs API key not configured.',
+    'aud.el_synth':'Synthesising...','aud.el_playing':'▶ Playing back...',
+    // files
+    'fm.refresh':'↻ Refresh','fm.header_name':'File','fm.header_size':'Size',
+    'fm.loading':'loading...','fm.no_files':'No files','fm.net_err':'Network error',
+    'fm.save':'💾 Save','fm.close':'Close',
+    'fm.upload_title':'Upload file',
+    'fm.upload_path':'Path (e.g. /config.json)',
+    'fm.upload_file':'File from PC','fm.upload_btn':'⬆ Upload',
+    'fm.upload_missing':'Enter path and select file.',
+    'fm.upload_ok':'Uploaded to ','fm.saving':'Saving...',
+    'fm.load_err':'Load error','fm.net_err2':'Network error',
+    'fm.del_confirm':'Delete',
+    // cfg
+    'cfg.title':'Behavior configurations',
+    'cfg.new_placeholder':'New configuration name',
+    'cfg.new_btn':'+ New','cfg.rules_label':'Rules — ',
+    'cfg.rule_add':'+ Add rule','cfg.activate':'Activate',
+    'cfg.del_confirm':'Delete this configuration?',
+    'cfg.new_default':'New config',
+    // raw
+    'raw.title':'Raw command (hex bytes space-separated)',
+    'raw.placeholder':'e.g. 13 00 27 03 08 01',
+    'raw.log':'Log','raw.no_bytes':'raw: no valid bytes',
+    // ble bar
+    'ble_bar.connected':'Connected: ','ble_bar.connecting':'Connecting...',
+    'ble_bar.scanning':'BLE scanning...','ble_bar.not_connected':'BLE: not connected',
+    'ble_bar.found_so_far':'Found so far:','ble_bar.furby_found':'Furby found:',
+    'ble_bar.conn_btn':'Connect',
+    'ble_bar.reset_confirm':'Full BLE stack reset? Connection will be lost.',
+    'tts_browser_hint':'Web Speech API — system voice, no API needed',
+    'tts_board_hint':'ElevenLabs via ESP32 — uses configured voice',
+    'voices_loaded':' voices loaded.',
     'ble.not_connected':'BLE: not connected','ble.connected':'Connected','ble.connecting':'Connecting...',
     'ble.scanning':'BLE scanning...','ble.scan':'Scan','ble.stop':'Stop scan',
     'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Found so far:',
@@ -238,10 +398,10 @@ function setLang(l){
 <div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
 <div class="nav-drawer" id="nav-drawer">
   <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
-  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Configurazione</a>
-  <a class="nav-item active" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg>Debug Furby</a>
-  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
-  <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
+  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-i18n="nav.config">Configurazione</span></a>
+  <a class="nav-item active" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg><span data-i18n="nav.debug">Debug Furby</span></a>
+  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="nav.camera">Camera</span></a>
+  <a class="nav-item" href="#" onclick="if(confirm(t('nav.confirm_reset'))){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span data-i18n="nav.reset">Reset ESP32</span></a>
 </div>
 <script src="/shared.js"></script>
 
@@ -262,18 +422,18 @@ function setLang(l){
   <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
 </div>
 
-<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap">carico info sistema...</div>
+<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap" data-i18n="sys.loading">carico info sistema...</div>
 
 <div class="ble-bar">
   <div class="ble-dot" id="wb-dot"></div>
-  <span id="wb-label" style="font-weight:600">BLE: non connesso</span>
+  <span id="wb-label" style="font-weight:600" data-i18n="ble.not_connected">BLE: non connesso</span>
   <span id="wb-battery" style="font-size:.68rem;color:#5a6a8a;margin-left:8px"></span>
   <span id="ble-uptime" style="display:none;font-size:.68rem;color:#5a6a8a;margin-left:4px"></span>
   <div style="margin-left:auto;display:flex;gap:4px">
-    <button id="btn-scan"  class="btn"       onclick="dbBleScan()"  style="padding:4px 10px;font-size:.7rem">&#x1F50D; Cerca</button>
-    <button id="btn-stop"  class="btn b-red" onclick="dbBleStop()"  style="display:none;padding:4px 10px;font-size:.7rem">&#x23F9; Stop scan</button>
-    <button id="btn-abort" class="btn b-red" onclick="dbBleAbort()" style="display:none;padding:4px 10px;font-size:.7rem">&#x23F9; Abort</button>
-    <button id="btn-disc"  class="btn b-red" onclick="dbBleDisc()"  style="display:none;padding:4px 10px;font-size:.7rem">&#x26D4; Disc</button>
+    <button id="btn-scan"  class="btn"       onclick="dbBleScan()"  style="padding:4px 10px;font-size:.7rem" data-i18n="ble.scan">&#x1F50D; Cerca</button>
+    <button id="btn-stop"  class="btn b-red" onclick="dbBleStop()"  style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.stop">&#x23F9; Stop scan</button>
+    <button id="btn-abort" class="btn b-red" onclick="dbBleAbort()" style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.abort">&#x23F9; Abort</button>
+    <button id="btn-disc"  class="btn b-red" onclick="dbBleDisc()"  style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.disconnect">&#x26D4; Disc</button>
     <button id="btn-rst"   class="btn b-amb" onclick="dbBleReset()" style="padding:4px 10px;font-size:.7rem" title="Reset stack BLE">&#x21BA;</button>
   </div>
 </div>
@@ -299,25 +459,25 @@ function setLang(l){
 <!-- TAB: Sensori -->
 <div class="tab-pane active" id="t-sensors">
   <div class="card">
-    <h3>Stato sensori &nbsp;<small style="color:#475569;font-size:.65rem" id="sensor-age">—</small></h3>
+    <h3><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small style="color:#475569;font-size:.65rem" id="sensor-age">—</small></h3>
     <div class="sensors">
-      <div class="sensor"><div class="dot" id="s-ant-l"></div>Antenna sx</div>
-      <div class="sensor"><div class="dot" id="s-ant-r"></div>Antenna dx</div>
-      <div class="sensor"><div class="dot" id="s-ant-f"></div>Antenna avanti</div>
-      <div class="sensor"><div class="dot" id="s-ant-b"></div>Antenna indietro</div>
-      <div class="sensor"><div class="dot" id="s-t-head"></div>Tickle testa</div>
-      <div class="sensor"><div class="dot" id="s-t-tummy"></div>Tickle pancia</div>
-      <div class="sensor"><div class="dot" id="s-t-right"></div>Tickle dx</div>
-      <div class="sensor"><div class="dot" id="s-t-left"></div>Tickle sx</div>
-      <div class="sensor"><div class="dot" id="s-tail"></div>Tira coda</div>
-      <div class="sensor"><div class="dot" id="s-tongue"></div>Spingi lingua</div>
-      <div class="sensor"><div class="dot" id="s-up"></div>Dritto</div>
-      <div class="sensor"><div class="dot" id="s-down"></div>Capovolto</div>
-      <div class="sensor"><div class="dot" id="s-right"></div>Lato dx</div>
-      <div class="sensor"><div class="dot" id="s-left"></div>Lato sx</div>
-      <div class="sensor"><div class="dot" id="s-lean"></div>Inclinato back</div>
-      <div class="sensor"><div class="dot" id="s-tr"></div>Inclinato dx</div>
-      <div class="sensor"><div class="dot" id="s-tl"></div>Inclinato sx</div>
+      <div class="sensor"><div class="dot" id="s-ant-l"></div><span data-i18n="sen.ant_l">Antenna sx</span></div>
+      <div class="sensor"><div class="dot" id="s-ant-r"></div><span data-i18n="sen.ant_r">Antenna dx</span></div>
+      <div class="sensor"><div class="dot" id="s-ant-f"></div><span data-i18n="sen.ant_f">Antenna avanti</span></div>
+      <div class="sensor"><div class="dot" id="s-ant-b"></div><span data-i18n="sen.ant_b">Antenna indietro</span></div>
+      <div class="sensor"><div class="dot" id="s-t-head"></div><span data-i18n="sen.tickle_head">Tickle testa</span></div>
+      <div class="sensor"><div class="dot" id="s-t-tummy"></div><span data-i18n="sen.tickle_tummy">Tickle pancia</span></div>
+      <div class="sensor"><div class="dot" id="s-t-right"></div><span data-i18n="sen.tickle_r">Tickle dx</span></div>
+      <div class="sensor"><div class="dot" id="s-t-left"></div><span data-i18n="sen.tickle_l">Tickle sx</span></div>
+      <div class="sensor"><div class="dot" id="s-tail"></div><span data-i18n="sen.pull_tail">Tira coda</span></div>
+      <div class="sensor"><div class="dot" id="s-tongue"></div><span data-i18n="sen.push_tongue">Spingi lingua</span></div>
+      <div class="sensor"><div class="dot" id="s-up"></div><span data-i18n="sen.upright">Dritto</span></div>
+      <div class="sensor"><div class="dot" id="s-down"></div><span data-i18n="sen.upside_down">Capovolto</span></div>
+      <div class="sensor"><div class="dot" id="s-right"></div><span data-i18n="sen.side_r">Lato dx</span></div>
+      <div class="sensor"><div class="dot" id="s-left"></div><span data-i18n="sen.side_l">Lato sx</span></div>
+      <div class="sensor"><div class="dot" id="s-lean"></div><span data-i18n="sen.lean_back">Inclinato back</span></div>
+      <div class="sensor"><div class="dot" id="s-tr"></div><span data-i18n="sen.tilt_r">Inclinato dx</span></div>
+      <div class="sensor"><div class="dot" id="s-tl"></div><span data-i18n="sen.tilt_l">Inclinato sx</span></div>
     </div>
     <div class="raw" id="raw-bytes">raw: —</div>
   </div>
@@ -326,58 +486,57 @@ function setLang(l){
 <!-- TAB: Azioni -->
 <div class="tab-pane" id="t-actions">
   <div class="card">
-    <h3>Interazione diretta</h3>
+    <h3 data-i18n="act.direct">Interazione diretta</h3>
     <div class="act-grid" id="act-grid-direct"></div>
   </div>
   <div class="card">
-    <h3>Note musicali (input 71)</h3>
+    <h3 data-i18n="act.notes">Note musicali (input 71)</h3>
     <div class="act-grid" id="act-grid-notes"></div>
   </div>
   <div class="card">
-    <h3>World App / Personalità</h3>
+    <h3 data-i18n="act.world">World App / Personalità</h3>
     <div class="act-grid" id="act-grid-world"></div>
   </div>
   <div class="card">
-    <h3>Azione personalizzata</h3>
+    <h3 data-i18n="act.custom">Azione personalizzata</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:6px">
       <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">input (0-75)</div><input type="number" id="ap-in" min="0" max="75" value="39" style="width:100%"></div>
       <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">index</div><input type="number" id="ap-ix" min="0" max="127" value="3" style="width:100%"></div>
       <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">subindex</div><input type="number" id="ap-sx" min="0" max="30" value="8" style="width:100%"></div>
       <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">specific</div><input type="number" id="ap-sp" min="0" max="10" value="1" style="width:100%"></div>
     </div>
-    <button class="btn" onclick="sendCustomAction()" style="width:100%">&#x25B6; Esegui</button>
+    <button class="btn" onclick="sendCustomAction()" style="width:100%" data-i18n="act.custom_run">&#x25B6; Esegui</button>
   </div>
 
   <!-- Pannello test behavior -->
   <div class="card">
-    <h3>&#x1F9EA; Test behavior (senza Furby)</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:10px">Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.</div>
+    <h3 data-i18n="act.test_title">&#x1F9EA; Test behavior (senza Furby)</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:10px" data-i18n="act.test_desc">Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
-        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px">Trigger</div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px" data-i18n="act.test_trigger">Trigger</div>
         <select id="tbeh-trg" onchange="tbehTrgChange()" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340">
-          <option value="0">VAD (parlato)</option>
-          <option value="1">Pulsante ESP32</option>
-          <option value="2">Sensore Furby</option>
+          <option value="0" data-i18n="tbeh.trg.0">VAD (parlato)</option>
+          <option value="1" data-i18n="tbeh.trg.1">Pulsante ESP32</option>
+          <option value="2" data-i18n="tbeh.trg.2">Sensore Furby</option>
         </select>
       </div>
       <div id="tbeh-sensor-wrap" style="display:none">
-        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px">Sensore</div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px" data-i18n="act.test_sensor">Sensore</div>
         <select id="tbeh-sensor" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340"></select>
       </div>
     </div>
 
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
-      <!-- dry run toggle -->
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;font-weight:600;color:#5a6a8a">
         <input type="checkbox" id="tbeh-dry" checked style="width:16px;height:16px;accent-color:#3a5298">
-        Dry run <span style="font-weight:400;font-size:.72rem">(skippa azioni BLE)</span>
+        <span data-i18n="act.test_dry">Dry run</span> <span style="font-weight:400;font-size:.72rem" data-i18n="act.test_dry_sub">(skippa azioni BLE)</span>
       </label>
       <div id="tbeh-behavior-label" style="font-size:.72rem;color:#8a9ab5;flex:1;text-align:right"></div>
     </div>
 
-    <button class="btn b-grn" onclick="tbehRun()" style="width:100%">&#x25B6; Simula trigger</button>
+    <button class="btn b-grn" onclick="tbehRun()" style="width:100%" data-i18n="act.test_run">&#x25B6; Simula trigger</button>
     <div id="tbeh-msg" style="font-size:.72rem;margin-top:8px;color:#5a6a8a;min-height:1.2em"></div>
   </div>
 </div>
@@ -385,36 +544,36 @@ function setLang(l){
 <!-- TAB: Controllo -->
 <div class="tab-pane" id="t-control">
   <div class="card">
-    <h3>Antenna LED (RGB)</h3>
+    <h3 data-i18n="ctrl.rgb">Antenna LED (RGB)</h3>
     <div class="rgb-row"><span>R</span><input type="range" id="r" min="0" max="255" value="0" oninput="updateRgb()"><span id="rv" style="width:28px;font-size:.68rem">0</span></div>
     <div class="rgb-row"><span>G</span><input type="range" id="g" min="0" max="255" value="255" oninput="updateRgb()"><span id="gv" style="width:28px;font-size:.68rem">255</span></div>
     <div class="rgb-row"><span>B</span><input type="range" id="b" min="0" max="255" value="0" oninput="updateRgb()"><span id="bv" style="width:28px;font-size:.68rem">0</span></div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
       <div class="rgb-prev" id="rgb-prev"></div>
-      <button class="btn b-grn" style="flex:1" onclick="sendRgb()">&#x1F4A1; Imposta</button>
+      <button class="btn b-grn" style="flex:1" onclick="sendRgb()" data-i18n="ctrl.rgb_set">&#x1F4A1; Imposta</button>
     </div>
     <div class="btn-row" style="margin-top:6px">
-      <button class="btn b-grn" onclick="wbCmd('occhi-on',[0xcd,0x01])">&#x1F441; Occhi ON</button>
-      <button class="btn b-slt" onclick="wbCmd('occhi-off',[0xcd,0x00])">&#x1F4A4; Occhi OFF</button>
+      <button class="btn b-grn" onclick="wbCmd('occhi-on',[0xcd,0x01])" data-i18n="ctrl.eyes_on">&#x1F441; Occhi ON</button>
+      <button class="btn b-slt" onclick="wbCmd('occhi-off',[0xcd,0x00])" data-i18n="ctrl.eyes_off">&#x1F4A4; Occhi OFF</button>
     </div>
   </div>
   <div class="card">
-    <h3>Mood (0x24)</h3>
+    <h3 data-i18n="ctrl.mood">Mood (0x24)</h3>
     <div class="mood-row"><span>Wellness</span><input type="range" id="m-well" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Fullness</span><input type="range" id="m-full" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Tiredness</span><input type="range" id="m-tire" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Excitedness</span><input type="range" id="m-exci" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <button class="btn b-tel btn-row" style="width:100%;margin-top:6px" onclick="sendMood()">&#x1F60A; Imposta mood</button>
+    <button class="btn b-tel btn-row" style="width:100%;margin-top:6px" onclick="sendMood()" data-i18n="ctrl.mood_set">&#x1F60A; Imposta mood</button>
   </div>
   <div class="card">
-    <h3>Sistema</h3>
+    <h3 data-i18n="ctrl.system">Sistema</h3>
     <div class="btn-row">
       <button class="btn b-amb" onclick="espCmd('debug-cycle',[0xdb])">&#x1F6E0; Ciclo debug</button>
       <button class="btn b-red" onclick="espCmdN('fw-version',[0x01])">&#x2139; FW version</button>
       <button class="btn b-slt" onclick="espCmdN('power',[0x03])">&#x1F50B; Power</button>
     </div>
     <div style="margin-top:8px">
-      <h3 style="margin-bottom:6px">DLC slot</h3>
+      <h3 style="margin-bottom:6px" data-i18n="ctrl.dlc">DLC slot</h3>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
         <input type="number" id="dlc-slot" min="0" max="13" value="0" style="width:44px">
         <button class="btn b-grn" onclick="dlcCmd(0x60)">Load</button>
@@ -431,40 +590,40 @@ function setLang(l){
 <!-- TAB: Configurazioni -->
 <div class="tab-pane" id="t-configs">
   <div class="card">
-    <h3>Configurazioni comportamento</h3>
+    <h3 data-i18n="cfg.title">Configurazioni comportamento</h3>
     <div id="cfg-list"></div>
     <div style="display:flex;gap:5px;margin-top:8px">
-      <input type="text" id="new-cfg-name" placeholder="Nome nuova configurazione" style="flex:1">
-      <button class="btn b-grn" onclick="cfgNew()">+ Nuova</button>
+      <input type="text" id="new-cfg-name" data-i18n-attr="placeholder" data-i18n="cfg.new_placeholder" placeholder="Nome nuova configurazione" style="flex:1">
+      <button class="btn b-grn" onclick="cfgNew()" data-i18n="cfg.new_btn">+ Nuova</button>
     </div>
   </div>
   <div class="card" id="cfg-editor" style="display:none">
-    <h3>Regole — <span id="cfg-editor-name"></span></h3>
+    <h3><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h3>
     <div id="cfg-rules"></div>
-    <button class="btn b-grn" style="margin-top:8px;width:100%" onclick="cfgRuleAdd()">+ Aggiungi regola</button>
+    <button class="btn b-grn" style="margin-top:8px;width:100%" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add">+ Aggiungi regola</button>
   </div>
 </div>
 
 <!-- TAB: Audio -->
 <div class="tab-pane" id="t-audio">
   <div class="card">
-    <h3>Amplificatore &amp; volume</h3>
+    <h3 data-i18n="aud.amp">Amplificatore &amp; volume</h3>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px">AMP</span>
+      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px" data-i18n="aud.amp_lbl">AMP</span>
       <button class="btn" id="btn-amp" onclick="ampToggle()" style="min-width:80px">...</button>
       <span style="font-size:.7rem;color:#94a3b8" id="amp-status">carico...</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px">VOL</span>
+      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px" data-i18n="aud.vol_lbl">VOL</span>
       <input type="range" id="vol-slider" min="0" max="100" value="75" style="flex:1" oninput="volChange(this.value)" onchange="volSend(this.value)">
       <span id="vol-val" style="font-size:.75rem;color:#5a6a8a;min-width:28px;text-align:right">75%</span>
     </div>
   </div>
   <div class="card">
-    <h3>Test casse (sine wave)</h3>
+    <h3 data-i18n="aud.tone">Test casse (sine wave)</h3>
     <div style="display:flex;gap:6px;margin-bottom:8px;align-items:flex-end">
       <div style="flex:1">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px">Durata (ms) — tutte le frequenze</div>
+        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="aud.tone_dur">Durata (ms) — tutte le frequenze</div>
         <input type="number" id="tone-ms" value="800" min="100" max="5000" style="width:100%">
       </div>
     </div>
@@ -478,17 +637,17 @@ function setLang(l){
     </div>
     <div style="display:flex;gap:6px;align-items:flex-end">
       <div style="flex:1">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px">Frequenza personalizzata (Hz)</div>
+        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="aud.tone_freq">Frequenza personalizzata (Hz)</div>
         <input type="number" id="tone-freq" value="440" min="20" max="20000" style="width:100%">
       </div>
-      <button class="btn b-amb" onclick="tonePlay(null)" style="white-space:nowrap">&#x25B6; Play</button>
+      <button class="btn b-amb" onclick="tonePlay(null)" style="white-space:nowrap" data-i18n="aud.tone_play">&#x25B6; Play</button>
     </div>
     <div id="tone-result" style="font-size:.7rem;margin-top:6px;color:#5a6a8a"></div>
   </div>
   <div class="card">
-    <h3>Microfoni live</h3>
+    <h3 data-i18n="aud.mic">Microfoni live</h3>
     <div style="margin-bottom:8px">
-      <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px">RMS live — L=MIC1, R=MIC2</div>
+      <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px" data-i18n="aud.mic_desc">RMS live — L=MIC1, R=MIC2</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div style="flex:1">
           <div style="font-size:.6rem;color:#94a3b8">MIC1 (L)</div>
@@ -509,9 +668,9 @@ function setLang(l){
     </div>
   </div>
   <div class="card">
-    <h3>Registra e riproduci (3 secondi)</h3>
-    <p style="font-size:.7rem;color:#5a6a8a;margin-bottom:8px">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).</p>
-    <button class="btn b-amb" id="btn-rec" onclick="micRecord()" style="width:100%">&#x1F3A4; Registra 3s e riproduci</button>
+    <h3 data-i18n="aud.rec">Registra e riproduci (3 secondi)</h3>
+    <p style="font-size:.7rem;color:#5a6a8a;margin-bottom:8px" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).</p>
+    <button class="btn b-amb" id="btn-rec" onclick="micRecord()" style="width:100%" data-i18n="aud.rec_btn">&#x1F3A4; Registra 3s e riproduci</button>
     <div id="rec-result" style="font-size:.7rem;margin-top:6px;color:#5a6a8a"></div>
   </div>
 </div>
@@ -519,15 +678,15 @@ function setLang(l){
 <!-- TAB: Raw / Log -->
 <div class="tab-pane" id="t-raw">
   <div class="card">
-    <h3>Comando raw (hex bytes separati da spazio)</h3>
+    <h3 data-i18n="raw.title">Comando raw (hex bytes separati da spazio)</h3>
     <div style="display:flex;gap:5px">
-      <input type="text" id="raw-in" placeholder="es. 13 00 27 03 08 01" style="flex:1;font-family:monospace">
+      <input type="text" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01" style="flex:1;font-family:monospace">
       <button class="btn b-grn" onclick="sendRaw('gp')">GP</button>
       <button class="btn b-pur" onclick="sendRaw('nordic')">Nordic</button>
     </div>
   </div>
   <div class="card">
-    <h3>Log</h3>
+    <h3 data-i18n="raw.log">Log</h3>
     <div class="log" id="log"></div>
   </div>
 </div>
@@ -537,12 +696,12 @@ function setLang(l){
   <div class="card">
     <div class="fm-bar">
       <span class="fm-quota" id="fm-quota">—</span>
-      <button class="btn b-grn" onclick="fmLoad()" style="padding:4px 10px;font-size:.68rem">&#x21BB; Aggiorna</button>
+      <button class="btn b-grn" onclick="fmLoad()" style="padding:4px 10px;font-size:.68rem" data-i18n="fm.refresh">&#x21BB; Aggiorna</button>
     </div>
     <div id="fm-table-wrap">
       <table class="fm-table">
-        <thead><tr><th>File</th><th>Dim.</th><th colspan="3"></th></tr></thead>
-        <tbody id="fm-tbody"><tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px">carico...</td></tr></tbody>
+        <thead><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th colspan="3"></th></tr></thead>
+        <tbody id="fm-tbody"><tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px" data-i18n="fm.loading">carico...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -550,23 +709,23 @@ function setLang(l){
     <h3 id="fm-editor-title">Editor</h3>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
     <div style="display:flex;gap:5px;margin-top:8px">
-      <button class="btn b-grn" onclick="fmSave()" style="flex:1">&#x1F4BE; Salva</button>
-      <button class="btn b-slt" onclick="fmEditorClose()">Chiudi</button>
+      <button class="btn b-grn" onclick="fmSave()" style="flex:1" data-i18n="fm.save">&#x1F4BE; Salva</button>
+      <button class="btn b-slt" onclick="fmEditorClose()" data-i18n="fm.close">Chiudi</button>
     </div>
     <div id="fm-editor-msg" style="font-size:.68rem;margin-top:4px;color:#5a6a8a"></div>
   </div>
   <div class="card">
-    <h3>Carica file</h3>
+    <h3 data-i18n="fm.upload_title">Carica file</h3>
     <div style="display:flex;gap:5px;align-items:flex-end;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px">Percorso (es. /config.json)</div>
+        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="fm.upload_path">Percorso (es. /config.json)</div>
         <input type="text" id="fm-up-path" placeholder="/nomefile.txt" style="width:100%;font-family:monospace">
       </div>
       <div style="flex:2;min-width:140px">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px">File da PC</div>
+        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="fm.upload_file">File da PC</div>
         <input type="file" id="fm-up-file" style="font-size:.7rem;width:100%">
       </div>
-      <button class="btn b-amb" onclick="fmUpload()" style="white-space:nowrap">&#x2B06; Carica</button>
+      <button class="btn b-amb" onclick="fmUpload()" style="white-space:nowrap" data-i18n="fm.upload_btn">&#x2B06; Carica</button>
     </div>
     <div id="fm-up-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
   </div>
@@ -575,10 +734,10 @@ function setLang(l){
 <!-- TAB PERSONALITÀ -->
 <div class="tab-pane" id="t-persona">
   <div class="card">
-    <h3>Personalità base</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px">System prompt LLM — definisce carattere e tono del Furby</div>
+    <h3 data-i18n="persona.base_title">Personalità base</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px" data-i18n="persona.base_desc">System prompt LLM — definisce carattere e tono del Furby</div>
     <textarea id="pers-prompt" style="width:100%;height:90px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Sei un giocattolo cinico..."></textarea>
-    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 3px">Voce ElevenLabs</div>
+    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 3px" data-i18n="persona.voice_label">Voce ElevenLabs</div>
     <div style="display:flex;gap:6px;align-items:center">
       <select id="pers-voice" style="flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.82rem;background:#f5f8ff;color:#1a2340">
         <option value="">— carica voci —</option>
@@ -587,72 +746,72 @@ function setLang(l){
     </div>
     <div id="voice-load-msg" style="font-size:.68rem;margin-top:3px;color:#8a9ab5"></div>
     <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="btn b-grn" onclick="persSave()" style="flex:1">Salva personalità</button>
+      <button class="btn b-grn" onclick="persSave()" style="flex:1" data-i18n="persona.save_btn">Salva personalità</button>
     </div>
     <div id="pers-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
   </div>
 
   <div class="card">
-    <h3>Comportamenti — eventi → conseguenze</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">
+    <h3 data-i18n="persona.beh_title">Comportamenti — eventi → conseguenze</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px" data-i18n="persona.beh_desc">
       Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.
     </div>
     <div id="beh-list"></div>
     <div class="btn-row" style="margin-top:10px">
-      <button class="btn b-grn" onclick="behAdd()">+ Aggiungi</button>
-      <button class="btn b-tel" onclick="behExport()">&#x2B07; Esporta JSON</button>
-      <label class="btn b-amb" style="cursor:pointer">&#x2B06; Importa JSON<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+      <button class="btn b-grn" onclick="behAdd()" data-i18n="persona.beh_add">+ Aggiungi</button>
+      <button class="btn b-tel" onclick="behExport()" data-i18n="persona.beh_export">&#x2B07; Esporta JSON</button>
+      <label class="btn b-amb" style="cursor:pointer"><span data-i18n="persona.beh_import">&#x2B06; Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
     </div>
     <div id="beh-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
   </div>
 
   <!-- Editor comportamento inline -->
   <div class="card" id="beh-editor" style="display:none">
-    <h3 id="beh-editor-title">Nuovo comportamento</h3>
+    <h3 id="beh-editor-title" data-i18n="beh.new_title">Nuovo comportamento</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:10px">
       <div>
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Trigger</div>
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.trigger_label">Trigger</div>
         <select id="beh-trg" style="width:100%;font-size:.75rem" onchange="behTrgChange()">
-          <option value="0">VAD (parlato)</option>
-          <option value="1">Pulsante ESP32</option>
-          <option value="2">Sensore Furby</option>
+          <option value="0" data-i18n="beh.trg.vad">VAD (parlato)</option>
+          <option value="1" data-i18n="beh.trg.button">Pulsante ESP32</option>
+          <option value="2" data-i18n="beh.trg.sensor">Sensore Furby</option>
         </select>
       </div>
       <div id="beh-sensor-wrap" style="display:none">
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Sensore</div>
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.sensor_label">Sensore</div>
         <select id="beh-sensor" style="width:100%;font-size:.75rem"></select>
       </div>
       <div>
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px">Nome</div>
-        <input type="text" id="beh-name" style="width:100%;font-size:.75rem" placeholder="es. Tocco testa">
+        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.name_label">Nome</div>
+        <input type="text" id="beh-name" style="width:100%;font-size:.75rem" data-i18n-attr="placeholder" data-i18n="beh.name_placeholder" placeholder="es. Tocco testa">
       </div>
     </div>
     <div id="csq-list"></div>
     <div class="btn-row" style="margin-top:8px">
-      <button class="btn b-grn" id="csq-add-btn" onclick="csqAdd()">+ Conseguenza</button>
+      <button class="btn b-grn" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq">+ Conseguenza</button>
     </div>
     <div class="btn-row" style="margin-top:12px">
-      <button class="btn" onclick="behSave()" style="flex:1">&#x1F4BE; Salva comportamento</button>
-      <button class="btn b-slt" onclick="behEditorClose()">Annulla</button>
+      <button class="btn" onclick="behSave()" style="flex:1" data-i18n="beh.save">&#x1F4BE; Salva comportamento</button>
+      <button class="btn b-slt" onclick="behEditorClose()" data-i18n="beh.cancel">Annulla</button>
     </div>
   </div>
 
   <!-- Pannello di test -->
   <div class="card">
-    <h3>Test LLM</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px">Invia un messaggio al modello con il personality prompt corrente (senza foto)</div>
-    <textarea id="test-llm-text" style="width:100%;height:60px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Cosa pensi del meteo oggi?"></textarea>
+    <h3 data-i18n="test.llm_title">Test LLM</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente (senza foto)</div>
+    <textarea id="test-llm-text" style="width:100%;height:60px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
     <div class="btn-row" style="margin-top:8px">
-      <button class="btn b-tel" onclick="testLlmSend()" style="flex:1">&#x27A4; Invia</button>
+      <button class="btn b-tel" onclick="testLlmSend()" style="flex:1" data-i18n="test.llm_send">&#x27A4; Invia</button>
     </div>
     <div id="test-llm-resp" style="display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;border-radius:8px;padding:10px;font-size:.78rem;color:#1a2340;white-space:pre-wrap;font-family:monospace"></div>
     <div id="test-llm-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
   </div>
 
   <div class="card">
-    <h3>Test TTS</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px">Sintetizza testo e riproduci — scegli la destinazione.</div>
-    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.82rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <h3 data-i18n="test.tts_title">Test TTS</h3>
+    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px" data-i18n="test.tts_desc">Sintetizza testo e riproduci — scegli la destinazione.</div>
+    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.82rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" data-i18n-attr="placeholder" data-i18n="test.tts_placeholder" placeholder="Ciao, sono un Furby cinico."></textarea>
     <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
       <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;flex-shrink:0">
         <label id="tts-lbl-browser" style="padding:6px 14px;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
@@ -664,8 +823,8 @@ function setLang(l){
           &#x1F4E1; ESP32
         </label>
       </div>
-      <span id="tts-panel-hint" style="font-size:.7rem;color:#8a9ab5">Web Speech API — voce di sistema, nessuna API</span>
-      <button class="btn b-grn" onclick="testTtsSend()" style="margin-left:auto">&#x25B6; Riproduci</button>
+      <span id="tts-panel-hint" style="font-size:.7rem;color:#8a9ab5" data-i18n="tts_browser_hint">Web Speech API — voce di sistema, nessuna API</span>
+      <button class="btn b-grn" onclick="testTtsSend()" style="margin-left:auto" data-i18n="test.tts_play">&#x25B6; Riproduci</button>
     </div>
     <div id="test-tts-msg" style="font-size:.72rem;margin-top:6px;color:#5a6a8a"></div>
   </div>
@@ -710,7 +869,7 @@ function voiceLoad(){
       });
       if(prev) sel.value=prev;
       msg.style.color='#16a34a';
-      msg.textContent=d.voices.length+' voci caricate.';
+      msg.textContent=d.voices.length+t('voices_loaded');
       setTimeout(function(){msg.textContent='';},2500);
     })
     .catch(function(){
@@ -809,8 +968,8 @@ function behRender(){
       +'<div style="display:flex;width:100%;align-items:center;gap:8px">'
       +'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#e4eaf4;color:#5a6a8a">'+trgLabel(b)+'</span>'
       +'<span class="cfg-name">'+b.name+'</span>'
-      +'<button class="btn b-slt" style="margin-left:auto;padding:3px 8px;font-size:.65rem" onclick="behEdit('+i+')">Modifica</button>'
-      +'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="behDel('+i+')">✕</button>'
+      +'<button class="btn b-slt" style="margin-left:auto;padding:3px 8px;font-size:.65rem" onclick="behEdit('+i+')">'+t('modify')+'</button>'
+      +'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="behDel('+i+')">'+t('delete_btn')+'</button>'
       +'</div>'
       +'<div>'+csqHtml+'</div>'
       +'</div>';
@@ -820,7 +979,7 @@ function behRender(){
 function behEdit(i){
   gEditIdx=i;
   var b=gBehaviors[i];
-  document.getElementById('beh-editor-title').textContent='Modifica: '+b.name;
+  document.getElementById('beh-editor-title').textContent=t('modify')+': '+b.name;
   var trg=b.trigger!==undefined?b.trigger:(b.event===1?0:b.event===2?1:0);
   document.getElementById('beh-trg').value=trg;
   behTrgChange();
@@ -834,7 +993,7 @@ function behEdit(i){
 
 function behAdd(){
   gEditIdx=-1;
-  document.getElementById('beh-editor-title').textContent='Nuovo comportamento';
+  document.getElementById('beh-editor-title').textContent=t('beh.new_title');
   document.getElementById('beh-trg').value=0;
   behTrgChange();
   document.getElementById('beh-name').value='';
@@ -850,7 +1009,7 @@ function behEditorClose(){
 }
 
 function behDel(i){
-  if(!confirm('Elimina "'+gBehaviors[i].name+'"?'))return;
+  if(!confirm(t('beh.del_confirm')+' "'+gBehaviors[i].name+'"?'))return;
   gBehaviors.splice(i,1);
   behSaveAll();
 }
@@ -999,7 +1158,7 @@ function ttsPanelDestChange(){
   document.getElementById('tts-lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';
   document.getElementById('tts-lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';
   document.getElementById('tts-panel-hint').textContent=
-    v==='browser'?'Web Speech API — voce di sistema, nessuna API':'ElevenLabs via ESP32 — usa la voce configurata';
+    v==='browser'?t('tts_browser_hint'):t('tts_board_hint');
 }
 
 function testTtsSend(){
@@ -1009,13 +1168,13 @@ function testTtsSend(){
   var dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
   if(dest==='browser'){
     msg.style.color='#5a6a8a';
-    msg.textContent='Carico config...';
+    msg.textContent=t('aud.loading');
     fetch('/sys/info').then(function(r){return r.json();}).then(function(cfg){
       var key=cfg.el_key||'';
       var vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
-      if(!key){msg.style.color='#dc2626';msg.textContent='API key ElevenLabs non configurata.';return;}
+      if(!key){msg.style.color='#dc2626';msg.textContent=t('aud.el_nokey');return;}
       msg.style.color='#5a6a8a';
-      msg.textContent='Sintesi in corso...';
+      msg.textContent=t('aud.el_synth');
       fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid+'?output_format=mp3_22050_32',{
         method:'POST',
         headers:{'Content-Type':'application/json','xi-api-key':key},
@@ -1031,7 +1190,7 @@ function testTtsSend(){
           src.connect(ctx.destination);
           src.start(0);
           msg.style.color='#16a34a';
-          msg.textContent='▶ Riproduzione in corso...';
+          msg.textContent=t('aud.el_playing');
           src.onended=function(){msg.textContent='';ctx.close();};
         });
       }).catch(function(e){
@@ -1068,37 +1227,37 @@ function dbBleApply(d){
   var batEl=document.getElementById('wb-battery');
   if(batEl)batEl.textContent=d.battery>=0?'🔋'+d.battery+'%':'';
   if(d.connected){
-    dot.className='ble-dot on';lbl.textContent='Connesso: '+d.name;
+    dot.className='ble-dot on';lbl.textContent=t('ble_bar.connected')+d.name;
     disc.style.display='';lst.innerHTML='';
   }else if(d.connecting){
-    dot.className='ble-dot scan';lbl.textContent='Connessione...';
+    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.connecting');
     abort.style.display='';
     setTimeout(dbBlePoll,800);
   }else if(d.scanning){
-    dot.className='ble-dot scan';lbl.textContent='Scansione BLE...';
+    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.scanning');
     stop.style.display='';
     if(d.devices&&d.devices.length){
-      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Trovati finora:</div>';
+      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+t('ble_bar.found_so_far')+'</div>';
       d.devices.forEach(function(dv){
         h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4">'
           +'<span style="flex:1;font-size:.78rem;color:#1a2340;font-weight:600">'+dv.name
           +' <span style="color:#8a9ab5;font-weight:400;font-size:.68rem">'+dv.addr+'</span></span>'
-          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">Connetti</button>'
+          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">'+t('ble_bar.conn_btn')+'</button>'
           +'</div>';
       });
       lst.innerHTML=h;
     }
     setTimeout(dbBlePoll,1500);
   }else{
-    dot.className='ble-dot';lbl.textContent='BLE: non connesso';
+    dot.className='ble-dot';lbl.textContent=t('ble_bar.not_connected');
     scan.style.display='';
     if(d.devices&&d.devices.length){
-      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Furby trovati:</div>';
+      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+t('ble_bar.furby_found')+'</div>';
       d.devices.forEach(function(dv){
         h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4">'
           +'<span style="flex:1;font-size:.78rem;color:#1a2340;font-weight:600">'+dv.name
           +' <span style="color:#8a9ab5;font-weight:400;font-size:.68rem">'+dv.addr+'</span></span>'
-          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">Connetti</button>'
+          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">'+t('ble_bar.conn_btn')+'</button>'
           +'</div>';
       });
       lst.innerHTML=h;
@@ -1127,7 +1286,7 @@ function dbBleStop() {fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).ca
 function dbBleDisc() {fetch('/ble/disconnect',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleReset(){
-  if(!confirm('Reset completo stack BLE? La connessione verrà persa.'))return;
+  if(!confirm(t('ble_bar.reset_confirm')))return;
   fetch('/ble/reset',{method:'POST'}).then(function(){
     setTimeout(dbBlePoll,1500);
   }).catch(function(){});
@@ -1221,7 +1380,6 @@ function tbehTrgChange(){
 function tbehUpdateLabel(){
   var trg=parseInt(document.getElementById('tbeh-trg').value);
   var sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
-  // cerca il behavior che matcherebbe questo trigger tra quelli configurati
   var lbl='';
   if(typeof gEventBehaviors!=='undefined'){
     for(var i=0;i<gEventBehaviors.length;i++){
@@ -1232,7 +1390,7 @@ function tbehUpdateLabel(){
       break;
     }
   }
-  if(!lbl)lbl='→ nessun behavior configurato, verrà usato il default';
+  if(!lbl)lbl=t('act.no_behavior');
   document.getElementById('tbeh-behavior-label').textContent=lbl;
 }
 
@@ -1242,7 +1400,7 @@ function tbehRun(){
   var dry=document.getElementById('tbeh-dry').checked;
   var msg=document.getElementById('tbeh-msg');
   msg.style.color='#5a6a8a';
-  msg.textContent='Invio trigger...';
+  msg.textContent=t('act.trigger_sending');
   var fd=new FormData();
   fd.append('trigger',trg);
   fd.append('sensor_id',sid);
@@ -1252,13 +1410,13 @@ function tbehRun(){
     .then(function(d){
       if(d.ok){
         msg.style.color='#16a34a';
-        msg.textContent=(dry?'[DRY RUN] ':'')+'Trigger inviato — guarda la console seriale per il log completo.';
+        msg.textContent=dry?t('act.trigger_sent_dry'):t('act.trigger_sent');
       } else {
         msg.style.color='#dc2626';
-        msg.textContent='Errore: '+(d.error||'?');
+        msg.textContent=t('act.trigger_err')+(d.error||'?');
       }
     })
-    .catch(function(){msg.style.color='#dc2626';msg.textContent='Errore connessione.';});
+    .catch(function(){msg.style.color='#dc2626';msg.textContent=t('error_conn');});
 }
 
 // init selector sensori al caricamento
@@ -1311,7 +1469,7 @@ function cfgLoad(){
       div.className='cfg-item'+(c.idx===d.active?' active-cfg':'');
       div.innerHTML='<span class="cfg-name">'+(c.idx===d.active?'&#x2605; ':'')+c.name+'</span>'
         +'<span style="font-size:.65rem;color:#475569">'+c.rules.length+' regole</span>'
-        +'<button class="btn b-grn" onclick="cfgActivate('+c.idx+')">Attiva</button>'
+        +'<button class="btn b-grn" onclick="cfgActivate('+c.idx+')">'+t('cfg.activate')+'</button>'
         +'<button class="btn" onclick="cfgEdit('+c.idx+',\''+c.name+'\')">&#x270F;</button>'
         +(d.configs.length>1?'<button class="btn b-red" onclick="cfgDel('+c.idx+')">&#x2715;</button>':'');
       el.appendChild(div);
@@ -1320,14 +1478,14 @@ function cfgLoad(){
 }
 function cfgActivate(idx){var fd=new FormData();fd.append('idx',idx);fetch('/cfg/activate',{method:'POST',body:fd}).then(cfgLoad);}
 function cfgNew(){
-  var nm=document.getElementById('new-cfg-name').value.trim()||'Nuova config';
+  var nm=document.getElementById('new-cfg-name').value.trim()||t('cfg.new_default');
   var fd=new FormData();fd.append('name',nm);
   fetch('/cfg/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
     document.getElementById('new-cfg-name').value='';cfgLoad();cfgEdit(d.idx,nm);
   });
 }
 function cfgDel(idx){
-  if(!confirm('Eliminare questa configurazione?'))return;
+  if(!confirm(t('cfg.del_confirm')))return;
   var fd=new FormData();fd.append('idx',idx);
   fetch('/cfg/del',{method:'POST',body:fd}).then(function(){cfgLoad();document.getElementById('cfg-editor').style.display='none';});
 }
@@ -1392,8 +1550,8 @@ var ampOn=false;
 function ampApply(on){
   ampOn=on;
   var btn=document.getElementById('btn-amp'),st=document.getElementById('amp-status');
-  if(on){btn.textContent='ON';btn.className='btn b-grn';st.textContent='amplificatore attivo';}
-  else{btn.textContent='OFF';btn.className='btn b-red';st.textContent='amplificatore spento';}
+  if(on){btn.textContent='ON';btn.className='btn b-grn';st.textContent=t('aud.amp_on');}
+  else{btn.textContent='OFF';btn.className='btn b-red';st.textContent=t('aud.amp_off');}
 }
 function ampToggle(){
   var fd=new FormData();fd.append('on',ampOn?'0':'1');
@@ -1413,25 +1571,25 @@ function tonePlay(freq){
   var fd=new FormData();
   fd.append('freq',freq!=null?freq:document.getElementById('tone-freq').value);
   fd.append('ms',document.getElementById('tone-ms').value);
-  var res=document.getElementById('tone-result');res.textContent='Invio tono...';
+  var res=document.getElementById('tone-result');res.textContent=t('aud.tone_sending');
   fetch('/debug/tone',{method:'POST',body:fd}).then(r=>r.json())
     .then(function(d){res.textContent=d.ok?'OK — '+d.freq+'Hz per '+d.ms+'ms':'ERR: '+(d.error||'');})
     .catch(function(){res.textContent='errore di rete';});
 }
 function micRecord(){
   var btn=document.getElementById('btn-rec'),res=document.getElementById('rec-result');
-  btn.disabled=true;res.textContent='Registrazione 3s in corso...';
+  btn.disabled=true;res.textContent=t('aud.rec_running');
   fetch('/debug/mic/record',{method:'POST'}).then(r=>r.json())
     .then(function(d){
       if(d.ok){
         var countdown=d.duration||3;
         var iv=setInterval(function(){
-          res.textContent='Registrazione... '+countdown+'s';countdown--;
-          if(countdown<0){clearInterval(iv);res.textContent='Riproduzione in corso...';
-            setTimeout(function(){res.textContent='Fatto.';btn.disabled=false;},3500);}
+          res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;
+          if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');
+            setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;},3500);}
         },1000);
       }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
-    }).catch(function(){res.textContent='errore di rete';btn.disabled=false;});
+    }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
 }
 var micPollIv=null;
 function startMicPoll(){
@@ -1446,9 +1604,9 @@ function startMicPoll(){
       document.getElementById('rms-val-l').textContent=d.rms1;
       document.getElementById('rms-val-r').textContent=d.rms2;
       var badge=document.getElementById('vad-badge');
-      if(d.vad){badge.textContent='Parlato rilevato';badge.style.background='#dcfce7';badge.style.color='#16a34a';}
-      else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent='Rumore';badge.style.background='#fef3c7';badge.style.color='#d97706';}
-      else{badge.textContent='Silenzio';badge.style.background='#e4eaf4';badge.style.color='#5a6a8a';}
+      if(d.vad){badge.textContent=t('aud.vad_speech');badge.style.background='#dcfce7';badge.style.color='#16a34a';}
+      else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent=t('aud.vad_noise');badge.style.background='#fef3c7';badge.style.color='#d97706';}
+      else{badge.textContent=t('aud.vad_silence');badge.style.background='#e4eaf4';badge.style.color='#5a6a8a';}
     }).catch(function(){});
   },150);
 }
@@ -1463,7 +1621,7 @@ function fmLoad(){
       'SPIFFS: '+fmFmtSize(d.used)+' / '+fmFmtSize(d.total)+' usati';
     var tb=document.getElementById('fm-tbody');
     if(!d.files||!d.files.length){
-      tb.innerHTML='<tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px">Nessun file</td></tr>';
+      tb.innerHTML='<tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px">'+t('fm.no_files')+'</td></tr>';
       return;
     }
     var rows='';
@@ -1480,19 +1638,19 @@ function fmLoad(){
     });
     tb.innerHTML=rows;
   }).catch(function(){
-    document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" style="color:#ef4444">Errore di rete</td></tr>';
+    document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" style="color:#ef4444">'+t('fm.net_err')+'</td></tr>';
   });
 }
 function fmEdit(path){
   fmCurrentPath=path;
   document.getElementById('fm-editor-card').style.display='';
   document.getElementById('fm-editor-title').textContent='Editor: '+path;
-  document.getElementById('fm-editor-msg').textContent='carico...';
+  document.getElementById('fm-editor-msg').textContent=t('fm.loading');
   document.getElementById('fm-editor-ta').value='';
-  fetch('/fs/get'+path).then(r=>r.text()).then(function(t){
-    document.getElementById('fm-editor-ta').value=t;
+  fetch('/fs/get'+path).then(r=>r.text()).then(function(txt){
+    document.getElementById('fm-editor-ta').value=txt;
     document.getElementById('fm-editor-msg').textContent='';
-  }).catch(function(){document.getElementById('fm-editor-msg').textContent='Errore caricamento';});
+  }).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
 }
 function fmEditorClose(){
   document.getElementById('fm-editor-card').style.display='none';
@@ -1502,13 +1660,13 @@ function fmSave(){
   if(!fmCurrentPath)return;
   var content=document.getElementById('fm-editor-ta').value;
   var fd=new FormData();fd.append('path',fmCurrentPath);fd.append('content',new Blob([content],{type:'text/plain'}),fmCurrentPath.split('/').pop());
-  var msg=document.getElementById('fm-editor-msg');msg.textContent='Salvo...';
+  var msg=document.getElementById('fm-editor-msg');msg.textContent=t('fm.saving');
   fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json())
-    .then(function(d){msg.textContent=d.ok?'Salvato.':'ERR: '+(d.error||'');fmLoad();})
+    .then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmLoad();})
     .catch(function(){msg.textContent='Errore di rete';});
 }
 function fmDel(path){
-  if(!confirm('Eliminare '+path+'?'))return;
+  if(!confirm(t('fm.del_confirm')+' '+path+'?'))return;
   var fd=new FormData();fd.append('path',path);
   fetch('/fs/del',{method:'POST',body:fd}).then(r=>r.json())
     .then(function(d){if(!d.ok)alert('ERR: '+(d.error||''));fmLoad();if(fmCurrentPath===path)fmEditorClose();})
@@ -1518,13 +1676,13 @@ function fmUpload(){
   var path=document.getElementById('fm-up-path').value.trim();
   var file=document.getElementById('fm-up-file').files[0];
   var msg=document.getElementById('fm-up-msg');
-  if(!path||!file){msg.textContent='Inserisci percorso e seleziona file.';return;}
+  if(!path||!file){msg.textContent=t('fm.upload_missing');return;}
   if(path[0]!=='/')path='/'+path;
   var fd=new FormData();fd.append('path',path);fd.append('content',file,file.name);
-  msg.textContent='Carico...';
+  msg.textContent=t('fm.loading');
   fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json())
     .then(function(d){
-      msg.textContent=d.ok?'Caricato in '+path:'ERR: '+(d.error||'');
+      msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
       if(d.ok){document.getElementById('fm-up-path').value='';document.getElementById('fm-up-file').value='';fmLoad();}
     }).catch(function(){msg.textContent='Errore di rete';});
 }
