@@ -365,7 +365,7 @@ void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur);
 static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp_ble_addr_type_t addrType);
 bool camInit();
 void camDeinit();
-static void i2s_write_stereo(const int16_t* buf_mono, int mono_samples);
+static void i2s_write_mono(const int16_t* buf, int samples);
 void generateAndPlayTTS_SD(String text);
 void streamAndPlayTTS_RAM(String text);
 String base64Encode(uint8_t* data, size_t length);
@@ -503,6 +503,20 @@ void setAmplifier(bool enable) {
     Serial.printf("setAmplifier(%s) port sarà 0x%02X\n", enable?"ON":"OFF",
         enable ? (ch32PortState | (1<<4)) : (ch32PortState & ~(1<<4)));
     ch32SetBit(4, enable);
+}
+
+// Legge tensione batteria dall'ADC dell'IO expander (reg 0x06, 12-bit, Vref=3.3V).
+// Il partitore sul PCB Waveshare è 1:2 → moltiplica per 2 per ottenere la tensione reale.
+// Restituisce mV, -1 se I2C fallisce.
+int readBatteryMv() {
+    Wire.beginTransmission(CH32_ADDR);
+    Wire.write(0x06);
+    if (Wire.endTransmission(false) != 0) return -1;
+    if (Wire.requestFrom(CH32_ADDR, (uint8_t)2) != 2) return -1;
+    uint8_t lo = Wire.read(), hi = Wire.read();
+    uint16_t raw = (uint16_t)(hi << 8 | lo);
+    // raw è 12-bit (0-4095), Vref=3.3V, partitore 1:2
+    return (int)((uint32_t)raw * 3300 * 2 / 4095);
 }
 
 // ==========================================
@@ -2147,11 +2161,11 @@ void handleDebugTone() {
             buf[i] = (int16_t)(16000 * sin(2.0f * M_PI * freq * phase / RATE));
             phase++;
         }
-        i2s_write_stereo(buf, chunk);
+        i2s_write_mono(buf, chunk);
     }
     // drain: scrivi silenzio per svuotare il DMA buffer prima di spegnere l'amp
     memset(buf, 0, sizeof(buf));
-    i2s_write_stereo(buf, BUF_SAMP);
+    i2s_write_mono(buf, BUF_SAMP);
     delay(50);
     i2s_zero_dma_buffer(I2S_NUM);
     setAmplifier(false);
@@ -2205,7 +2219,7 @@ static void micRecordTask(void* pv) {
             int32_t mix = (int32_t)recBuf[i + 2*k] + recBuf[i + 2*k + 1];
             outBuf[k] = (int16_t)(mix / 2);
         }
-        i2s_write_stereo(outBuf, chunk);
+        i2s_write_mono(outBuf, chunk);
     }
     i2s_zero_dma_buffer(I2S_NUM);
     setAmplifier(false);
@@ -2391,6 +2405,7 @@ void handleSysInfo() {
     j += "\"flash_used_kb\":" + String(kb(ESP.getSketchSize()) + kb(SPIFFS.usedBytes())) + ",";
     j += "\"flash_free_kb\":" + String(ESP.getFlashChipSize() / 1024 - kb(ESP.getSketchSize()) - kb(SPIFFS.usedBytes())) + ",";
     j += "\"uptime_s\":"      + String(millis() / 1000) + ",";
+    j += "\"bat_mv\":"        + String(readBatteryMv()) + ",";
     j += "\"fw_version\":\""  + String(FW_VERSION) + "\",";
     j += "\"el_key\":\""      + elevenlabs_api_key + "\",";
     j += "\"el_voice_id\":\"" + elevenlabs_voice_id + "\",";
@@ -2786,7 +2801,7 @@ public:
     bool ConsumeSample(int16_t sample[2]) override {
         long amp = (abs((int)sample[0]) + abs((int)sample[1])) / 2;
         currentAmplitude = (int)amp;
-        i2s_write_stereo(sample, 1);
+        i2s_write_mono(sample, 1);
         return true;
     }
     bool stop() override {
@@ -2880,7 +2895,7 @@ void playAudioSD(String filename) {
             int n = bytesRead / 2; long sum = 0;
             for (int i = 0; i < n; i++) sum += abs(pcm[i]);
             currentAmplitude = n > 0 ? sum / n : 0;
-            i2s_write_stereo(pcm, n);
+            i2s_write_mono(pcm, n);
         }
         file.close();
         i2s_zero_dma_buffer(I2S_NUM);
@@ -2961,7 +2976,7 @@ void streamAndPlayTTS_RAM(String text) {
                     int ns = n / 2; long sum = 0;
                     for (int i = 0; i < ns; i++) sum += abs(pcm[i]);
                     currentAmplitude = ns > 0 ? sum / ns : 0;
-                    i2s_write_stereo(pcm, ns);
+                    i2s_write_mono(pcm, ns);
                 }
                 delay(1);
             }
@@ -2986,7 +3001,7 @@ void initI2S() {
         .mode                 = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
         .sample_rate          = 16000,
         .bits_per_sample      = I2S_BITS_PER_SAMPLE_16BIT,
-        .channel_format       = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .channel_format       = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags     = ESP_INTR_FLAG_LEVEL1,
         .dma_buf_count        = 8,
@@ -3004,24 +3019,12 @@ void initI2S() {
     };
     i2s_driver_install(I2S_NUM, &cfg, 0, NULL);
     i2s_set_pin(I2S_NUM, &pins);
-    i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
+    i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
 }
 
-// Scrive buffer PCM mono su I2S stereo duplicando ogni campione su L e R.
-// buf_mono: campioni int16 mono; mono_samples: numero campioni (non bytes)
-static void i2s_write_stereo(const int16_t* buf_mono, int mono_samples) {
-    // Buffer stereo temporaneo su stack (512 campioni mono → 2KB)
-    const int CHUNK = 512;
-    int16_t stereo[CHUNK * 2];
+static void i2s_write_mono(const int16_t* buf, int samples) {
     size_t written;
-    for (int s = 0; s < mono_samples; s += CHUNK) {
-        int n = min(CHUNK, mono_samples - s);
-        for (int i = 0; i < n; i++) {
-            stereo[i*2]   = buf_mono[s + i]; // L
-            stereo[i*2+1] = buf_mono[s + i]; // R
-        }
-        i2s_write(I2S_NUM, stereo, n * 4, &written, portMAX_DELAY);
-    }
+    i2s_write(I2S_NUM, buf, samples * sizeof(int16_t), &written, portMAX_DELAY);
 }
 
 // ==========================================

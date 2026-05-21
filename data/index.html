@@ -322,7 +322,7 @@ function bleApply(d){
   var scan=document.getElementById('btn-scan'),stop=document.getElementById('btn-stop'),disc=document.getElementById('btn-disc');
   var msg=document.getElementById('ble-scanning'),lst=document.getElementById('ble-list');
   var upRow=document.getElementById('ble-uptime-row');
-  if(d.uptime!==undefined){_bootRef={t:Date.now(),s:d.uptime};_uptimeTick();}
+  if(d.uptime!==undefined){_bootRefSet(Date.now(),d.uptime);_uptimeTick();}
   if(d.connected){document.getElementById('ble-uptime').textContent=fmtSec(d.ble_uptime);upRow.style.display='';}
   else{upRow.style.display='none';}
   if(d.connected){
