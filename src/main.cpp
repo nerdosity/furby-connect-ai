@@ -2542,6 +2542,18 @@ void startWebServer() {
         server.sendHeader("Cache-Control", "public, max-age=86400");
         server.streamFile(f, "image/png"); f.close();
     });
+    server.on("/shared.css", HTTP_GET, []() {
+        File f = SPIFFS.open("/shared.css","r");
+        if (!f) { server.send(404); return; }
+        server.sendHeader("Cache-Control", "public, max-age=3600");
+        server.streamFile(f, "text/css; charset=utf-8"); f.close();
+    });
+    server.on("/shared.js", HTTP_GET, []() {
+        File f = SPIFFS.open("/shared.js","r");
+        if (!f) { server.send(404); return; }
+        server.sendHeader("Cache-Control", "public, max-age=3600");
+        server.streamFile(f, "application/javascript; charset=utf-8"); f.close();
+    });
 
     server.onNotFound([]() {
         String uri = server.uri();

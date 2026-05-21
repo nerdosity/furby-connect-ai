@@ -8,6 +8,7 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
   box-shadow:0 3px 12px rgba(0,0,0,.35)}
 .logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden}
 .logo-wrap img{width:100%;height:100%;object-fit:cover}
+.header-text h1{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
 .header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
 
 /* ── nav hamburger ───────────────────────────────────────────────────────── */
@@ -37,16 +38,71 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
 /* ── sys bar ─────────────────────────────────────────────────────────────── */
 #sys-bar,#sys-info-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap}
 
+/* ── section title ───────────────────────────────────────────────────────── */
+.sec-title{display:flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;color:#5a6a8a;margin:20px 0 8px;padding-left:2px}
+.sec-title .ico{width:18px;height:18px;opacity:.7}
+
 /* ── card base ───────────────────────────────────────────────────────────── */
 .card{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:12px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
 .card h3{font-size:.78rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
   letter-spacing:1.2px;margin-bottom:12px}
 
+/* ── status row ──────────────────────────────────────────────────────────── */
+.status-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-ok  {background:#22c55e;box-shadow:0 0 6px #22c55e88}
+.dot-warn{background:#f59e0b;box-shadow:0 0 6px #f59e0b88}
+.dot-err {background:#ef4444;box-shadow:0 0 6px #ef444488}
+.status-label{font-size:.82rem;font-weight:600;color:#1a2340}
+.status-sub{font-size:.72rem;color:#8a9ab5;margin-left:auto}
+
+/* ── form elements ───────────────────────────────────────────────────────── */
+label{display:block;font-size:.72rem;font-weight:600;color:#5a6a8a;
+  margin-bottom:4px;margin-top:12px;text-transform:uppercase;letter-spacing:.5px}
+input[type=text],input[type=password],input[type=number],select{
+  width:100%;padding:10px 13px;background:#f5f8ff;color:#1a2340;
+  border:1.5px solid #d0d9ee;border-radius:9px;font-size:.88rem;
+  transition:border-color .15s,box-shadow .15s;appearance:none}
+input:focus,select:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 3px #3a529822}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a8a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+
 /* ── pulsanti base ───────────────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:9px 14px;border:none;border-radius:9px;cursor:pointer;
   font-size:.82rem;font-weight:700;transition:opacity .12s;width:100%;margin-top:8px}
 .btn:hover{opacity:.85}.btn:active{opacity:.65}
+.btn-blue  {background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff}
+.btn-green {background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff}
+.btn-red   {background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.btn-amber {background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.btn-ghost {background:#f0f4f8;color:#3a5298;border:1.5px solid #d0d9ee}
+.btn-sm    {padding:7px 12px;font-size:.75rem;width:auto;margin-top:0}
 .btn-row{display:flex;gap:8px;margin-top:8px}
 .btn-row .btn{flex:1}
+
+/* ── table ───────────────────────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:4px}
+th{text-align:left;padding:8px 10px;background:#f5f8ff;color:#8a9ab5;
+   font-weight:600;font-size:.68rem;text-transform:uppercase;letter-spacing:.8px}
+td{padding:8px 10px;border-bottom:1px solid #eef2fa;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.ssid-name{font-weight:600;color:#1a2340}
+
+/* ── badge ───────────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
+.badge-ok  {background:#dcfce7;color:#16a34a}
+.badge-err {background:#fee2e2;color:#dc2626}
+.badge-warn{background:#fef9c3;color:#d97706}
+
+/* ── misc ────────────────────────────────────────────────────────────────── */
+.divider{border:none;border-top:1px solid #eef2fa;margin:14px 0}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:38px}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:.9rem;padding:2px}
+.ip-bar{background:#eef2fa;border-radius:8px;padding:7px 12px;
+  font-size:.73rem;color:#5a6a8a;margin-bottom:4px;display:flex;align-items:center;gap:6px}
