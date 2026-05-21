@@ -10,6 +10,8 @@ function fmtKB(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
 var _uptimeTimer = null;
 var _fwUpdateAvailable = false;
 var _fwCurrent = null;
+var _lastSysPlain = '';
+var _lastTempC = null;
 var _bootRef = (function(){
   try {
     var v=JSON.parse(sessionStorage.getItem('_furby_boot'));
@@ -28,6 +30,31 @@ function _uptimeTick(){
   if(el)el.textContent=fmtSec(_bootRef.s+Math.floor((Date.now()-_bootRef.t)/1000));
 }
 
+function _tempColor(c){
+  if(c>=85) return '#ff2222';
+  if(c>=75) return '#ff8800';
+  if(c>=60) return '#ffcc00';
+  return '';
+}
+
+function _renderSysBar(bar, plainText, tempC){
+  while(bar.firstChild) bar.removeChild(bar.firstChild);
+  bar.appendChild(document.createTextNode(plainText));
+  if(tempC!=null){
+    bar.appendChild(document.createTextNode(' | T '));
+    var col=_tempColor(tempC);
+    if(col){
+      var sp=document.createElement('span');
+      sp.style.color=col;
+      sp.style.fontWeight='bold';
+      sp.textContent=tempC+'°C';
+      bar.appendChild(sp);
+    } else {
+      bar.appendChild(document.createTextNode(tempC+'°C'));
+    }
+  }
+}
+
 function _updateSysBar(d){
   var sd=d.sd_total?' | SD '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total):'';
   var flashUsed=d.flash_used_kb!=null?fmtKB(d.flash_used_kb):'?';
@@ -39,12 +66,14 @@ function _updateSysBar(d){
   var psramUsed=d.psram_total-d.psram_free;
   var psramPct=d.psram_total?Math.round(psramUsed*100/d.psram_total):0;
   var fw=d.fw_version?' | FW '+d.fw_version+(_fwUpdateAvailable?' ⬆':''):'';
-  if(bar)bar.textContent='CPU '+d.cpu_mhz+'MHz'
+  _lastSysPlain='CPU '+d.cpu_mhz+'MHz'
     +' | SRAM '+fmtKB(sramUsed)+'/'+fmtKB(d.heap_total)+' ('+sramPct+'%)'
     +' | PSRAM '+fmtKB(psramUsed)+'/'+fmtKB(d.psram_total)+' ('+psramPct+'%)'
     +' | Sketch '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
     +' | SPIFFS '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
     +' | Flash '+flashUsed+' usati, '+flashFree+' liberi ('+d.flash_mb+'MB)'+bat+sd+fw;
+  _lastTempC=(d.chip_temp_c!=null)?d.chip_temp_c:null;
+  if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC);
   if(d.uptime_s!=null&&!_bootRef){
     _bootRefSet(Date.now(),d.uptime_s);
     if(!_uptimeTimer)_uptimeTimer=setInterval(_uptimeTick,1000);
@@ -58,9 +87,9 @@ function _updateSysBar(d){
         var latest=t.trim();
         if(latest&&latest!==_fwCurrent){
           _fwUpdateAvailable=true;
-          // Ridisegna la bar con l'indicatore aggiornamento
+          _lastSysPlain=_lastSysPlain.replace(' | FW '+_fwCurrent,' | FW '+_fwCurrent+' ⬆ '+latest);
           var bar=document.getElementById('sys-bar')||document.getElementById('sys-info-bar');
-          if(bar)bar.textContent=bar.textContent.replace(' | FW '+_fwCurrent,' | FW '+_fwCurrent+' ⬆ '+latest);
+          if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC);
         }
       }).catch(function(){});
   }
@@ -69,7 +98,6 @@ function _updateSysBar(d){
 document.addEventListener('DOMContentLoaded',function(){
   var ipEl=document.getElementById('esp-ip');
   if(ipEl)ipEl.textContent=window.location.hostname;
-    // Se bootRef già noto (navigazione tra pagine), avvia subito il tick senza aspettare /sys/info
   if(_bootRef){_uptimeTimer=setInterval(_uptimeTick,1000);_uptimeTick();}
   (function sysLoop(){
     fetch('/sys/info').then(function(r){return r.json();}).then(_updateSysBar).catch(function(){});

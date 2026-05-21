@@ -23,7 +23,7 @@
 #include "AudioFileSourceBuffer.h"
 #include "AudioFileSourcePROGMEM.h"
 
-#define FW_VERSION "2026.0521.1050"
+#define FW_VERSION "2026.0521.1113"
 
 // ==========================================
 // PINOUT E CONFIG HARDWARE
@@ -1127,24 +1127,37 @@ static volatile int wifiConnectState = 0;
 static String wifiConnectSSID;
 static String wifiConnectIP;
 
-static void wifiConnectTask(void*) {
-    WiFi.disconnect(true); vTaskDelay(300 / portTICK_PERIOD_MS);
+// Tenta connessione a tutte le reti salvate in ordine. Ritorna true se connesso.
+// useDelay: true=vTaskDelay (da task FreeRTOS), false=delay (da setup/loop)
+static bool tryConnectWifi(bool useDelay) {
+    WiFi.disconnect(true);
+    if (useDelay) vTaskDelay(300/portTICK_PERIOD_MS); else delay(300);
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(false);
     for (int i = 0; i < wifiNetCount; i++) {
+        Serial.println("WiFi: provo " + wifiNets[i].ssid);
         WiFi.begin(wifiNets[i].ssid.c_str(), wifiNets[i].pass.c_str());
         for (int t = 0; t < 20 && WiFi.status() != WL_CONNECTED; t++)
-            vTaskDelay(500 / portTICK_PERIOD_MS);
+            if (useDelay) vTaskDelay(500/portTICK_PERIOD_MS); else delay(500);
         if (WiFi.status() == WL_CONNECTED) {
-            isConfigMode = false;
-            wifiConnectSSID = wifiNets[i].ssid;
-            wifiConnectIP   = WiFi.localIP().toString();
-            wifiConnectState = 2;
-            vTaskDelete(NULL); return;
+            Serial.println("WiFi connesso: " + WiFi.localIP().toString());
+            return true;
         }
-        WiFi.disconnect(true); vTaskDelay(200 / portTICK_PERIOD_MS);
+        WiFi.disconnect(true);
+        if (useDelay) vTaskDelay(200/portTICK_PERIOD_MS); else delay(200);
     }
-    wifiConnectState = 3;
+    return false;
+}
+
+static void wifiConnectTask(void*) {
+    if (tryConnectWifi(true)) {
+        isConfigMode     = false;
+        wifiConnectSSID  = WiFi.SSID();
+        wifiConnectIP    = WiFi.localIP().toString();
+        wifiConnectState = 2;
+    } else {
+        wifiConnectState = 3;
+    }
     vTaskDelete(NULL);
 }
 
@@ -1235,54 +1248,61 @@ void handleWifiDown() {
     server.sendHeader("Location", "/"); server.send(303);
 }
 
+// Estrae tutti i valori di "id" da un body JSON in un JsonArray (parsing leggero, no heap)
+static void extractJsonIds(const String& body, JsonArray arr) {
+    int pos = 0;
+    while (true) {
+        int idx  = body.indexOf("\"id\":\"",  pos);
+        int idx2 = body.indexOf("\"id\": \"", pos);
+        if (idx < 0 && idx2 < 0) break;
+        int start;
+        if      (idx < 0)    start = idx2 + 7;
+        else if (idx2 < 0)   start = idx  + 6;
+        else if (idx2 < idx) start = idx2 + 7;
+        else                 start = idx  + 6;
+        int end = body.indexOf("\"", start);
+        if (end < 0) break;
+        arr.add(body.substring(start, end));
+        pos = end + 1;
+    }
+}
+
 // Ritorna lista modelli dal provider come JSON array di stringhe
 // GET /api/models?provider=openai  oppure  ?provider=claude
 void handleApiModels() {
     String provider = server.arg("provider");
     if (provider.length() == 0) provider = llm_provider;
 
-    // Rilegge dalla NVS in caso la RAM sia stata svuotata per qualsiasi motivo
     if (openai_api_key.length() == 0) openai_api_key = preferences.getString("openai", "");
     if (claude_api_key.length() == 0) claude_api_key  = preferences.getString("claude", "");
 
     Serial.printf("[API-MODELS] provider=%s openai_key_len=%u claude_key_len=%u\n",
         provider.c_str(), openai_api_key.length(), claude_api_key.length());
 
+    const String& key = (provider == "claude") ? claude_api_key : openai_api_key;
+    if (key.length() == 0) {
+        server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return;
+    }
+
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
-    String result = "[";
-
     server.sendHeader("Cache-Control", "no-store");
 
+    JsonDocument doc;
+    JsonArray models = doc["models"].to<JsonArray>();
+
     if (provider == "openai") {
-        if (openai_api_key.length() == 0) {
-            Serial.println("[API-MODELS] openai_api_key vuota -> ritorno errore");
-            server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return;
-        }
         http.begin(client, "https://api.openai.com/v1/models");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
-        int oaCode = http.GET();
-        Serial.printf("[API-MODELS] OpenAI /models HTTP %d\n", oaCode);
-        if (oaCode == 200) {
+        int code = http.GET();
+        Serial.printf("[API-MODELS] OpenAI /models HTTP %d\n", code);
+        if (code == 200) {
             String body = http.getString();
-            Serial.printf("[API-MODELS] OpenAI body len=%u\n", body.length());
-            // Filtra modelli testuali: gpt-*, o1*, o3*, o4*, chatgpt-*
-            // Esclude: embedding, tts, dall-e, whisper, babbage, davinci, ada
-            int pos = 0;
-            bool first = true;
-            while (true) {
-                // OpenAI risponde con "id": "..." (spazio dopo i due punti)
-                int idx  = body.indexOf("\"id\":\"",  pos);
-                int idx2 = body.indexOf("\"id\": \"", pos);
-                if (idx < 0 && idx2 < 0) break;
-                int useIdx;
-                if      (idx < 0)        useIdx = idx2 + 7;
-                else if (idx2 < 0)       useIdx = idx  + 6;
-                else if (idx2 < idx)     useIdx = idx2 + 7;
-                else                     useIdx = idx  + 6;
-                int end = body.indexOf("\"", useIdx);
-                if (end < 0) break;
-                String id = body.substring(useIdx, end);
+            JsonDocument tmp;
+            JsonArray all = tmp["a"].to<JsonArray>();
+            extractJsonIds(body, all);
+            for (JsonVariant v : all) {
+                String id = v.as<String>();
                 bool isText = id.startsWith("gpt-") || id.startsWith("o1") ||
                               id.startsWith("o3")   || id.startsWith("o4") ||
                               id.startsWith("chatgpt-");
@@ -1290,45 +1310,23 @@ void handleApiModels() {
                               id.indexOf("dall-e") >= 0 || id.indexOf("whisper") >= 0 ||
                               id.indexOf("babbage") >= 0 || id.indexOf("davinci") >= 0 ||
                               id.indexOf("ada") >= 0;
-                if (isText && !isExcl) {
-                    if (!first) result += ",";
-                    result += "\"" + id + "\"";
-                    first = false;
-                }
-                pos = end + 1;
+                if (isText && !isExcl) models.add(id);
             }
-            Serial.printf("[API-MODELS] OpenAI modelli trovati: %s\n", result.c_str());
+            Serial.printf("[API-MODELS] OpenAI modelli trovati: %u\n", models.size());
         } else {
-            Serial.printf("[API-MODELS] OpenAI HTTP %d: %s\n", oaCode, http.getString().substring(0,200).c_str());
+            Serial.printf("[API-MODELS] OpenAI HTTP %d\n", code);
         }
-        http.end();
-
     } else if (provider == "claude") {
-        if (claude_api_key.length() == 0) { server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return; }
         http.begin(client, "https://api.anthropic.com/v1/models");
         http.addHeader("x-api-key", claude_api_key);
         http.addHeader("anthropic-version", "2023-06-01");
-        if (http.GET() == 200) {
-            String body = http.getString();
-            int pos = 0;
-            bool first = true;
-            while (true) {
-                int idx = body.indexOf("\"id\":\"", pos);
-                if (idx < 0) break;
-                idx += 6;
-                int end = body.indexOf("\"", idx);
-                String id = body.substring(idx, end);
-                if (!first) result += ",";
-                result += "\"" + id + "\"";
-                first = false;
-                pos = end + 1;
-            }
-        }
-        http.end();
+        if (http.GET() == 200) extractJsonIds(http.getString(), models);
     }
+    http.end();
 
-    result += "]";
-    server.send(200, "application/json", "{\"ok\":true,\"models\":" + result + "}");
+    doc["ok"] = true;
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // GET /api/config?openai_key=...&claude_key=...&el_key=...&el_vid=...&provider=...&model=...&ssid=...&pass=...
@@ -1674,24 +1672,22 @@ void handleBleScanStop() {
 
 // GET /ble/status — stato connessione + lista Furby trovati + uptime
 void handleBleStatus() {
-    String name = ble_last_name; name.replace("\"", "\\\"");
-    unsigned long upMs  = millis();
-    unsigned long bleMs = connected ? (upMs - bleConnectedMs) : 0;
-    String json = "{\"connected\":"   + String(connected     ? "true" : "false") +
-                  ",\"scanning\":"   + String(bleScanning   ? "true" : "false") +
-                  ",\"connecting\":" + String(bleConnecting ? "true" : "false") +
-                  ",\"name\":\""     + name + "\"" +
-                  ",\"battery\":"    + String(ble_battery_pct) +
-                  ",\"uptime\":"     + String(upMs / 1000) +
-                  ",\"ble_uptime\":" + String(bleMs / 1000) +
-                  ",\"devices\":[";
+    JsonDocument d;
+    d["connected"]  = connected;
+    d["scanning"]   = bleScanning;
+    d["connecting"] = bleConnecting;
+    d["name"]       = ble_last_name;
+    d["battery"]    = ble_battery_pct;
+    d["uptime"]     = millis() / 1000;
+    d["ble_uptime"] = connected ? (millis() - bleConnectedMs) / 1000 : 0;
+    JsonArray devs = d["devices"].to<JsonArray>();
     for (int i = 0; i < furbyListCount; i++) {
-        if (i) json += ",";
-        String n = furbyList[i].name; n.replace("\"", "\\\"");
-        json += "{\"name\":\"" + n + "\",\"addr\":\"" + furbyList[i].addr + "\"}";
+        JsonObject o = devs.add<JsonObject>();
+        o["name"] = furbyList[i].name;
+        o["addr"] = furbyList[i].addr;
     }
-    json += "]}";
-    server.send(200, "application/json", json);
+    String j; serializeJson(d, j);
+    server.send(200, "application/json", j);
 }
 
 // POST /ble/connect?addr=XX:XX:XX:XX:XX:XX — connetti a Furby specifico
@@ -2069,33 +2065,32 @@ void handleFsDel() {
 }
 
 void handleDebugSensors() {
-    unsigned long age = lastSensorMs ? (millis() - lastSensorMs) : 99999;
-    String j = "{";
-    j += "\"connected\":" + String(connected ? "true" : "false") + ",";
-    j += "\"device\":\"" + ble_last_name + " [" + ble_last_addr + "]\",";
-    j += "\"sensor_age_ms\":" + String(age) + ",";
-    j += "\"antennaLeft\":"    + String(furbyState.antennaLeft    ? "true":"false") + ",";
-    j += "\"antennaRight\":"   + String(furbyState.antennaRight   ? "true":"false") + ",";
-    j += "\"antennaForward\":" + String(furbyState.antennaForward ? "true":"false") + ",";
-    j += "\"antennaBack\":"    + String(furbyState.antennaBack    ? "true":"false") + ",";
-    j += "\"tickleHead\":"     + String(furbyState.tickleHead     ? "true":"false") + ",";
-    j += "\"tickleTummy\":"    + String(furbyState.tickleTummy    ? "true":"false") + ",";
-    j += "\"tickleRight\":"    + String(furbyState.tickleRight    ? "true":"false") + ",";
-    j += "\"tickleLeft\":"     + String(furbyState.tickleLeft     ? "true":"false") + ",";
-    j += "\"pullTail\":"       + String(furbyState.pullTail       ? "true":"false") + ",";
-    j += "\"pushTongue\":"     + String(furbyState.pushTongue     ? "true":"false") + ",";
-    j += "\"upright\":"        + String(furbyState.upright        ? "true":"false") + ",";
-    j += "\"upsideDown\":"     + String(furbyState.upsideDown     ? "true":"false") + ",";
-    j += "\"onRightSide\":"    + String(furbyState.onRightSide    ? "true":"false") + ",";
-    j += "\"onLeftSide\":"     + String(furbyState.onLeftSide     ? "true":"false") + ",";
-    j += "\"leanBack\":"       + String(furbyState.leanBack       ? "true":"false") + ",";
-    j += "\"tiltRight\":"      + String(furbyState.tiltRight      ? "true":"false") + ",";
-    j += "\"tiltLeft\":"       + String(furbyState.tiltLeft       ? "true":"false") + ",";
-    j += "\"rawB1\":" + String(furbyState.rawB1) + ",";
-    j += "\"rawB2\":" + String(furbyState.rawB2) + ",";
-    j += "\"rawB3\":" + String(furbyState.rawB3) + ",";
-    j += "\"rawB4\":" + String(furbyState.rawB4);
-    j += "}";
+    JsonDocument d;
+    d["connected"]     = connected;
+    d["device"]        = ble_last_name + " [" + ble_last_addr + "]";
+    d["sensor_age_ms"] = lastSensorMs ? (millis() - lastSensorMs) : 99999;
+    d["antennaLeft"]    = furbyState.antennaLeft;
+    d["antennaRight"]   = furbyState.antennaRight;
+    d["antennaForward"] = furbyState.antennaForward;
+    d["antennaBack"]    = furbyState.antennaBack;
+    d["tickleHead"]     = furbyState.tickleHead;
+    d["tickleTummy"]    = furbyState.tickleTummy;
+    d["tickleRight"]    = furbyState.tickleRight;
+    d["tickleLeft"]     = furbyState.tickleLeft;
+    d["pullTail"]       = furbyState.pullTail;
+    d["pushTongue"]     = furbyState.pushTongue;
+    d["upright"]        = furbyState.upright;
+    d["upsideDown"]     = furbyState.upsideDown;
+    d["onRightSide"]    = furbyState.onRightSide;
+    d["onLeftSide"]     = furbyState.onLeftSide;
+    d["leanBack"]       = furbyState.leanBack;
+    d["tiltRight"]      = furbyState.tiltRight;
+    d["tiltLeft"]       = furbyState.tiltLeft;
+    d["rawB1"]          = furbyState.rawB1;
+    d["rawB2"]          = furbyState.rawB2;
+    d["rawB3"]          = furbyState.rawB3;
+    d["rawB4"]          = furbyState.rawB4;
+    String j; serializeJson(d, j);
     server.send(200, "application/json", j);
 }
 
@@ -2420,74 +2415,77 @@ void handleBleReset() {
 
 // GET /sys/info — info sistema (CPU, heap, PSRAM, SPIFFS, SD, flash)
 void handleSysInfo() {
-    auto kb = [](size_t b) { return b / 1024; };
-    // SRAM interna: heap_caps include sia heap dinamica che SRAM statica allocata
-    size_t sramTotal = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
-    size_t sramFree  = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
-    // PSRAM esterna
+    auto kb = [](size_t b) -> size_t { return b / 1024; };
+    size_t sramTotal  = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    size_t sramFree   = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     size_t psramTotal = psramFound() ? heap_caps_get_total_size(MALLOC_CAP_SPIRAM) : 0;
     size_t psramFree  = psramFound() ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM)  : 0;
-    String j = "{";
-    j += "\"cpu_mhz\":"      + String(getCpuFrequencyMhz())        + ",";
-    j += "\"heap_free\":"    + String(kb(sramFree))                 + ",";
-    j += "\"heap_total\":"   + String(kb(sramTotal))                + ",";
-    j += "\"psram_free\":"   + String(kb(psramFree))                + ",";
-    j += "\"psram_total\":"  + String(kb(psramTotal))               + ",";
-    j += "\"spiffs_used\":"   + String(kb(SPIFFS.usedBytes()))                  + ",";
-    j += "\"spiffs_total\":"  + String(kb(SPIFFS.totalBytes()))                 + ",";
-    j += "\"sketch_used\":"   + String(kb(ESP.getSketchSize()))  + ",";
-    j += "\"sketch_total\":"  + String(0x400000 / 1024)          + ",";
-    j += "\"flash_mb\":"      + String(ESP.getFlashChipSize() / (1024*1024))    + ",";
-    j += "\"flash_used_kb\":" + String(kb(ESP.getSketchSize()) + kb(SPIFFS.usedBytes())) + ",";
-    j += "\"flash_free_kb\":" + String(ESP.getFlashChipSize() / 1024 - kb(ESP.getSketchSize()) - kb(SPIFFS.usedBytes())) + ",";
-    j += "\"uptime_s\":"      + String(millis() / 1000) + ",";
-    j += "\"bat_mv\":"        + String(readBatteryMv()) + ",";
-    j += "\"fw_version\":\""  + String(FW_VERSION) + "\",";
-    j += "\"el_key\":\""      + elevenlabs_api_key + "\",";
-    j += "\"el_voice_id\":\"" + elevenlabs_voice_id + "\",";
-    j += "\"el_fmt\":\""      + el_audio_fmt + "\"";
+    size_t sketchKb   = kb(ESP.getSketchSize());
+    size_t spiffsKb   = kb(SPIFFS.usedBytes());
+    JsonDocument d;
+    d["cpu_mhz"]      = getCpuFrequencyMhz();
+    d["heap_free"]    = kb(sramFree);
+    d["heap_total"]   = kb(sramTotal);
+    d["psram_free"]   = kb(psramFree);
+    d["psram_total"]  = kb(psramTotal);
+    d["spiffs_used"]  = kb(SPIFFS.usedBytes());
+    d["spiffs_total"] = kb(SPIFFS.totalBytes());
+    d["sketch_used"]  = sketchKb;
+    d["sketch_total"] = 0x400000 / 1024;
+    d["flash_mb"]     = ESP.getFlashChipSize() / (1024*1024);
+    d["flash_used_kb"]= sketchKb + spiffsKb;
+    d["flash_free_kb"]= ESP.getFlashChipSize() / 1024 - sketchKb - spiffsKb;
+    d["uptime_s"]     = millis() / 1000;
+    d["bat_mv"]       = readBatteryMv();
+    d["chip_temp_c"]  = (int)temperatureRead();
+    d["fw_version"]   = FW_VERSION;
+    d["el_key"]       = elevenlabs_api_key;
+    d["el_voice_id"]  = elevenlabs_voice_id;
+    d["el_fmt"]       = el_audio_fmt;
     if (sdAvailable) {
-        j += ",\"sd_used\":"  + String(kb(SD_MMC.usedBytes()));
-        j += ",\"sd_total\":" + String(kb(SD_MMC.totalBytes()));
+        d["sd_used"]  = kb(SD_MMC.usedBytes());
+        d["sd_total"] = kb(SD_MMC.totalBytes());
     }
-    j += "}";
+    String j; serializeJson(d, j);
     server.send(200, "application/json", j);
 }
 
 // GET /api/home — tutti i dati dinamici della home page
 void handleApiHome() {
     bool wifiOk = (WiFi.status() == WL_CONNECTED);
-    String ip = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
-    String j = "{";
-    j += "\"wifi_connected\":" + String(wifiOk ? "true" : "false") + ",";
-    j += "\"wifi_ssid\":\""    + (wifiOk ? WiFi.SSID() : String("")) + "\",";
-    j += "\"ip\":\""           + ip + "\",";
-    j += "\"wifi_nets\":[";
+    JsonDocument doc;
+    doc["wifi_connected"] = wifiOk;
+    doc["wifi_ssid"]      = wifiOk ? WiFi.SSID() : "";
+    doc["ip"]             = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
+    JsonArray nets = doc["wifi_nets"].to<JsonArray>();
     for (int i = 0; i < wifiNetCount; i++) {
-        if (i) j += ",";
-        j += "{\"ssid\":\"" + wifiNets[i].ssid + "\"}";
+        JsonObject net = nets.add<JsonObject>();
+        net["ssid"] = wifiNets[i].ssid;
     }
-    j += "],";
-    j += "\"llm_provider\":\"" + llm_provider + "\",";
-    j += "\"llm_model\":\""    + llm_model + "\",";
-    j += "\"cur_key\":\""      + (llm_provider == "claude" ? claude_api_key : openai_api_key) + "\",";
-    j += "\"el_key\":\""       + elevenlabs_api_key + "\",";
-    j += "\"el_vid\":\""       + elevenlabs_voice_id + "\",";
-    j += "\"el_fmt\":\""       + el_audio_fmt + "\",";
-    j += "\"sd_present\":"     + String(sdAvailable ? "true" : "false") + ",";
-    if (sdAvailable) {
-        j += "\"sd_used_mb\":"  + String(SD_MMC.usedBytes()  / (1024*1024)) + ",";
-        j += "\"sd_total_mb\":" + String(SD_MMC.totalBytes() / (1024*1024)) + ",";
-    } else {
-        j += "\"sd_used_mb\":0,\"sd_total_mb\":0,";
-    }
-    j += "\"vad_enabled\":"    + String(vadEnabled  ? "true" : "false") + ",";
-    j += "\"vad_threshold\":"  + String(vad_threshold) + ",";
-    j += "\"stt_enabled\":"    + String(sttEnabled  ? "true" : "false") + ",";
-    j += "\"ble_svc_uuid\":\""  + ble_service_uuid  + "\",";
-    j += "\"ble_char_uuid\":\"" + ble_char_uuid_tx  + "\"";
-    j += "}";
-    server.send(200, "application/json", j);
+    doc["llm_provider"]   = llm_provider;
+    doc["llm_model"]      = llm_model;
+    doc["cur_key"]        = (llm_provider == "claude") ? claude_api_key : openai_api_key;
+    doc["el_key"]         = elevenlabs_api_key;
+    doc["el_vid"]         = elevenlabs_voice_id;
+    doc["el_fmt"]         = el_audio_fmt;
+    doc["sd_present"]     = sdAvailable;
+    doc["sd_used_mb"]     = sdAvailable ? (int)(SD_MMC.usedBytes()  / (1024*1024)) : 0;
+    doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.totalBytes() / (1024*1024)) : 0;
+    doc["vad_enabled"]    = vadEnabled;
+    doc["vad_threshold"]  = vad_threshold;
+    doc["stt_enabled"]    = sttEnabled;
+    doc["ble_svc_uuid"]   = ble_service_uuid;
+    doc["ble_char_uuid"]  = ble_char_uuid_tx;
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+static void serveSpiffs(const char* path, const char* mime, const char* cache) {
+    File f = SPIFFS.open(path, "r");
+    if (!f) { server.send(404); return; }
+    server.sendHeader("Cache-Control", cache);
+    server.streamFile(f, mime);
+    f.close();
 }
 
 void startWebServer() {
@@ -2581,35 +2579,14 @@ void startWebServer() {
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);
-    server.on("/favicon.ico",    HTTP_GET,  []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
-    server.on("/apple-touch-icon.png",        HTTP_GET, []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
-    server.on("/apple-touch-icon-precomposed.png", HTTP_GET, []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
-    server.on("/manifest.json",  HTTP_GET,  []() { server.sendHeader("Cache-Control","public, max-age=86400"); server.send(204); });
-    // Serve immagini statiche da SPIFFS: GET /img/<nome>.png|jpg
-    server.on("/img/logo.png",    HTTP_GET, []() {
-        File f = SPIFFS.open("/logo.png","r");
-        if (!f) { server.send(404); return; }
-        server.sendHeader("Cache-Control", "public, max-age=86400");
-        server.streamFile(f, "image/png"); f.close();
-    });
-    server.on("/img/title.png",   HTTP_GET, []() {
-        File f = SPIFFS.open("/title.png","r");
-        if (!f) { server.send(404); return; }
-        server.sendHeader("Cache-Control", "public, max-age=86400");
-        server.streamFile(f, "image/png"); f.close();
-    });
-    server.on("/shared.css", HTTP_GET, []() {
-        File f = SPIFFS.open("/shared.css","r");
-        if (!f) { server.send(404); return; }
-        server.sendHeader("Cache-Control", "public, max-age=3600");
-        server.streamFile(f, "text/css; charset=utf-8"); f.close();
-    });
-    server.on("/shared.js", HTTP_GET, []() {
-        File f = SPIFFS.open("/shared.js","r");
-        if (!f) { server.send(404); return; }
-        server.sendHeader("Cache-Control", "public, max-age=3600");
-        server.streamFile(f, "application/javascript; charset=utf-8"); f.close();
-    });
+    server.on("/favicon.ico",                    HTTP_GET, []() { server.send(204); });
+    server.on("/apple-touch-icon.png",           HTTP_GET, []() { server.send(204); });
+    server.on("/apple-touch-icon-precomposed.png",HTTP_GET,[]() { server.send(204); });
+    server.on("/manifest.json",                  HTTP_GET, []() { server.send(204); });
+    server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                       "public, max-age=86400"); });
+    server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                       "public, max-age=86400"); });
+    server.on("/shared.css",    HTTP_GET, []() { serveSpiffs("/shared.css","text/css; charset=utf-8",          "public, max-age=3600");  });
+    server.on("/shared.js",     HTTP_GET, []() { serveSpiffs("/shared.js", "application/javascript; charset=utf-8","public, max-age=3600"); });
 
     server.onNotFound([]() {
         String uri = server.uri();
@@ -3662,24 +3639,7 @@ void setup() {
     initES8311();
     initES7210();
 
-    // WiFi: tenta le reti in ordine di priorità (solo SSID, ignora BSSID/MAC)
-    bool wifiOk = false;
-    WiFi.mode(WIFI_STA);
-    WiFi.setAutoReconnect(false);
-    for (int i = 0; i < wifiNetCount && !wifiOk; i++) {
-        Serial.println("WiFi: provo " + wifiNets[i].ssid);
-        WiFi.begin(wifiNets[i].ssid.c_str(), wifiNets[i].pass.c_str());
-        for (int t = 0; t < 20 && WiFi.status() != WL_CONNECTED; t++) delay(500);
-        if (WiFi.status() == WL_CONNECTED) {
-            wifiOk = true;
-            Serial.println("WiFi connesso: " + WiFi.localIP().toString());
-        } else {
-            WiFi.disconnect(true);
-            delay(200);
-        }
-    }
-
-    if (!wifiOk) startCaptivePortal();
+    if (!tryConnectWifi(false)) startCaptivePortal();
 
     // Web server sempre attivo — una sola chiamata in entrambi i casi
     startWebServer();
