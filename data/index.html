@@ -158,7 +158,7 @@
         <label class="form-label" data-i18n="vad.label_thresh">Soglia sensibilità (RMS 0–32767, default 800)</label>
         <input type="number" class="form-control form-control-sm" id="vad-thresh" min="0" max="32767" onchange="vadSaveThresh()" onblur="vadSaveThresh()">
       </div>
-      <button class="btn btn-outline-secondary btn-sm" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic"></i></button>
+      <button class="btn btn-outline-secondary px-3" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic"></i></button>
     </div>
   </div>
 </div>
@@ -170,7 +170,7 @@
     </div>
     <div class="d-flex gap-2 align-items-center">
       <p class="text-muted small mb-0 flex-fill" data-i18n="stt.desc">Trascrive il parlato con Whisper prima di passarlo all'LLM.</p>
-      <button class="btn btn-outline-secondary btn-sm" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i></button>
+      <button class="btn btn-outline-secondary px-3" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i></button>
     </div>
   </div>
 </div>
@@ -290,12 +290,12 @@ function vadApplyUI(vad_en, stt_en){
   document.getElementById('vad-dot').className='fb-dot '+(vad_en?'fb-dot-ok':'fb-dot-warn');
   document.getElementById('vad-label').textContent=vad_en?T('vad.active'):T('vad.disabled');
   var bv=document.getElementById('btn-vad-tog');
-  bv.className=vad_en?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
+  bv.className=vad_en?'btn btn-success px-3':'btn btn-outline-secondary px-3';
   bv.innerHTML=vad_en?'<i class="bi bi-mic-fill"></i>':'<i class="bi bi-mic-mute"></i>';
   document.getElementById('stt-dot').className='fb-dot '+(stt_en?'fb-dot-ok':'fb-dot-warn');
   document.getElementById('stt-label').textContent=stt_en?T('stt.active'):T('stt.disabled');
   var bs=document.getElementById('btn-stt-tog');
-  bs.className=stt_en?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
+  bs.className=stt_en?'btn btn-success px-3':'btn btn-outline-secondary px-3';
 }
 function vadSaveAndApply(fd){
   fetch('/vad/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
@@ -336,7 +336,7 @@ function bleApply(d){
     scan.style.display='none';stop.style.display='';disc.style.display='none';msg.style.display='block';
     if(d.devices&&d.devices.length){
       var h='<div class="small text-muted fw-bold text-uppercase mb-1">'+T('ble.found_so_far')+'</div>';
-      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small">'+dv.name+' <span class="text-muted">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="bleConn(\''+dv.addr+'\')">'+T('ble.connect')+'</button></div>';});
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small">'+dv.name+' <span class="text-muted">'+dv.addr+'</span></span><button class="btn btn-success px-3" onclick="bleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+T('ble.connect')+'</button></div>';});
       lst.innerHTML=h;
     }
     setTimeout(blePoll,1500);
@@ -345,7 +345,7 @@ function bleApply(d){
     scan.style.display='';stop.style.display='none';disc.style.display='none';msg.style.display='none';
     if(d.devices&&d.devices.length){
       var h='<div class="small text-muted fw-bold text-uppercase mb-1">'+T('ble.furby_found')+'</div>';
-      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small">'+dv.name+' <span class="text-muted">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="bleConn(\''+dv.addr+'\')">'+T('ble.connect')+'</button></div>';});
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small">'+dv.name+' <span class="text-muted">'+dv.addr+'</span></span><button class="btn btn-success px-3" onclick="bleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+T('ble.connect')+'</button></div>';});
       lst.innerHTML=h;
     } else {lst.innerHTML='';}
   }

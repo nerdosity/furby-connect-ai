@@ -720,9 +720,9 @@ function setLang(l){
     <div class="d-flex align-items-center gap-3 flex-wrap">
       <div class="btn-group" role="group">
         <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-browser" value="browser" checked onchange="ttsPanelDestChange()">
-        <label class="btn btn-outline-primary btn-sm" for="tts-dest-browser"><i class="bi bi-display"></i> Browser</label>
+        <label class="btn btn-outline-primary px-3" for="tts-dest-browser"><i class="bi bi-display"></i> Browser</label>
         <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-board" value="board" onchange="ttsPanelDestChange()">
-        <label class="btn btn-outline-primary btn-sm" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
+        <label class="btn btn-outline-primary px-3" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
       </div>
       <span id="tts-panel-hint" class="text-muted small" data-i18n="tts_browser_hint">Web Speech API</span>
       <button class="btn btn-success px-3 ms-auto" onclick="testTtsSend()" data-i18n="test.tts_play"><i class="bi bi-play-fill"></i> Riproduci</button>
@@ -977,7 +977,7 @@ function dbBleApply(d){
     dot.className='ble-dot scan';lbl.textContent=t('ble_bar.scanning');stop.style.display='';
     if(d.devices&&d.devices.length){
       var h='<div class="small fw-bold text-muted text-uppercase py-1">'+t('ble_bar.found_so_far')+'</div>';
-      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success px-3" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
       lst.innerHTML=h;
     }
     setTimeout(dbBlePoll,1500);
@@ -985,7 +985,7 @@ function dbBleApply(d){
     dot.className='ble-dot';lbl.textContent=t('ble_bar.not_connected');scan.style.display='';
     if(d.devices&&d.devices.length){
       var h='<div class="small fw-bold text-muted text-uppercase py-1">'+t('ble_bar.furby_found')+'</div>';
-      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success px-3" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
       lst.innerHTML=h;
     }else{lst.innerHTML='';}
   }
@@ -1085,7 +1085,7 @@ function cfgLoad(){
       var div=document.createElement('div');div.className='cfg-item'+(c.idx===d.active?' active-cfg':'');
       div.innerHTML='<span class="cfg-name">'+(c.idx===d.active?'★ ':'')+c.name+'</span>'
         +'<span class="text-muted small">'+c.rules.length+' regole</span>'
-        +'<button class="btn btn-success btn-sm" onclick="cfgActivate('+c.idx+')"><i class="bi bi-check-circle"></i> '+t('cfg.activate')+'</button>'
+        +'<button class="btn btn-success px-3" onclick="cfgActivate('+c.idx+')"><i class="bi bi-check-circle"></i> '+t('cfg.activate')+'</button>'
         +'<button class="btn btn-outline-secondary btn-sm" onclick="cfgEdit('+c.idx+',\''+c.name+'\')"><i class="bi bi-pencil"></i></button>'
         +(d.configs.length>1?'<button class="btn btn-danger btn-sm" onclick="cfgDel('+c.idx+')"><i class="bi bi-trash3"></i></button>':'');
       el.appendChild(div);
