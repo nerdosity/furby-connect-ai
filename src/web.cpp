@@ -1267,12 +1267,27 @@ void startWebServer() {
     server.on("/manifest.json",                   HTTP_GET, []() { server.send(204); });
     server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                            "public, max-age=86400"); });
     server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                            "public, max-age=86400"); });
-    server.on("/shared.css",    HTTP_GET, []() { serveSpiffs("/shared.css","text/css; charset=utf-8",               "public, max-age=3600");  });
-    server.on("/shared.js",     HTTP_GET, []() { serveSpiffs("/shared.js", "application/javascript; charset=utf-8","public, max-age=3600");  });
+    server.on("/shared.css", HTTP_GET, []() { serveSpiffs("/shared.css", "text/css; charset=utf-8",               "public, max-age=3600"); });
+    server.on("/shared.js",  HTTP_GET, []() { serveSpiffs("/shared.js",  "application/javascript; charset=utf-8", "public, max-age=3600"); });
 
     server.onNotFound([]() {
         String uri = server.uri();
         if (uri.startsWith("/fs/get/") || uri == "/fs/get") { handleFsGet(); return; }
+        // file statici da SPIFFS (.css .js .png .ico ecc.)
+        if (server.method() == HTTP_GET) {
+            String ct;
+            if      (uri.endsWith(".css"))  ct = "text/css; charset=utf-8";
+            else if (uri.endsWith(".js"))   ct = "application/javascript; charset=utf-8";
+            else if (uri.endsWith(".png"))  ct = "image/png";
+            else if (uri.endsWith(".ico"))  ct = "image/x-icon";
+            else if (uri.endsWith(".svg"))  ct = "image/svg+xml";
+            else if (uri.endsWith(".woff2"))ct = "font/woff2";
+            if (ct.length() && SPIFFS.exists(uri)) {
+                String cache = (uri.indexOf("bootstrap") >= 0) ? "public, max-age=604800" : "public, max-age=3600";
+                serveSpiffs(uri.c_str(), ct.c_str(), cache.c_str());
+                return;
+            }
+        }
         Serial.println("HTTP 404: " + uri + " [" + String(server.method()) + "]");
         if (isConfigMode) handleCaptiveRedirect();
         else server.send(404, "text/plain", "Not found");

@@ -1,100 +1,17 @@
 <!DOCTYPE html><html lang="it"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Furby Debug</title>
+<link rel="stylesheet" href="/bootstrap.min.css">
+<link rel="stylesheet" href="/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/shared.css">
-<style>
-body{font-size:15px}
-.ble-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:#fff;
-  border-bottom:1px solid #e4eaf4;font-size:.8rem;color:#1a2340}
-.ble-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;
-  box-shadow:0 0 5px #ef444488}
-.ble-dot.on{background:#22c55e;box-shadow:0 0 5px #22c55e88}
-.ble-dot.scan{background:#f59e0b;box-shadow:0 0 5px #f59e0b88}
-.tabs{display:flex;gap:0;border-bottom:2px solid #e4eaf4;background:#fff;overflow-x:clip}
-.tab{padding:11px 20px;font-size:.82rem;font-weight:700;color:#8a9ab5;cursor:pointer;
-  border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
-.tab.active{color:#3a5298;border-bottom-color:#3a5298}
-.tab:hover{color:#3a5298}
-.tab-pane{display:none;padding:20px 24px;max-width:1400px;margin:0 auto}
-.tab-pane.active{display:block}
-@media(min-width:900px){
-  body{font-size:16px}
-  .tab-pane{padding:28px 36px}
-  .card{padding:22px 28px}
-  .card h3{font-size:.85rem;letter-spacing:.8px}
-  .sensor{font-size:.92rem}
-  .tab{padding:13px 24px;font-size:.88rem}
-  .btn{font-size:.9rem;padding:9px 16px}
-  label,input[type=text],input[type=number],select,textarea{font-size:.88rem}
-  .sensors{grid-template-columns:1fr 1fr 1fr 1fr}
-  .act-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
-  .fm-table{font-size:.88rem}
-  .fm-editor{height:440px;font-size:.85rem}
-  .log{font-size:.8rem;height:160px}
-  .raw{font-size:.78rem}
-}
-.sensors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px}
-.sensor{display:flex;align-items:center;gap:7px;font-size:.85rem;padding:4px 0;color:#1a2340}
-.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#e4eaf4;transition:background .12s}
-.dot.on{background:#22c55e;box-shadow:0 0 5px #22c55e88}
-.raw{font-size:.72rem;color:#8a9ab5;margin-top:8px;font-family:monospace}
-.btn{padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.85rem;font-weight:700;
-  background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff;transition:opacity .12s}
-.btn:hover{opacity:.85}.btn:active{opacity:.65}
-.b-red{background:linear-gradient(135deg,#dc2626,#ef4444)}
-.b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}
-.b-amb{background:linear-gradient(135deg,#d97706,#f59e0b)}
-.b-pur{background:linear-gradient(135deg,#7c3aed,#a855f7)}
-.b-slt{background:#f0f4f8;color:#5a6a8a;border:1px solid #d0d9ee}
-.b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}
-.act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
-.act-btn{padding:8px 10px;font-size:.8rem;text-align:left;line-height:1.3;white-space:normal;border-radius:8px}
-.mood-row{display:grid;grid-template-columns:90px 1fr 28px;gap:4px 10px;align-items:center;font-size:.82rem;margin-bottom:6px}
-.mood-row span{color:#8a9ab5}
-.rgb-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-.rgb-row span{color:#5a6a8a;font-size:.78rem;width:12px;flex-shrink:0}
-.rgb-row input[type=range]{flex:1;accent-color:#3a5298}
-.rgb-prev{width:26px;height:26px;border-radius:6px;border:1.5px solid #d0d9ee;flex-shrink:0}
-.cfg-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
-  background:#f5f8ff;margin-bottom:7px;border:1.5px solid #e4eaf4}
-.cfg-item.active-cfg{border-color:#22c55e;background:#f0fff4}
-.cfg-name{flex:1;font-size:.88rem;font-weight:700;color:#1a2340}
-.rule-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.82rem}
-.rule-row select,.rule-row input{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;
-  border-radius:7px;padding:5px 9px;font-size:.8rem}
-select{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;border-radius:7px;padding:5px 8px;font-size:.82rem}
-input[type=text],input[type=number]{background:#f5f8ff;border:1.5px solid #d0d9ee;color:#1a2340;
-  border-radius:7px;padding:6px 10px;font-size:.82rem}
-input:focus,select:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px #3a529822}
-textarea{font-size:.82rem}
-.log{background:#1a2340;border-radius:8px;padding:10px 12px;font-family:monospace;
-  font-size:.75rem;color:#8fb3e8;height:130px;overflow-y:auto;margin-top:6px}
-.fm-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.fm-table th{text-align:left;padding:6px 10px;color:#5a6a8a;font-size:.72rem;
-  text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e4eaf4}
-.fm-table td{padding:6px 10px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
-.fm-table tr:hover td{background:#f5f8ff}
-.fm-name{font-family:monospace;color:#1a2340;font-size:.72rem;word-break:break-all}
-.fm-size{color:#8a9ab5;white-space:nowrap}
-.fm-editor{width:100%;height:220px;font-family:monospace;font-size:.72rem;
-  background:#1a2340;color:#8fb3e8;border:1.5px solid #2d3f6e;border-radius:8px;
-  padding:8px;resize:vertical}
-.fm-bar{display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.fm-path{font-family:monospace;font-size:.72rem;color:#3a5298;font-weight:700;flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fm-quota{font-size:.65rem;color:#8a9ab5}
-</style>
 <script>
-// ======================= I18N =======================
 var TRANSLATIONS={
   it:{
-    'nav.config':'Configurazione','nav.debug':'Debug Furby','nav.camera':'Camera','nav.reset':'Reset ESP32',
+    'nav.config':'Configurazione','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Riavviare l\'ESP32?',
     'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
     'tab.configs':'Configurazioni','tab.raw':'Raw / Log','tab.audio':'Audio',
     'tab.files':'File SPIFFS','tab.persona':'Personalità',
-    // sensori
     'sen.title':'Stato sensori','sen.ant_l':'Antenna sx','sen.ant_r':'Antenna dx',
     'sen.ant_f':'Antenna avanti','sen.ant_b':'Antenna indietro',
     'sen.tickle_head':'Tickle testa','sen.tickle_tummy':'Tickle pancia',
@@ -103,38 +20,34 @@ var TRANSLATIONS={
     'sen.upright':'Dritto','sen.upside_down':'Capovolto',
     'sen.side_r':'Lato dx','sen.side_l':'Lato sx',
     'sen.lean_back':'Inclinato back','sen.tilt_r':'Inclinato dx','sen.tilt_l':'Inclinato sx',
-    // azioni
     'act.direct':'Interazione diretta','act.notes':'Note musicali (input 71)',
     'act.world':'World App / Personalità','act.custom':'Azione personalizzata',
-    'act.custom_run':'▶ Esegui',
-    'act.test_title':'🧪 Test behavior (senza Furby)',
+    'act.custom_run':'<i class="bi bi-play-fill"></i> Esegui',
+    'act.test_title':'<i class="bi bi-flask"></i> Test behavior (senza Furby)',
     'act.test_desc':'Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.',
     'act.test_trigger':'Trigger','act.test_sensor':'Sensore',
     'act.test_dry':'Dry run','act.test_dry_sub':'(skippa azioni BLE)',
-    'act.test_run':'▶ Simula trigger',
+    'act.test_run':'<i class="bi bi-play-fill"></i> Simula trigger',
     'act.no_behavior':'→ nessun behavior configurato, verrà usato il default',
     'act.trigger_sent':'Trigger inviato — guarda la console seriale per il log completo.',
     'act.trigger_sent_dry':'[DRY RUN] Trigger inviato — guarda la console seriale per il log completo.',
     'act.trigger_err':'Errore: ','act.trigger_sending':'Invio trigger...',
     'tbeh.trg.0':'VAD (parlato)','tbeh.trg.1':'Pulsante ESP32','tbeh.trg.2':'Sensore Furby',
-    // controllo
-    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'💡 Imposta',
-    'ctrl.eyes_on':'👁 Occhi ON','ctrl.eyes_off':'💤 Occhi OFF',
-    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'😊 Imposta mood',
-    'ctrl.system':'Sistema',
-    'ctrl.dlc':'DLC slot',
-    // audio
+    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Imposta',
+    'ctrl.eyes_on':'<i class="bi bi-eye"></i> Occhi ON','ctrl.eyes_off':'<i class="bi bi-eye-slash"></i> Occhi OFF',
+    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Imposta mood',
+    'ctrl.system':'Sistema','ctrl.dlc':'DLC slot',
     'aud.amp':'Amplificatore & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
     'aud.amp_on':'amplificatore attivo','aud.amp_off':'amplificatore spento',
     'aud.tone':'Test casse (sine wave)',
     'aud.tone_dur':'Durata (ms) — tutte le frequenze',
     'aud.tone_freq':'Frequenza personalizzata (Hz)',
-    'aud.tone_play':'▶ Play',
+    'aud.tone_play':'<i class="bi bi-play-fill"></i> Play',
     'aud.mic':'Microfoni live','aud.mic_desc':'RMS live — L=MIC1, R=MIC2',
     'aud.vad_speech':'Parlato rilevato','aud.vad_noise':'Rumore','aud.vad_silence':'Silenzio',
     'aud.rec':'Registra e riproduci (3 secondi)',
     'aud.rec_desc':'Parla per 3 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
-    'aud.rec_btn':'🎤 Registra 3s e riproduci',
+    'aud.rec_btn':'<i class="bi bi-mic"></i> Registra 3s e riproduci',
     'aud.rec_running':'Registrazione 3s in corso...','aud.rec_countdown':'Registrazione... ',
     'aud.rec_playing':'Riproduzione in corso...','aud.rec_done':'Fatto.',
     'aud.tone_sending':'Invio tono...',
@@ -142,30 +55,26 @@ var TRANSLATIONS={
     'aud.tts_board_hint':'ElevenLabs via ESP32 — usa la voce configurata',
     'aud.loading':'Carico config...',
     'aud.el_nokey':'API key ElevenLabs non configurata.',
-    'aud.el_synth':'Sintesi in corso...','aud.el_playing':'▶ Riproduzione in corso...',
-    // file
-    'fm.refresh':'↻ Aggiorna','fm.header_name':'File','fm.header_size':'Dim.',
+    'aud.el_synth':'Sintesi in corso...','aud.el_playing':'<i class="bi bi-play-fill"></i> Riproduzione in corso...',
+    'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Aggiorna','fm.header_name':'File','fm.header_size':'Dim.',
     'fm.loading':'carico...','fm.no_files':'Nessun file','fm.net_err':'Errore di rete',
-    'fm.save':'💾 Salva','fm.close':'Chiudi',
+    'fm.save':'<i class="bi bi-floppy"></i> Salva','fm.close':'Chiudi',
     'fm.upload_title':'Carica file',
     'fm.upload_path':'Percorso (es. /config.json)',
-    'fm.upload_file':'File da PC','fm.upload_btn':'⬆ Carica',
+    'fm.upload_file':'File da PC','fm.upload_btn':'<i class="bi bi-upload"></i> Carica',
     'fm.upload_missing':'Inserisci percorso e seleziona file.',
     'fm.upload_ok':'Caricato in ','fm.saving':'Salvo...',
     'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete',
     'fm.del_confirm':'Eliminare',
-    // cfg
     'cfg.title':'Configurazioni comportamento',
     'cfg.new_placeholder':'Nome nuova configurazione',
-    'cfg.new_btn':'+ Nuova','cfg.rules_label':'Regole — ',
-    'cfg.rule_add':'+ Aggiungi regola','cfg.activate':'Attiva',
+    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> Nuova','cfg.rules_label':'Regole — ',
+    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Aggiungi regola','cfg.activate':'<i class="bi bi-check-circle"></i> Attiva',
     'cfg.del_confirm':'Eliminare questa configurazione?',
     'cfg.new_default':'Nuova config',
-    // raw
     'raw.title':'Comando raw (hex bytes separati da spazio)',
     'raw.placeholder':'es. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: nessun byte valido',
-    // ble bar
     'ble_bar.connected':'Connesso: ','ble_bar.connecting':'Connessione...',
     'ble_bar.scanning':'Scansione BLE...','ble_bar.not_connected':'BLE: non connesso',
     'ble_bar.found_so_far':'Trovati finora:','ble_bar.furby_found':'Furby trovati:',
@@ -175,19 +84,19 @@ var TRANSLATIONS={
     'tts_board_hint':'ElevenLabs via ESP32 — usa la voce configurata',
     'voices_loaded':' voci caricate.',
     'ble.not_connected':'BLE: non connesso','ble.connected':'Connesso','ble.connecting':'Connessione...',
-    'ble.scanning':'Scansione BLE...','ble.scan':'Cerca','ble.stop':'Stop scan',
-    'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Trovati finora:',
-    'ble.connect':'Connetti',
+    'ble.scanning':'Scansione BLE...','ble.scan':'<i class="bi bi-bluetooth"></i> Cerca','ble.stop':'<i class="bi bi-stop-fill"></i> Stop scan',
+    'ble.abort':'<i class="bi bi-x-octagon"></i> Abort','ble.disconnect':'<i class="bi bi-x-circle"></i> Disc','ble.found_so_far':'Trovati finora:',
+    'ble.connect':'<i class="bi bi-link-45deg"></i> Connetti',
     'persona.base_title':'Personalità base',
     'persona.base_desc':'System prompt LLM — definisce carattere e tono del Furby',
     'persona.voice_label':'ElevenLabs Voice ID',
-    'persona.save_btn':'Salva personalità',
+    'persona.save_btn':'<i class="bi bi-floppy"></i> Salva personalità',
     'persona.beh_title':'Comportamenti — eventi → conseguenze',
     'persona.beh_desc':'Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.',
-    'persona.beh_add':'+ Aggiungi','persona.beh_export':'⬇ Esporta JSON','persona.beh_import':'⬆ Importa JSON',
+    'persona.beh_add':'<i class="bi bi-plus-lg"></i> Aggiungi','persona.beh_export':'<i class="bi bi-download"></i> Esporta JSON','persona.beh_import':'<i class="bi bi-upload"></i> Importa JSON',
     'beh.new_title':'Nuovo comportamento','beh.trigger_label':'Trigger','beh.sensor_label':'Sensore',
     'beh.name_label':'Nome','beh.name_placeholder':'es. Tocco testa',
-    'beh.save':'💾 Salva comportamento','beh.cancel':'Annulla','beh.add_csq':'+ Conseguenza',
+    'beh.save':'<i class="bi bi-floppy"></i> Salva comportamento','beh.cancel':'Annulla','beh.add_csq':'<i class="bi bi-plus-lg"></i> Conseguenza',
     'beh.del_confirm':'Elimina',
     'beh.trg.vad':'VAD (parlato)','beh.trg.button':'Pulsante ESP32','beh.trg.sensor':'Sensore Furby',
     'beh.sensor.ant_l':'Antenna sx','beh.sensor.ant_r':'Antenna dx',
@@ -207,11 +116,11 @@ var TRANSLATIONS={
     'csq.llm_placeholder':'Contesto evento (es. \'Qualcuno ti parla\')',
     'csq.action_placeholder':'-- scegli azione --',
     'test.llm_title':'Test LLM','test.llm_desc':'Invia un messaggio al modello con il personality prompt corrente (senza foto)',
-    'test.llm_send':'➤ Invia','test.llm_placeholder':'Cosa pensi del meteo oggi?',
+    'test.llm_send':'<i class="bi bi-send"></i> Invia','test.llm_placeholder':'Cosa pensi del meteo oggi?',
     'test.tts_title':'Test TTS','test.tts_desc':'Invia testo ad ElevenLabs e riproduci sull\'ESP32 (usa la voce corrente)',
-    'test.tts_play':'▶ Riproduci','test.tts_placeholder':'Ciao, sono un Furby cinico.',
-    'test.voices_title':'Voci ElevenLabs','test.voices_desc':'Voci disponibili nel tuo account — clicca "Usa" per impostare la Voice ID nel campo Personalità',
-    'test.voices_load':'↻ Carica voci','test.voices_use':'Usa','test.voices_none':'Nessuna voce trovata.',
+    'test.tts_play':'<i class="bi bi-play-fill"></i> Riproduci','test.tts_placeholder':'Ciao, sono un Furby cinico.',
+    'test.voices_title':'Voci ElevenLabs','test.voices_desc':'Voci disponibili nel tuo account',
+    'test.voices_load':'<i class="bi bi-arrow-clockwise"></i> Carica voci','test.voices_use':'<i class="bi bi-check-lg"></i> Usa','test.voices_none':'Nessuna voce trovata.',
     'sys.loading':'carico info sistema...',
     'saved':'Salvato.','error':'Errore.','error_conn':'Errore connessione.',
     'no_behaviors':'Nessun comportamento configurato.',
@@ -221,12 +130,11 @@ var TRANSLATIONS={
     'voice_set':'Voice ID impostato:'
   },
   en:{
-    'nav.config':'Configuration','nav.debug':'Debug Furby','nav.camera':'Camera','nav.reset':'Reset ESP32',
+    'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Restart the ESP32?',
     'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
     'tab.configs':'Configs','tab.raw':'Raw / Log','tab.audio':'Audio',
     'tab.files':'SPIFFS Files','tab.persona':'Personality',
-    // sensors
     'sen.title':'Sensor state','sen.ant_l':'Antenna left','sen.ant_r':'Antenna right',
     'sen.ant_f':'Antenna forward','sen.ant_b':'Antenna back',
     'sen.tickle_head':'Tickle head','sen.tickle_tummy':'Tickle tummy',
@@ -235,38 +143,34 @@ var TRANSLATIONS={
     'sen.upright':'Upright','sen.upside_down':'Upside down',
     'sen.side_r':'Right side','sen.side_l':'Left side',
     'sen.lean_back':'Lean back','sen.tilt_r':'Tilt right','sen.tilt_l':'Tilt left',
-    // actions
     'act.direct':'Direct interaction','act.notes':'Musical notes (input 71)',
     'act.world':'World App / Personality','act.custom':'Custom action',
-    'act.custom_run':'▶ Run',
-    'act.test_title':'🧪 Behavior test (without Furby)',
+    'act.custom_run':'<i class="bi bi-play-fill"></i> Run',
+    'act.test_title':'<i class="bi bi-flask"></i> Behavior test (without Furby)',
     'act.test_desc':'Simulate a trigger and execute LLM + TTS as in production. With "Dry run" BLE actions toward Furby are skipped.',
     'act.test_trigger':'Trigger','act.test_sensor':'Sensor',
     'act.test_dry':'Dry run','act.test_dry_sub':'(skip BLE actions)',
-    'act.test_run':'▶ Simulate trigger',
+    'act.test_run':'<i class="bi bi-play-fill"></i> Simulate trigger',
     'act.no_behavior':'→ no behavior configured, default will be used',
     'act.trigger_sent':'Trigger sent — check serial console for full log.',
     'act.trigger_sent_dry':'[DRY RUN] Trigger sent — check serial console for full log.',
     'act.trigger_err':'Error: ','act.trigger_sending':'Sending trigger...',
     'tbeh.trg.0':'VAD (speech)','tbeh.trg.1':'ESP32 button','tbeh.trg.2':'Furby sensor',
-    // control
-    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'💡 Set',
-    'ctrl.eyes_on':'👁 Eyes ON','ctrl.eyes_off':'💤 Eyes OFF',
-    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'😊 Set mood',
-    'ctrl.system':'System',
-    'ctrl.dlc':'DLC slot',
-    // audio
+    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Set',
+    'ctrl.eyes_on':'<i class="bi bi-eye"></i> Eyes ON','ctrl.eyes_off':'<i class="bi bi-eye-slash"></i> Eyes OFF',
+    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Set mood',
+    'ctrl.system':'System','ctrl.dlc':'DLC slot',
     'aud.amp':'Amplifier & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
     'aud.amp_on':'amplifier active','aud.amp_off':'amplifier off',
     'aud.tone':'Speaker test (sine wave)',
     'aud.tone_dur':'Duration (ms) — all frequencies',
     'aud.tone_freq':'Custom frequency (Hz)',
-    'aud.tone_play':'▶ Play',
+    'aud.tone_play':'<i class="bi bi-play-fill"></i> Play',
     'aud.mic':'Live microphones','aud.mic_desc':'Live RMS — L=MIC1, R=MIC2',
     'aud.vad_speech':'Speech detected','aud.vad_noise':'Noise','aud.vad_silence':'Silence',
     'aud.rec':'Record and play back (3 seconds)',
     'aud.rec_desc':'Speak for 3 seconds. The ESP32 records and plays back through speakers (MIC1+MIC2 mix).',
-    'aud.rec_btn':'🎤 Record 3s and play',
+    'aud.rec_btn':'<i class="bi bi-mic"></i> Record 3s and play',
     'aud.rec_running':'Recording 3s...','aud.rec_countdown':'Recording... ',
     'aud.rec_playing':'Playing back...','aud.rec_done':'Done.',
     'aud.tone_sending':'Sending tone...',
@@ -274,30 +178,26 @@ var TRANSLATIONS={
     'aud.tts_board_hint':'ElevenLabs via ESP32 — uses configured voice',
     'aud.loading':'Loading config...',
     'aud.el_nokey':'ElevenLabs API key not configured.',
-    'aud.el_synth':'Synthesising...','aud.el_playing':'▶ Playing back...',
-    // files
-    'fm.refresh':'↻ Refresh','fm.header_name':'File','fm.header_size':'Size',
+    'aud.el_synth':'Synthesising...','aud.el_playing':'<i class="bi bi-play-fill"></i> Playing back...',
+    'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Refresh','fm.header_name':'File','fm.header_size':'Size',
     'fm.loading':'loading...','fm.no_files':'No files','fm.net_err':'Network error',
-    'fm.save':'💾 Save','fm.close':'Close',
+    'fm.save':'<i class="bi bi-floppy"></i> Save','fm.close':'Close',
     'fm.upload_title':'Upload file',
     'fm.upload_path':'Path (e.g. /config.json)',
-    'fm.upload_file':'File from PC','fm.upload_btn':'⬆ Upload',
+    'fm.upload_file':'File from PC','fm.upload_btn':'<i class="bi bi-upload"></i> Upload',
     'fm.upload_missing':'Enter path and select file.',
     'fm.upload_ok':'Uploaded to ','fm.saving':'Saving...',
     'fm.load_err':'Load error','fm.net_err2':'Network error',
     'fm.del_confirm':'Delete',
-    // cfg
     'cfg.title':'Behavior configurations',
     'cfg.new_placeholder':'New configuration name',
-    'cfg.new_btn':'+ New','cfg.rules_label':'Rules — ',
-    'cfg.rule_add':'+ Add rule','cfg.activate':'Activate',
+    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> New','cfg.rules_label':'Rules — ',
+    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Add rule','cfg.activate':'<i class="bi bi-check-circle"></i> Activate',
     'cfg.del_confirm':'Delete this configuration?',
     'cfg.new_default':'New config',
-    // raw
     'raw.title':'Raw command (hex bytes space-separated)',
     'raw.placeholder':'e.g. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: no valid bytes',
-    // ble bar
     'ble_bar.connected':'Connected: ','ble_bar.connecting':'Connecting...',
     'ble_bar.scanning':'BLE scanning...','ble_bar.not_connected':'BLE: not connected',
     'ble_bar.found_so_far':'Found so far:','ble_bar.furby_found':'Furby found:',
@@ -307,19 +207,19 @@ var TRANSLATIONS={
     'tts_board_hint':'ElevenLabs via ESP32 — uses configured voice',
     'voices_loaded':' voices loaded.',
     'ble.not_connected':'BLE: not connected','ble.connected':'Connected','ble.connecting':'Connecting...',
-    'ble.scanning':'BLE scanning...','ble.scan':'Scan','ble.stop':'Stop scan',
-    'ble.abort':'Abort','ble.disconnect':'Disc','ble.found_so_far':'Found so far:',
-    'ble.connect':'Connect',
+    'ble.scanning':'BLE scanning...','ble.scan':'<i class="bi bi-bluetooth"></i> Scan','ble.stop':'<i class="bi bi-stop-fill"></i> Stop scan',
+    'ble.abort':'<i class="bi bi-x-octagon"></i> Abort','ble.disconnect':'<i class="bi bi-x-circle"></i> Disc','ble.found_so_far':'Found so far:',
+    'ble.connect':'<i class="bi bi-link-45deg"></i> Connect',
     'persona.base_title':'Base personality',
     'persona.base_desc':'LLM system prompt — defines Furby\'s character and tone',
     'persona.voice_label':'ElevenLabs Voice ID',
-    'persona.save_btn':'Save personality',
+    'persona.save_btn':'<i class="bi bi-floppy"></i> Save personality',
     'persona.beh_title':'Behaviors — triggers → consequences',
     'persona.beh_desc':'Each behavior maps a trigger to 1-3 consequences executed in sequence.',
-    'persona.beh_add':'+ Add','persona.beh_export':'⬇ Export JSON','persona.beh_import':'⬆ Import JSON',
+    'persona.beh_add':'<i class="bi bi-plus-lg"></i> Add','persona.beh_export':'<i class="bi bi-download"></i> Export JSON','persona.beh_import':'<i class="bi bi-upload"></i> Import JSON',
     'beh.new_title':'New behavior','beh.trigger_label':'Trigger','beh.sensor_label':'Sensor',
     'beh.name_label':'Name','beh.name_placeholder':'e.g. Head tickle',
-    'beh.save':'💾 Save behavior','beh.cancel':'Cancel','beh.add_csq':'+ Consequence',
+    'beh.save':'<i class="bi bi-floppy"></i> Save behavior','beh.cancel':'Cancel','beh.add_csq':'<i class="bi bi-plus-lg"></i> Consequence',
     'beh.del_confirm':'Delete',
     'beh.trg.vad':'VAD (speech)','beh.trg.button':'ESP32 button','beh.trg.sensor':'Furby sensor',
     'beh.sensor.ant_l':'Antenna left','beh.sensor.ant_r':'Antenna right',
@@ -339,11 +239,11 @@ var TRANSLATIONS={
     'csq.llm_placeholder':'Event context (e.g. \'Someone is talking to you\')',
     'csq.action_placeholder':'-- choose action --',
     'test.llm_title':'Test LLM','test.llm_desc':'Send a message to the model with the current personality prompt (no photo)',
-    'test.llm_send':'➤ Send','test.llm_placeholder':'What do you think about the weather today?',
+    'test.llm_send':'<i class="bi bi-send"></i> Send','test.llm_placeholder':'What do you think about the weather today?',
     'test.tts_title':'Test TTS','test.tts_desc':'Send text to ElevenLabs and play on the ESP32 (uses current voice)',
-    'test.tts_play':'▶ Play','test.tts_placeholder':'Hello, I\'m a cynical Furby.',
-    'test.voices_title':'ElevenLabs Voices','test.voices_desc':'Voices available in your account — click "Use" to set the Voice ID in the Personality field',
-    'test.voices_load':'↻ Load voices','test.voices_use':'Use','test.voices_none':'No voices found.',
+    'test.tts_play':'<i class="bi bi-play-fill"></i> Play','test.tts_placeholder':'Hello, I\'m a cynical Furby.',
+    'test.voices_title':'ElevenLabs Voices','test.voices_desc':'Voices available in your account',
+    'test.voices_load':'<i class="bi bi-arrow-clockwise"></i> Load voices','test.voices_use':'<i class="bi bi-check-lg"></i> Use','test.voices_none':'No voices found.',
     'sys.loading':'loading system info...',
     'saved':'Saved.','error':'Error.','error_conn':'Connection error.',
     'no_behaviors':'No behaviors configured.',
@@ -353,866 +253,645 @@ var TRANSLATIONS={
     'voice_set':'Voice ID set:'
   }
 };
-
 var gLang='it';
-function t(k){return (TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||k;}
-
+function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||k;}
 function setLang(l){
-  gLang=l;
-  localStorage.setItem('furby_lang',l);
+  gLang=l;localStorage.setItem('furby_lang',l);
   var sel=document.getElementById('lang-sel');if(sel)sel.value=l;
-  // aggiorna tutti gli elementi data-i18n
   document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var attr=el.getAttribute('data-i18n-attr');
-    if(attr)el.setAttribute(attr,t(k));
-    else el.textContent=t(k);
+    var k=el.getAttribute('data-i18n'),attr=el.getAttribute('data-i18n-attr');
+    if(attr)el.setAttribute(attr,t(k));else el.innerHTML=t(k);
   });
-  // ricostruisci tabelle dinamiche
   var trgSel=document.getElementById('beh-trg');
-  if(trgSel){
-    trgSel.options[0].textContent=t('beh.trg.vad');
-    trgSel.options[1].textContent=t('beh.trg.button');
-    trgSel.options[2].textContent=t('beh.trg.sensor');
-  }
-  // ricostruisci lista sensori se già popolata
+  if(trgSel){trgSel.options[0].textContent=t('beh.trg.vad');trgSel.options[1].textContent=t('beh.trg.button');trgSel.options[2].textContent=t('beh.trg.sensor');}
   var senSel=document.getElementById('beh-sensor');
   if(senSel&&senSel.options.length){
     senSel.innerHTML='';
-    var keys=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l',
-              'pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
+    var keys=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l','pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
     keys.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);senSel.appendChild(o);});
   }
-  // rirenderizza lista comportamenti se tab persona attiva
   if(gBehaviors&&gBehaviors.length)behRender();
 }
-
-// init lingua da localStorage
-(function(){
-  var l=localStorage.getItem('furby_lang')||'it';
-  gLang=l;
-})();
+(function(){gLang=localStorage.getItem('furby_lang')||'it';})();
 </script>
 </head>
 <body>
-<div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
-<div class="nav-drawer" id="nav-drawer">
-  <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
-  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-i18n="nav.config">Configurazione</span></a>
-  <a class="nav-item active" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg><span data-i18n="nav.debug">Debug Furby</span></a>
-  <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="nav.camera">Camera</span></a>
-  <a class="nav-item" href="#" onclick="if(confirm(t('nav.confirm_reset'))){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span data-i18n="nav.reset">Reset ESP32</span></a>
-</div>
-<script src="/shared.js"></script>
 
-<div class="header">
-  <div class="logo-wrap">
-    <img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display='none'">
-  </div>
-  <div class="header-text">
-    <img src="/img/title.png" alt="FurbyMind" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
-    <p>IP: <span id="esp-ip">—</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">—</span></p>
-  </div>
-  <nav class="desktop-nav">
-    <a href="/">&#x2302; Home</a>
-    <a href="/debug" class="active">Debug</a>
-    <a href="/camera">Camera</a>
-  </nav>
-  <select id="lang-sel" onchange="setLang(this.value)" style="width:auto;background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0;appearance:none"><option value="it">IT</option><option value="en">EN</option></select>
-  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
-</div>
+<script>renderNav('debug');</script>
 
-<div id="sys-info-bar" style="background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;color:#8fb3e8;overflow-x:auto;white-space:nowrap" data-i18n="sys.loading">carico info sistema...</div>
+<div id="sys-info-bar" data-i18n="sys.loading">carico info sistema...</div>
 
+<!-- BLE bar -->
 <div class="ble-bar">
   <div class="ble-dot" id="wb-dot"></div>
-  <span id="wb-label" style="font-weight:600" data-i18n="ble.not_connected">BLE: non connesso</span>
-  <span id="wb-battery" style="font-size:.68rem;color:#5a6a8a;margin-left:8px"></span>
-  <span id="ble-uptime" style="display:none;font-size:.68rem;color:#5a6a8a;margin-left:4px"></span>
-  <div style="margin-left:auto;display:flex;gap:4px">
-    <button id="btn-scan"  class="btn"       onclick="dbBleScan()"  style="padding:4px 10px;font-size:.7rem" data-i18n="ble.scan">&#x1F50D; Cerca</button>
-    <button id="btn-stop"  class="btn b-red" onclick="dbBleStop()"  style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.stop">&#x23F9; Stop scan</button>
-    <button id="btn-abort" class="btn b-red" onclick="dbBleAbort()" style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.abort">&#x23F9; Abort</button>
-    <button id="btn-disc"  class="btn b-red" onclick="dbBleDisc()"  style="display:none;padding:4px 10px;font-size:.7rem" data-i18n="ble.disconnect">&#x26D4; Disc</button>
-    <button id="btn-rst"   class="btn b-amb" onclick="dbBleReset()" style="padding:4px 10px;font-size:.7rem" title="Reset stack BLE">&#x21BA;</button>
+  <span id="wb-label" class="fw-semibold" data-i18n="ble.not_connected">BLE: non connesso</span>
+  <span id="wb-battery" class="text-muted small ms-2"></span>
+  <span id="ble-uptime" class="text-muted small ms-1" style="display:none"></span>
+  <div class="ms-auto d-flex gap-1">
+    <button id="btn-scan"  class="btn btn-primary btn-sm"   onclick="dbBleScan()"  data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca</button>
+    <button id="btn-stop"  class="btn btn-danger btn-sm"    onclick="dbBleStop()"  style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop</button>
+    <button id="btn-abort" class="btn btn-danger btn-sm"    onclick="dbBleAbort()" style="display:none" data-i18n="ble.abort"><i class="bi bi-x-octagon"></i> Abort</button>
+    <button id="btn-disc"  class="btn btn-danger btn-sm"    onclick="dbBleDisc()"  style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disc</button>
+    <button id="btn-rst"   class="btn btn-warning btn-sm"   onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i></button>
   </div>
 </div>
-<div id="db-ble-list" style="background:#f5f8ff;padding:0 16px;border-bottom:1px solid #e4eaf4"></div>
+<div id="db-ble-list" class="px-3 py-1 bg-light border-bottom small"></div>
 
-<div style="display:flex;align-items:center;gap:10px;padding:6px 16px;background:#fff;border-bottom:1px solid #e4eaf4">
-  <span style="font-size:.68rem;color:#5a6a8a;flex-shrink:0">&#x1F50A; VOL</span>
-  <input type="range" id="vol-bar" min="0" max="100" value="75" style="flex:1;height:4px;accent-color:#3a5298" oninput="volBarChange(this.value)" onchange="volSend(this.value)">
-  <span id="vol-bar-val" style="font-size:.68rem;color:#5a6a8a;min-width:32px;text-align:right;flex-shrink:0">75%</span>
+<!-- volume bar -->
+<div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border-bottom">
+  <span class="text-muted small"><i class="bi bi-volume-up"></i> VOL</span>
+  <input type="range" class="form-range flex-fill" id="vol-bar" min="0" max="100" value="75" oninput="volBarChange(this.value)" onchange="volSend(this.value)">
+  <span id="vol-bar-val" class="text-muted small" style="min-width:34px;text-align:right">75%</span>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('t-sensors',this)" data-i18n="tab.sensors">Sensori</div>
-  <div class="tab" onclick="showTab('t-actions',this)" data-i18n="tab.actions">Azioni</div>
-  <div class="tab" onclick="showTab('t-control',this)" data-i18n="tab.control">Controllo</div>
-  <div class="tab" onclick="showTab('t-configs',this)" data-i18n="tab.configs">Configurazioni</div>
-  <div class="tab" onclick="showTab('t-raw',this)" data-i18n="tab.raw">Raw / Log</div>
-  <div class="tab" onclick="showTab('t-audio',this)" data-i18n="tab.audio">Audio</div>
-  <div class="tab" onclick="showTab('t-files',this)" data-i18n="tab.files">File SPIFFS</div>
-  <div class="tab" onclick="showTab('t-persona',this)" data-i18n="tab.persona">Personalità</div>
+<!-- tabs -->
+<div class="fb-tabs">
+  <div class="fb-tab active" onclick="showTab('t-sensors',this)" data-i18n="tab.sensors">Sensori</div>
+  <div class="fb-tab" onclick="showTab('t-actions',this)" data-i18n="tab.actions">Azioni</div>
+  <div class="fb-tab" onclick="showTab('t-control',this)" data-i18n="tab.control">Controllo</div>
+  <div class="fb-tab" onclick="showTab('t-configs',this)" data-i18n="tab.configs">Configurazioni</div>
+  <div class="fb-tab" onclick="showTab('t-raw',this)" data-i18n="tab.raw">Raw / Log</div>
+  <div class="fb-tab" onclick="showTab('t-audio',this)" data-i18n="tab.audio">Audio</div>
+  <div class="fb-tab" onclick="showTab('t-files',this)" data-i18n="tab.files">File SPIFFS</div>
+  <div class="fb-tab" onclick="showTab('t-persona',this)" data-i18n="tab.persona">Personalità</div>
 </div>
 
 <!-- TAB: Sensori -->
-<div class="tab-pane active" id="t-sensors">
-  <div class="card">
-    <h3><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small style="color:#475569;font-size:.65rem" id="sensor-age">—</small></h3>
-    <div class="sensors">
-      <div class="sensor"><div class="dot" id="s-ant-l"></div><span data-i18n="sen.ant_l">Antenna sx</span></div>
-      <div class="sensor"><div class="dot" id="s-ant-r"></div><span data-i18n="sen.ant_r">Antenna dx</span></div>
-      <div class="sensor"><div class="dot" id="s-ant-f"></div><span data-i18n="sen.ant_f">Antenna avanti</span></div>
-      <div class="sensor"><div class="dot" id="s-ant-b"></div><span data-i18n="sen.ant_b">Antenna indietro</span></div>
-      <div class="sensor"><div class="dot" id="s-t-head"></div><span data-i18n="sen.tickle_head">Tickle testa</span></div>
-      <div class="sensor"><div class="dot" id="s-t-tummy"></div><span data-i18n="sen.tickle_tummy">Tickle pancia</span></div>
-      <div class="sensor"><div class="dot" id="s-t-right"></div><span data-i18n="sen.tickle_r">Tickle dx</span></div>
-      <div class="sensor"><div class="dot" id="s-t-left"></div><span data-i18n="sen.tickle_l">Tickle sx</span></div>
-      <div class="sensor"><div class="dot" id="s-tail"></div><span data-i18n="sen.pull_tail">Tira coda</span></div>
-      <div class="sensor"><div class="dot" id="s-tongue"></div><span data-i18n="sen.push_tongue">Spingi lingua</span></div>
-      <div class="sensor"><div class="dot" id="s-up"></div><span data-i18n="sen.upright">Dritto</span></div>
-      <div class="sensor"><div class="dot" id="s-down"></div><span data-i18n="sen.upside_down">Capovolto</span></div>
-      <div class="sensor"><div class="dot" id="s-right"></div><span data-i18n="sen.side_r">Lato dx</span></div>
-      <div class="sensor"><div class="dot" id="s-left"></div><span data-i18n="sen.side_l">Lato sx</span></div>
-      <div class="sensor"><div class="dot" id="s-lean"></div><span data-i18n="sen.lean_back">Inclinato back</span></div>
-      <div class="sensor"><div class="dot" id="s-tr"></div><span data-i18n="sen.tilt_r">Inclinato dx</span></div>
-      <div class="sensor"><div class="dot" id="s-tl"></div><span data-i18n="sen.tilt_l">Inclinato sx</span></div>
+<div class="fb-tab-pane active" id="t-sensors">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small class="text-secondary fw-normal" id="sensor-age">—</small></h6>
+      <div class="sensors">
+        <div class="sensor"><div class="dot" id="s-ant-l"></div><span data-i18n="sen.ant_l">Antenna sx</span></div>
+        <div class="sensor"><div class="dot" id="s-ant-r"></div><span data-i18n="sen.ant_r">Antenna dx</span></div>
+        <div class="sensor"><div class="dot" id="s-ant-f"></div><span data-i18n="sen.ant_f">Antenna avanti</span></div>
+        <div class="sensor"><div class="dot" id="s-ant-b"></div><span data-i18n="sen.ant_b">Antenna indietro</span></div>
+        <div class="sensor"><div class="dot" id="s-t-head"></div><span data-i18n="sen.tickle_head">Tickle testa</span></div>
+        <div class="sensor"><div class="dot" id="s-t-tummy"></div><span data-i18n="sen.tickle_tummy">Tickle pancia</span></div>
+        <div class="sensor"><div class="dot" id="s-t-right"></div><span data-i18n="sen.tickle_r">Tickle dx</span></div>
+        <div class="sensor"><div class="dot" id="s-t-left"></div><span data-i18n="sen.tickle_l">Tickle sx</span></div>
+        <div class="sensor"><div class="dot" id="s-tail"></div><span data-i18n="sen.pull_tail">Tira coda</span></div>
+        <div class="sensor"><div class="dot" id="s-tongue"></div><span data-i18n="sen.push_tongue">Spingi lingua</span></div>
+        <div class="sensor"><div class="dot" id="s-up"></div><span data-i18n="sen.upright">Dritto</span></div>
+        <div class="sensor"><div class="dot" id="s-down"></div><span data-i18n="sen.upside_down">Capovolto</span></div>
+        <div class="sensor"><div class="dot" id="s-right"></div><span data-i18n="sen.side_r">Lato dx</span></div>
+        <div class="sensor"><div class="dot" id="s-left"></div><span data-i18n="sen.side_l">Lato sx</span></div>
+        <div class="sensor"><div class="dot" id="s-lean"></div><span data-i18n="sen.lean_back">Inclinato back</span></div>
+        <div class="sensor"><div class="dot" id="s-tr"></div><span data-i18n="sen.tilt_r">Inclinato dx</span></div>
+        <div class="sensor"><div class="dot" id="s-tl"></div><span data-i18n="sen.tilt_l">Inclinato sx</span></div>
+      </div>
+      <div class="fb-raw mt-2" id="raw-bytes">raw: —</div>
     </div>
-    <div class="raw" id="raw-bytes">raw: —</div>
   </div>
 </div>
 
 <!-- TAB: Azioni -->
-<div class="tab-pane" id="t-actions">
-  <div class="card">
-    <h3 data-i18n="act.direct">Interazione diretta</h3>
+<div class="fb-tab-pane" id="t-actions">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.direct">Interazione diretta</h6>
     <div class="act-grid" id="act-grid-direct"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="act.notes">Note musicali (input 71)</h3>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.notes">Note musicali (input 71)</h6>
     <div class="act-grid" id="act-grid-notes"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="act.world">World App / Personalità</h3>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.world">World App / Personalità</h6>
     <div class="act-grid" id="act-grid-world"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="act.custom">Azione personalizzata</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:6px">
-      <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">input (0-75)</div><input type="number" id="ap-in" min="0" max="75" value="39" style="width:100%"></div>
-      <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">index</div><input type="number" id="ap-ix" min="0" max="127" value="3" style="width:100%"></div>
-      <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">subindex</div><input type="number" id="ap-sx" min="0" max="30" value="8" style="width:100%"></div>
-      <div><div style="font-size:.68rem;color:#94a3b8;margin-bottom:2px">specific</div><input type="number" id="ap-sp" min="0" max="10" value="1" style="width:100%"></div>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.custom">Azione personalizzata</h6>
+    <div class="row g-2 mb-2">
+      <div class="col"><div class="text-muted small mb-1">input (0-75)</div><input type="number" class="form-control form-control-sm" id="ap-in" min="0" max="75" value="39"></div>
+      <div class="col"><div class="text-muted small mb-1">index</div><input type="number" class="form-control form-control-sm" id="ap-ix" min="0" max="127" value="3"></div>
+      <div class="col"><div class="text-muted small mb-1">subindex</div><input type="number" class="form-control form-control-sm" id="ap-sx" min="0" max="30" value="8"></div>
+      <div class="col"><div class="text-muted small mb-1">specific</div><input type="number" class="form-control form-control-sm" id="ap-sp" min="0" max="10" value="1"></div>
     </div>
-    <button class="btn" onclick="sendCustomAction()" style="width:100%" data-i18n="act.custom_run">&#x25B6; Esegui</button>
-  </div>
-
-  <!-- Pannello test behavior -->
-  <div class="card">
-    <h3 data-i18n="act.test_title">&#x1F9EA; Test behavior (senza Furby)</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:10px" data-i18n="act.test_desc">Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
-        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px" data-i18n="act.test_trigger">Trigger</div>
-        <select id="tbeh-trg" onchange="tbehTrgChange()" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340">
+    <button class="btn btn-primary w-100" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="act.test_title"><i class="bi bi-flask"></i> Test behavior</h6>
+    <p class="text-muted small mb-3" data-i18n="act.test_desc">Simula un trigger ed esegue LLM + TTS.</p>
+    <div class="row g-2 mb-3">
+      <div class="col">
+        <label class="form-label small" data-i18n="act.test_trigger">Trigger</label>
+        <select class="form-select form-select-sm" id="tbeh-trg" onchange="tbehTrgChange()">
           <option value="0" data-i18n="tbeh.trg.0">VAD (parlato)</option>
           <option value="1" data-i18n="tbeh.trg.1">Pulsante ESP32</option>
           <option value="2" data-i18n="tbeh.trg.2">Sensore Furby</option>
         </select>
       </div>
-      <div id="tbeh-sensor-wrap" style="display:none">
-        <div style="font-size:.68rem;color:#94a3b8;margin-bottom:3px" data-i18n="act.test_sensor">Sensore</div>
-        <select id="tbeh-sensor" style="width:100%;padding:6px 8px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.8rem;background:#f5f8ff;color:#1a2340"></select>
+      <div class="col" id="tbeh-sensor-wrap" style="display:none">
+        <label class="form-label small" data-i18n="act.test_sensor">Sensore</label>
+        <select class="form-select form-select-sm" id="tbeh-sensor"></select>
       </div>
     </div>
-
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;font-weight:600;color:#5a6a8a">
-        <input type="checkbox" id="tbeh-dry" checked style="width:16px;height:16px;accent-color:#3a5298">
-        <span data-i18n="act.test_dry">Dry run</span> <span style="font-weight:400;font-size:.72rem" data-i18n="act.test_dry_sub">(skippa azioni BLE)</span>
-      </label>
-      <div id="tbeh-behavior-label" style="font-size:.72rem;color:#8a9ab5;flex:1;text-align:right"></div>
+    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="tbeh-dry" checked>
+        <label class="form-check-label small" for="tbeh-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
+      </div>
+      <div id="tbeh-behavior-label" class="text-muted small ms-auto"></div>
     </div>
-
-    <button class="btn b-grn" onclick="tbehRun()" style="width:100%" data-i18n="act.test_run">&#x25B6; Simula trigger</button>
-    <div id="tbeh-msg" style="font-size:.72rem;margin-top:8px;color:#5a6a8a;min-height:1.2em"></div>
-  </div>
+    <button class="btn btn-success w-100" onclick="tbehRun()" data-i18n="act.test_run"><i class="bi bi-play-fill"></i> Simula trigger</button>
+    <div id="tbeh-msg" class="small mt-2 text-muted"></div>
+  </div></div>
 </div>
 
 <!-- TAB: Controllo -->
-<div class="tab-pane" id="t-control">
-  <div class="card">
-    <h3 data-i18n="ctrl.rgb">Antenna LED (RGB)</h3>
-    <div class="rgb-row"><span>R</span><input type="range" id="r" min="0" max="255" value="0" oninput="updateRgb()"><span id="rv" style="width:28px;font-size:.68rem">0</span></div>
-    <div class="rgb-row"><span>G</span><input type="range" id="g" min="0" max="255" value="255" oninput="updateRgb()"><span id="gv" style="width:28px;font-size:.68rem">255</span></div>
-    <div class="rgb-row"><span>B</span><input type="range" id="b" min="0" max="255" value="0" oninput="updateRgb()"><span id="bv" style="width:28px;font-size:.68rem">0</span></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+<div class="fb-tab-pane" id="t-control">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
+    <div class="rgb-row"><span>R</span><input type="range" id="r" min="0" max="255" value="0" oninput="updateRgb()"><span id="rv" class="small" style="width:28px">0</span></div>
+    <div class="rgb-row"><span>G</span><input type="range" id="g" min="0" max="255" value="255" oninput="updateRgb()"><span id="gv" class="small" style="width:28px">255</span></div>
+    <div class="rgb-row"><span>B</span><input type="range" id="b" min="0" max="255" value="0" oninput="updateRgb()"><span id="bv" class="small" style="width:28px">0</span></div>
+    <div class="d-flex align-items-center gap-2 mt-2">
       <div class="rgb-prev" id="rgb-prev"></div>
-      <button class="btn b-grn" style="flex:1" onclick="sendRgb()" data-i18n="ctrl.rgb_set">&#x1F4A1; Imposta</button>
+      <button class="btn btn-success flex-fill" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
     </div>
-    <div class="btn-row" style="margin-top:6px">
-      <button class="btn b-grn" onclick="wbCmd('occhi-on',[0xcd,0x01])" data-i18n="ctrl.eyes_on">&#x1F441; Occhi ON</button>
-      <button class="btn b-slt" onclick="wbCmd('occhi-off',[0xcd,0x00])" data-i18n="ctrl.eyes_off">&#x1F4A4; Occhi OFF</button>
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-success flex-fill" onclick="wbCmd('occhi-on',[0xcd,0x01])" data-i18n="ctrl.eyes_on"><i class="bi bi-eye"></i> Occhi ON</button>
+      <button class="btn btn-outline-secondary flex-fill" onclick="wbCmd('occhi-off',[0xcd,0x00])" data-i18n="ctrl.eyes_off"><i class="bi bi-eye-slash"></i> Occhi OFF</button>
     </div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="ctrl.mood">Mood (0x24)</h3>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.mood">Mood (0x24)</h6>
     <div class="mood-row"><span>Wellness</span><input type="range" id="m-well" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Fullness</span><input type="range" id="m-full" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Tiredness</span><input type="range" id="m-tire" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
     <div class="mood-row"><span>Excitedness</span><input type="range" id="m-exci" min="0" max="7" value="4" oninput="this.nextElementSibling.textContent=this.value"><span>4</span></div>
-    <button class="btn b-tel btn-row" style="width:100%;margin-top:6px" onclick="sendMood()" data-i18n="ctrl.mood_set">&#x1F60A; Imposta mood</button>
-  </div>
-  <div class="card">
-    <h3 data-i18n="ctrl.system">Sistema</h3>
-    <div class="btn-row">
-      <button class="btn b-amb" onclick="espCmd('debug-cycle',[0xdb])">&#x1F6E0; Ciclo debug</button>
-      <button class="btn b-red" onclick="espCmdN('fw-version',[0x01])">&#x2139; FW version</button>
-      <button class="btn b-slt" onclick="espCmdN('power',[0x03])">&#x1F50B; Power</button>
+    <button class="btn btn-primary w-100 mt-2" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      <button class="btn btn-warning btn-sm" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button>
+      <button class="btn btn-danger btn-sm" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button>
     </div>
-    <div style="margin-top:8px">
-      <h3 style="margin-bottom:6px" data-i18n="ctrl.dlc">DLC slot</h3>
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <input type="number" id="dlc-slot" min="0" max="13" value="0" style="width:44px">
-        <button class="btn b-grn" onclick="dlcCmd(0x60)">Load</button>
-        <button class="btn b-tel" onclick="dlcCmd(0x61)">Activate</button>
-        <button class="btn b-slt" onclick="dlcCmd(0x62)">Deactivate</button>
-        <button class="btn b-red" onclick="dlcCmd(0x74)">Delete</button>
-        <button class="btn" onclick="espCmd('dlc-info',[0x72])">Info all</button>
-        <button class="btn" onclick="dlcCmd(0x73)">Info slot</button>
-      </div>
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <input type="number" class="form-control form-control-sm" id="dlc-slot" min="0" max="13" value="0" style="width:60px">
+      <button class="btn btn-success btn-sm" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
+      <button class="btn btn-primary btn-sm" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button>
+      <button class="btn btn-danger btn-sm" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button>
+      <button class="btn btn-primary btn-sm" onclick="espCmd('dlc-info',[0x72])"><i class="bi bi-info-circle"></i> Info all</button>
+      <button class="btn btn-primary btn-sm" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
     </div>
-  </div>
+  </div></div>
 </div>
 
 <!-- TAB: Configurazioni -->
-<div class="tab-pane" id="t-configs">
-  <div class="card">
-    <h3 data-i18n="cfg.title">Configurazioni comportamento</h3>
+<div class="fb-tab-pane" id="t-configs">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="cfg.title">Configurazioni comportamento</h6>
     <div id="cfg-list"></div>
-    <div style="display:flex;gap:5px;margin-top:8px">
-      <input type="text" id="new-cfg-name" data-i18n-attr="placeholder" data-i18n="cfg.new_placeholder" placeholder="Nome nuova configurazione" style="flex:1">
-      <button class="btn b-grn" onclick="cfgNew()" data-i18n="cfg.new_btn">+ Nuova</button>
+    <div class="d-flex gap-2 mt-2">
+      <input type="text" class="form-control form-control-sm flex-fill" id="new-cfg-name" data-i18n-attr="placeholder" data-i18n="cfg.new_placeholder" placeholder="Nome nuova configurazione">
+      <button class="btn btn-success btn-sm" onclick="cfgNew()" data-i18n="cfg.new_btn"><i class="bi bi-plus-lg"></i> Nuova</button>
     </div>
-  </div>
-  <div class="card" id="cfg-editor" style="display:none">
-    <h3><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h3>
+  </div></div>
+  <div class="card shadow-sm mb-3" id="cfg-editor" style="display:none"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h6>
     <div id="cfg-rules"></div>
-    <button class="btn b-grn" style="margin-top:8px;width:100%" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add">+ Aggiungi regola</button>
-  </div>
+    <button class="btn btn-success w-100 mt-2" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add"><i class="bi bi-plus-lg"></i> Aggiungi regola</button>
+  </div></div>
 </div>
 
 <!-- TAB: Audio -->
-<div class="tab-pane" id="t-audio">
-  <div class="card">
-    <h3 data-i18n="aud.amp">Amplificatore &amp; volume</h3>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px" data-i18n="aud.amp_lbl">AMP</span>
-      <button class="btn" id="btn-amp" onclick="ampToggle()" style="min-width:80px">...</button>
-      <span style="font-size:.7rem;color:#94a3b8" id="amp-status">carico...</span>
+<div class="fb-tab-pane" id="t-audio">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.amp">Amplificatore &amp; volume</h6>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <span class="text-muted small" data-i18n="aud.amp_lbl">AMP</span>
+      <button class="btn btn-secondary btn-sm" id="btn-amp" onclick="ampToggle()" style="min-width:60px">...</button>
+      <span class="text-muted small" id="amp-status"></span>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:.75rem;color:#5a6a8a;min-width:32px" data-i18n="aud.vol_lbl">VOL</span>
-      <input type="range" id="vol-slider" min="0" max="100" value="75" style="flex:1" oninput="volChange(this.value)" onchange="volSend(this.value)">
-      <span id="vol-val" style="font-size:.75rem;color:#5a6a8a;min-width:28px;text-align:right">75%</span>
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-muted small" data-i18n="aud.vol_lbl">VOL</span>
+      <input type="range" class="form-range flex-fill" id="vol-slider" min="0" max="100" value="75" oninput="volChange(this.value)" onchange="volSend(this.value)">
+      <span id="vol-val" class="text-muted small" style="min-width:34px;text-align:right">75%</span>
     </div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="aud.tone">Test casse (sine wave)</h3>
-    <div style="display:flex;gap:6px;margin-bottom:8px;align-items:flex-end">
-      <div style="flex:1">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="aud.tone_dur">Durata (ms) — tutte le frequenze</div>
-        <input type="number" id="tone-ms" value="800" min="100" max="5000" style="width:100%">
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.tone">Test casse (sine wave)</h6>
+    <div class="mb-3">
+      <label class="form-label small" data-i18n="aud.tone_dur">Durata (ms)</label>
+      <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
+    </div>
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      <button class="btn btn-success btn-sm" onclick="tonePlay(220)">220 Hz</button>
+      <button class="btn btn-success btn-sm" onclick="tonePlay(440)">440 Hz (La)</button>
+      <button class="btn btn-primary btn-sm" onclick="tonePlay(880)">880 Hz</button>
+      <button class="btn btn-primary btn-sm" onclick="tonePlay(1000)">1 kHz</button>
+      <button class="btn btn-primary btn-sm" onclick="tonePlay(1760)">1760 Hz</button>
+      <button class="btn btn-primary btn-sm" onclick="tonePlay(4000)">4 kHz</button>
+    </div>
+    <div class="d-flex gap-2 align-items-end">
+      <div class="flex-fill">
+        <label class="form-label small" data-i18n="aud.tone_freq">Frequenza (Hz)</label>
+        <input type="number" class="form-control form-control-sm" id="tone-freq" value="440" min="20" max="20000">
+      </div>
+      <button class="btn btn-warning btn-sm" onclick="tonePlay(null)" data-i18n="aud.tone_play"><i class="bi bi-play-fill"></i> Play</button>
+    </div>
+    <div id="tone-result" class="small mt-2 text-muted"></div>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.mic">Microfoni live</h6>
+    <p class="text-muted small mb-2" data-i18n="aud.mic_desc">RMS live — L=MIC1, R=MIC2</p>
+    <div class="row g-3 mb-2">
+      <div class="col">
+        <div class="small text-muted mb-1">MIC1 (L)</div>
+        <div class="progress" style="height:12px"><div id="rms-bar-l" class="progress-bar" style="width:0%"></div></div>
+        <div id="rms-val-l" class="small text-muted mt-1">0</div>
+      </div>
+      <div class="col">
+        <div class="small text-muted mb-1">MIC2 (R)</div>
+        <div class="progress" style="height:12px"><div id="rms-bar-r" class="progress-bar bg-success" style="width:0%"></div></div>
+        <div id="rms-val-r" class="small text-muted mt-1">0</div>
       </div>
     </div>
-    <div style="overflow-x:auto;white-space:nowrap;margin-bottom:8px;padding-bottom:2px;-webkit-overflow-scrolling:touch">
-      <button class="btn b-grn" onclick="tonePlay(220)" style="margin-right:4px">220 Hz</button>
-      <button class="btn b-grn" onclick="tonePlay(440)" style="margin-right:4px">440 Hz (La)</button>
-      <button class="btn b-tel" onclick="tonePlay(880)" style="margin-right:4px">880 Hz</button>
-      <button class="btn b-tel" onclick="tonePlay(1000)" style="margin-right:4px">1 kHz</button>
-      <button class="btn b-pur" onclick="tonePlay(1760)" style="margin-right:4px">1760 Hz</button>
-      <button class="btn b-pur" onclick="tonePlay(4000)" style="margin-right:4px">4 kHz</button>
-    </div>
-    <div style="display:flex;gap:6px;align-items:flex-end">
-      <div style="flex:1">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="aud.tone_freq">Frequenza personalizzata (Hz)</div>
-        <input type="number" id="tone-freq" value="440" min="20" max="20000" style="width:100%">
-      </div>
-      <button class="btn b-amb" onclick="tonePlay(null)" style="white-space:nowrap" data-i18n="aud.tone_play">&#x25B6; Play</button>
-    </div>
-    <div id="tone-result" style="font-size:.7rem;margin-top:6px;color:#5a6a8a"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="aud.mic">Microfoni live</h3>
-    <div style="margin-bottom:8px">
-      <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px" data-i18n="aud.mic_desc">RMS live — L=MIC1, R=MIC2</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="flex:1">
-          <div style="font-size:.6rem;color:#94a3b8">MIC1 (L)</div>
-          <div style="background:#e4eaf4;border-radius:4px;height:12px;overflow:hidden">
-            <div id="rms-bar-l" style="height:100%;background:linear-gradient(90deg,#3a5298,#5b7fe0);width:0%;transition:width .1s"></div>
-          </div>
-          <div id="rms-val-l" style="font-size:.65rem;color:#5a6a8a;margin-top:1px">0</div>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:.6rem;color:#94a3b8">MIC2 (R)</div>
-          <div style="background:#e4eaf4;border-radius:4px;height:12px;overflow:hidden">
-            <div id="rms-bar-r" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);width:0%;transition:width .1s"></div>
-          </div>
-          <div id="rms-val-r" style="font-size:.65rem;color:#5a6a8a;margin-top:1px">0</div>
-        </div>
-      </div>
-      <div id="vad-badge" style="margin-top:6px;display:inline-block;padding:2px 10px;border-radius:12px;font-size:.7rem;font-weight:700;background:#e4eaf4;color:#5a6a8a">Silenzio</div>
-    </div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="aud.rec">Registra e riproduci (3 secondi)</h3>
-    <p style="font-size:.7rem;color:#5a6a8a;margin-bottom:8px" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).</p>
-    <button class="btn b-amb" id="btn-rec" onclick="micRecord()" style="width:100%" data-i18n="aud.rec_btn">&#x1F3A4; Registra 3s e riproduci</button>
-    <div id="rec-result" style="font-size:.7rem;margin-top:6px;color:#5a6a8a"></div>
-  </div>
+    <span id="vad-badge" class="badge bg-secondary">Silenzio</span>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
+    <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
+    <button class="btn btn-warning w-100" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
+    <div id="rec-result" class="small mt-2 text-muted"></div>
+  </div></div>
 </div>
 
 <!-- TAB: Raw / Log -->
-<div class="tab-pane" id="t-raw">
-  <div class="card">
-    <h3 data-i18n="raw.title">Comando raw (hex bytes separati da spazio)</h3>
-    <div style="display:flex;gap:5px">
-      <input type="text" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01" style="flex:1;font-family:monospace">
-      <button class="btn b-grn" onclick="sendRaw('gp')">GP</button>
-      <button class="btn b-pur" onclick="sendRaw('nordic')">Nordic</button>
+<div class="fb-tab-pane" id="t-raw">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
+    <div class="d-flex gap-2">
+      <input type="text" class="form-control form-control-sm font-monospace flex-fill" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
+      <button class="btn btn-success btn-sm" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
+      <button class="btn btn-primary btn-sm" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
     </div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="raw.log">Log</h3>
-    <div class="log" id="log"></div>
-  </div>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.log">Log</h6>
+    <div class="fb-log" id="log"></div>
+  </div></div>
 </div>
 
 <!-- TAB: File SPIFFS -->
-<div class="tab-pane" id="t-files">
-  <div class="card">
-    <div class="fm-bar">
-      <span class="fm-quota" id="fm-quota">—</span>
-      <button class="btn b-grn" onclick="fmLoad()" style="padding:4px 10px;font-size:.68rem" data-i18n="fm.refresh">&#x21BB; Aggiorna</button>
+<div class="fb-tab-pane" id="t-files">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="text-muted small" id="fm-quota">—</span>
+      <button class="btn btn-success btn-sm ms-auto" onclick="fmLoad()" data-i18n="fm.refresh"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
     </div>
-    <div id="fm-table-wrap">
-      <table class="fm-table">
-        <thead><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th colspan="3"></th></tr></thead>
-        <tbody id="fm-tbody"><tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px" data-i18n="fm.loading">carico...</td></tr></tbody>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead class="table-light"><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th colspan="3"></th></tr></thead>
+        <tbody id="fm-tbody"><tr><td colspan="5" class="text-center text-muted" data-i18n="fm.loading">carico...</td></tr></tbody>
       </table>
     </div>
-  </div>
-  <div class="card" id="fm-editor-card" style="display:none">
-    <h3 id="fm-editor-title">Editor</h3>
+  </div></div>
+  <div class="card shadow-sm mb-3" id="fm-editor-card" style="display:none"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" id="fm-editor-title">Editor</h6>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
-    <div style="display:flex;gap:5px;margin-top:8px">
-      <button class="btn b-grn" onclick="fmSave()" style="flex:1" data-i18n="fm.save">&#x1F4BE; Salva</button>
-      <button class="btn b-slt" onclick="fmEditorClose()" data-i18n="fm.close">Chiudi</button>
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-success flex-fill" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
+      <button class="btn btn-outline-secondary" onclick="fmEditorClose()" data-i18n="fm.close"><i class="bi bi-x-lg"></i> Chiudi</button>
     </div>
-    <div id="fm-editor-msg" style="font-size:.68rem;margin-top:4px;color:#5a6a8a"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="fm.upload_title">Carica file</h3>
-    <div style="display:flex;gap:5px;align-items:flex-end;flex-wrap:wrap">
-      <div style="flex:1;min-width:120px">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="fm.upload_path">Percorso (es. /config.json)</div>
-        <input type="text" id="fm-up-path" placeholder="/nomefile.txt" style="width:100%;font-family:monospace">
+    <div id="fm-editor-msg" class="small mt-1 text-muted"></div>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="fm.upload_title">Carica file</h6>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label small" data-i18n="fm.upload_path">Percorso</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="fm-up-path" placeholder="/nomefile.txt">
       </div>
-      <div style="flex:2;min-width:140px">
-        <div style="font-size:.65rem;color:#94a3b8;margin-bottom:2px" data-i18n="fm.upload_file">File da PC</div>
-        <input type="file" id="fm-up-file" style="font-size:.7rem;width:100%">
+      <div class="col-12 col-md-5">
+        <label class="form-label small" data-i18n="fm.upload_file">File da PC</label>
+        <input type="file" class="form-control form-control-sm" id="fm-up-file">
       </div>
-      <button class="btn b-amb" onclick="fmUpload()" style="white-space:nowrap" data-i18n="fm.upload_btn">&#x2B06; Carica</button>
+      <div class="col-12 col-md-3">
+        <button class="btn btn-warning w-100" onclick="fmUpload()" data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
+      </div>
     </div>
-    <div id="fm-up-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
-  </div>
+    <div id="fm-up-msg" class="small mt-2 text-muted"></div>
+  </div></div>
 </div>
 
-<!-- TAB PERSONALITÀ -->
-<div class="tab-pane" id="t-persona">
-  <div class="card">
-    <h3 data-i18n="persona.base_title">Personalità base</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:4px" data-i18n="persona.base_desc">System prompt LLM — definisce carattere e tono del Furby</div>
-    <textarea id="pers-prompt" style="width:100%;height:90px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" placeholder="Sei un giocattolo cinico..."></textarea>
-    <div style="font-size:.68rem;color:#8a9ab5;margin:8px 0 3px" data-i18n="persona.voice_label">Voce ElevenLabs</div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <select id="pers-voice" style="flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid #d0d9ee;font-size:.82rem;background:#f5f8ff;color:#1a2340">
-        <option value="">— carica voci —</option>
-      </select>
-      <button class="btn" onclick="voiceLoad()" id="btn-voice-load" style="padding:7px 13px;white-space:nowrap">&#x21BB; Carica</button>
+<!-- TAB: Personalità -->
+<div class="fb-tab-pane" id="t-persona">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="persona.base_title">Personalità base</h6>
+    <p class="text-muted small mb-2" data-i18n="persona.base_desc">System prompt LLM</p>
+    <textarea class="form-control form-control-sm font-monospace mb-3" id="pers-prompt" rows="4" placeholder="Sei un giocattolo cinico..."></textarea>
+    <label class="form-label small" data-i18n="persona.voice_label">Voce ElevenLabs</label>
+    <div class="d-flex gap-2 mb-2">
+      <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">— carica voci —</option></select>
+      <button class="btn btn-outline-secondary btn-sm" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i> Carica</button>
     </div>
-    <div id="voice-load-msg" style="font-size:.68rem;margin-top:3px;color:#8a9ab5"></div>
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="btn b-grn" onclick="persSave()" style="flex:1" data-i18n="persona.save_btn">Salva personalità</button>
-    </div>
-    <div id="pers-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
-  </div>
+    <div id="voice-load-msg" class="small text-muted mb-2"></div>
+    <button class="btn btn-success w-100" onclick="persSave()" data-i18n="persona.save_btn"><i class="bi bi-floppy"></i> Salva personalità</button>
+    <div id="pers-msg" class="small mt-1 text-muted"></div>
+  </div></div>
 
-  <div class="card">
-    <h3 data-i18n="persona.beh_title">Comportamenti — eventi → conseguenze</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px" data-i18n="persona.beh_desc">
-      Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.
-    </div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="persona.beh_title">Comportamenti</h6>
+    <p class="text-muted small mb-3" data-i18n="persona.beh_desc">Ogni comportamento mappa un evento su 1-3 conseguenze.</p>
     <div id="beh-list"></div>
-    <div class="btn-row" style="margin-top:10px">
-      <button class="btn b-grn" onclick="behAdd()" data-i18n="persona.beh_add">+ Aggiungi</button>
-      <button class="btn b-tel" onclick="behExport()" data-i18n="persona.beh_export">&#x2B07; Esporta JSON</button>
-      <label class="btn b-amb" style="cursor:pointer"><span data-i18n="persona.beh_import">&#x2B06; Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+    <div class="d-flex gap-2 flex-wrap mt-2">
+      <button class="btn btn-success btn-sm" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+      <button class="btn btn-primary btn-sm" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
+      <label class="btn btn-warning btn-sm mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
     </div>
-    <div id="beh-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
-  </div>
+    <div id="beh-msg" class="small mt-2 text-muted"></div>
+  </div></div>
 
   <!-- Editor comportamento inline -->
-  <div class="card" id="beh-editor" style="display:none">
-    <h3 id="beh-editor-title" data-i18n="beh.new_title">Nuovo comportamento</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:10px">
-      <div>
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.trigger_label">Trigger</div>
-        <select id="beh-trg" style="width:100%;font-size:.75rem" onchange="behTrgChange()">
+  <div class="card shadow-sm mb-3" id="beh-editor" style="display:none"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" id="beh-editor-title" data-i18n="beh.new_title">Nuovo comportamento</h6>
+    <div class="row g-2 mb-3">
+      <div class="col">
+        <label class="form-label small" data-i18n="beh.trigger_label">Trigger</label>
+        <select class="form-select form-select-sm" id="beh-trg" onchange="behTrgChange()">
           <option value="0" data-i18n="beh.trg.vad">VAD (parlato)</option>
           <option value="1" data-i18n="beh.trg.button">Pulsante ESP32</option>
           <option value="2" data-i18n="beh.trg.sensor">Sensore Furby</option>
         </select>
       </div>
-      <div id="beh-sensor-wrap" style="display:none">
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.sensor_label">Sensore</div>
-        <select id="beh-sensor" style="width:100%;font-size:.75rem"></select>
+      <div class="col" id="beh-sensor-wrap" style="display:none">
+        <label class="form-label small" data-i18n="beh.sensor_label">Sensore</label>
+        <select class="form-select form-select-sm" id="beh-sensor"></select>
       </div>
-      <div>
-        <div style="font-size:.65rem;color:#8a9ab5;margin-bottom:2px" data-i18n="beh.name_label">Nome</div>
-        <input type="text" id="beh-name" style="width:100%;font-size:.75rem" data-i18n-attr="placeholder" data-i18n="beh.name_placeholder" placeholder="es. Tocco testa">
+      <div class="col">
+        <label class="form-label small" data-i18n="beh.name_label">Nome</label>
+        <input type="text" class="form-control form-control-sm" id="beh-name" data-i18n-attr="placeholder" data-i18n="beh.name_placeholder" placeholder="es. Tocco testa">
       </div>
     </div>
     <div id="csq-list"></div>
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn b-grn" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq">+ Conseguenza</button>
+    <button class="btn btn-success btn-sm mt-2" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-primary flex-fill" onclick="behSave()" data-i18n="beh.save"><i class="bi bi-floppy"></i> Salva</button>
+      <button class="btn btn-outline-secondary" onclick="behEditorClose()" data-i18n="beh.cancel"><i class="bi bi-x-lg"></i> Annulla</button>
     </div>
-    <div class="btn-row" style="margin-top:12px">
-      <button class="btn" onclick="behSave()" style="flex:1" data-i18n="beh.save">&#x1F4BE; Salva comportamento</button>
-      <button class="btn b-slt" onclick="behEditorClose()" data-i18n="beh.cancel">Annulla</button>
-    </div>
-  </div>
+  </div></div>
 
-  <!-- Pannello di test -->
-  <div class="card">
-    <h3 data-i18n="test.llm_title">Test LLM</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:6px" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente (senza foto)</div>
-    <textarea id="test-llm-text" style="width:100%;height:60px;font-size:.75rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn b-tel" onclick="testLlmSend()" style="flex:1" data-i18n="test.llm_send">&#x27A4; Invia</button>
-    </div>
-    <div id="test-llm-resp" style="display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;border-radius:8px;padding:10px;font-size:.78rem;color:#1a2340;white-space:pre-wrap;font-family:monospace"></div>
-    <div id="test-llm-msg" style="font-size:.68rem;margin-top:5px;color:#5a6a8a"></div>
-  </div>
+  <!-- Test LLM -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.llm_title">Test LLM</h6>
+    <p class="text-muted small mb-2" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente</p>
+    <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
+    <button class="btn btn-primary w-100" onclick="testLlmSend()" data-i18n="test.llm_send"><i class="bi bi-send"></i> Invia</button>
+    <div id="test-llm-resp" class="mt-2 p-3 rounded border bg-light small font-monospace" style="display:none;white-space:pre-wrap"></div>
+    <div id="test-llm-msg" class="small mt-1 text-muted"></div>
+  </div></div>
 
-  <div class="card">
-    <h3 data-i18n="test.tts_title">Test TTS</h3>
-    <div style="font-size:.68rem;color:#8a9ab5;margin-bottom:8px" data-i18n="test.tts_desc">Sintetizza testo e riproduci — scegli la destinazione.</div>
-    <textarea id="test-tts-text" style="width:100%;height:52px;font-size:.82rem;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:8px;padding:8px;resize:vertical" data-i18n-attr="placeholder" data-i18n="test.tts_placeholder" placeholder="Ciao, sono un Furby cinico."></textarea>
-    <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
-      <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;flex-shrink:0">
-        <label id="tts-lbl-browser" style="padding:6px 14px;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
-          <input type="radio" name="tts-panel-dest" value="browser" checked style="display:none" onchange="ttsPanelDestChange()">
-          &#x1F5A5; Browser
-        </label>
-        <label id="tts-lbl-board" style="padding:6px 14px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
-          <input type="radio" name="tts-panel-dest" value="board" style="display:none" onchange="ttsPanelDestChange()">
-          &#x1F4E1; ESP32
-        </label>
+  <!-- Test TTS -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.tts_title">Test TTS</h6>
+    <p class="text-muted small mb-2" data-i18n="test.tts_desc">Sintetizza testo e riproduci</p>
+    <textarea class="form-control form-control-sm font-monospace mb-3" id="test-tts-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.tts_placeholder" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-browser" value="browser" checked onchange="ttsPanelDestChange()">
+        <label class="btn btn-outline-primary btn-sm" for="tts-dest-browser"><i class="bi bi-display"></i> Browser</label>
+        <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-board" value="board" onchange="ttsPanelDestChange()">
+        <label class="btn btn-outline-primary btn-sm" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
       </div>
-      <span id="tts-panel-hint" style="font-size:.7rem;color:#8a9ab5" data-i18n="tts_browser_hint">Web Speech API — voce di sistema, nessuna API</span>
-      <button class="btn b-grn" onclick="testTtsSend()" style="margin-left:auto" data-i18n="test.tts_play">&#x25B6; Riproduci</button>
+      <span id="tts-panel-hint" class="text-muted small" data-i18n="tts_browser_hint">Web Speech API</span>
+      <button class="btn btn-success btn-sm ms-auto" onclick="testTtsSend()" data-i18n="test.tts_play"><i class="bi bi-play-fill"></i> Riproduci</button>
     </div>
-    <div id="test-tts-msg" style="font-size:.72rem;margin-top:6px;color:#5a6a8a"></div>
-  </div>
-
+    <div id="test-tts-msg" class="small mt-2 text-muted"></div>
+  </div></div>
 </div>
 
+<script src="/bootstrap.bundle.min.js"></script>
 <script>
 function showTab(id,el){
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.fb-tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.fb-tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
   if(id==='t-audio'){startMicPoll();ampLoad();}else stopMicPoll();
-  if(id==='t-files'){fmLoad();}
-  if(id==='t-configs'){cfgLoad();}
-  if(id==='t-persona'){persLoad();}
+  if(id==='t-files')fmLoad();
+  if(id==='t-configs')cfgLoad();
+  if(id==='t-persona')persLoad();
 }
-// ======================= PERSONALITÀ =======================
-var gBehaviors=[]; var gActions=[]; var gEditIdx=-1;
-
-// ID voce corrente — tenuto in memoria per rimetterlo nella select dopo il caricamento
-var gCurrentVoiceId='';
+var gBehaviors=[],gActions=[],gEditIdx=-1,gCurrentVoiceId='';
 
 function voiceLoad(){
-  var btn=document.getElementById('btn-voice-load');
-  var msg=document.getElementById('voice-load-msg');
-  var sel=document.getElementById('pers-voice');
-  btn.disabled=true; btn.textContent='...'; msg.textContent='';
-  fetch('/test/voices')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      btn.disabled=false; btn.textContent='↻ Carica';
-      if(!d.ok){msg.style.color='#dc2626';msg.textContent='Errore: '+(d.error||'?');return;}
-      if(!d.voices||!d.voices.length){msg.textContent='Nessuna voce trovata.';return;}
-      var prev=sel.value||gCurrentVoiceId;
-      sel.innerHTML='';
-      d.voices.forEach(function(v){
-        var o=document.createElement('option');
-        o.value=v.id;
-        o.textContent=v.name+(v.category?' ('+v.category+')':'');
-        sel.appendChild(o);
-      });
-      if(prev) sel.value=prev;
-      msg.style.color='#16a34a';
-      msg.textContent=d.voices.length+t('voices_loaded');
-      setTimeout(function(){msg.textContent='';},2500);
-    })
-    .catch(function(){
-      btn.disabled=false;btn.textContent='↻ Carica';
-      msg.style.color='#dc2626';msg.textContent='Errore connessione.';
-    });
+  var btn=document.getElementById('btn-voice-load'),msg=document.getElementById('voice-load-msg'),sel=document.getElementById('pers-voice');
+  btn.disabled=true;btn.textContent='...';msg.textContent='';
+  fetch('/test/voices').then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;btn.innerHTML='<i class="bi bi-arrow-clockwise"></i> Carica';
+    if(!d.ok){msg.className='small mt-1 text-danger';msg.textContent='Errore: '+(d.error||'?');return;}
+    if(!d.voices||!d.voices.length){msg.textContent=t('test.voices_none');return;}
+    var prev=sel.value||gCurrentVoiceId;
+    sel.innerHTML='';
+    d.voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name+(v.category?' ('+v.category+')':'');sel.appendChild(o);});
+    if(prev)sel.value=prev;
+    msg.className='small mt-1 text-success';msg.textContent=d.voices.length+t('voices_loaded');
+    setTimeout(function(){msg.textContent='';},2500);
+  }).catch(function(){btn.disabled=false;btn.innerHTML='<i class="bi bi-arrow-clockwise"></i> Carica';msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
 }
 
 function persLoad(){
   fetch('/personality').then(r=>r.json()).then(d=>{
     document.getElementById('pers-prompt').value=d.prompt||'';
     gCurrentVoiceId=d.voice_id||'';
-    // carica le voci e poi seleziona quella corrente
     voiceLoad();
   });
   fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
   behLoad();
 }
-
 function persSave(){
-  var fd=new FormData();
-  fd.append('prompt',document.getElementById('pers-prompt').value);
-  fd.append('voice_id',document.getElementById('pers-voice').value);
+  var fd=new FormData();fd.append('prompt',document.getElementById('pers-prompt').value);fd.append('voice_id',document.getElementById('pers-voice').value);
   fetch('/personality/save',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    document.getElementById('pers-msg').textContent=d.ok?'Salvato.':'Errore.';
+    document.getElementById('pers-msg').textContent=d.ok?t('saved'):t('error');
     setTimeout(()=>{document.getElementById('pers-msg').textContent='';},2500);
   });
 }
-
 function behLoad(){
   fetch('/behaviors').then(r=>r.json()).then(d=>{
     gBehaviors=d.behaviors||[];
-    // aggiorna anche personalità se non ancora caricata
-    if(d.personality){
-      var pp=document.getElementById('pers-prompt');
-      if(pp&&!pp.value)pp.value=d.personality.prompt||'';
-      if(d.personality.voice_id&&!gCurrentVoiceId){
-        gCurrentVoiceId=d.personality.voice_id;
-        var pv=document.getElementById('pers-voice');
-        if(pv)pv.value=gCurrentVoiceId; // funziona se le voci sono già caricate
-      }
-    }
+    if(d.personality){var pp=document.getElementById('pers-prompt');if(pp&&!pp.value)pp.value=d.personality.prompt||'';}
     behRender();
   });
 }
-
-// trigger: 0=VAD, 1=Pulsante, 2=Sensore Furby
-var SENSOR_KEYS=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l',
-  'pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
+var SENSOR_KEYS=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l','pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
 function getSensorName(i){if(i<1||i>SENSOR_KEYS.length)return String(i);return t('beh.sensor.'+SENSOR_KEYS[i-1]);}
 function getTrgName(n){return t(['beh.trg.vad','beh.trg.button','beh.trg.sensor'][n]||'?');}
 function getCsqName(n){return t(['','csq.furby_action','csq.tts_fixed','csq.prompt_fixed','csq.llm_decide'][n]||'?');}
-// alias per compatibilità con il JS del file manager che usa SENSOR_NAMES direttamente
-var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro',
-  'Tickle testa','Tickle pancia','Tickle dx','Tickle sx',
-  'Tira coda','Spingi lingua',
-  'Dritto','Capovolto','Lato dx','Lato sx',
-  'Inclinato back','Inclinato dx','Inclinato sx'];
+var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro','Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua','Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
 var CSQ_COLORS={1:'#7c3aed',2:'#0f766e',3:'#d97706',4:'#3a5298'};
-
-function trgLabel(b){
-  if(b.trigger===2) return t('beh.trg.sensor')+': '+getSensorName(b.sensor_id);
-  return getTrgName(b.trigger)||'?';
-}
-
+function trgLabel(b){if(b.trigger===2)return t('beh.trg.sensor')+': '+getSensorName(b.sensor_id);return getTrgName(b.trigger)||'?';}
 function behTrgChange(){
-  var trg=parseInt(document.getElementById('beh-trg').value);
-  var wrap=document.getElementById('beh-sensor-wrap');
+  var trg=parseInt(document.getElementById('beh-trg').value),wrap=document.getElementById('beh-sensor-wrap');
   wrap.style.display=(trg===2)?'block':'none';
-  if(trg===2){
-    var sel=document.getElementById('beh-sensor');
-    var prev=sel.value;
-    sel.innerHTML='';
-    SENSOR_KEYS.forEach(function(k,i){
-      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
-    });
-    if(prev)sel.value=prev;
-  }
+  if(trg===2){var sel=document.getElementById('beh-sensor'),prev=sel.value;sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});if(prev)sel.value=prev;}
 }
-
 function behRender(){
   var el=document.getElementById('beh-list');
-  if(!gBehaviors.length){el.innerHTML='<div style="color:#8a9ab5;font-size:.75rem;padding:8px 0">'+t('no_behaviors')+'</div>';return;}
+  if(!gBehaviors.length){el.innerHTML='<div class="text-muted small py-2">'+t('no_behaviors')+'</div>';return;}
   el.innerHTML=gBehaviors.map(function(b,i){
     var csqHtml=b.consequences.map(function(c){
-      var col=CSQ_COLORS[c.type]||'#8a9ab5';
-      var lbl=getCsqName(c.type);
-      var det='';
+      var col=CSQ_COLORS[c.type]||'#8a9ab5',lbl=getCsqName(c.type),det='';
       if(c.type==1&&c.action_id){var act=gActions.find(function(a){return a.id==c.action_id;});det=act?act.label:c.action_id;}
-      else if(c.type==2&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
-      else if(c.type==3&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
+      else if((c.type==2||c.type==3)&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
       else if(c.type==4){det=c.snapshot?'📷 ':'';det+=c.reaction_count?c.reaction_count+' reactions':'text only';}
-      return '<span style="display:inline-flex;align-items:center;gap:3px;background:'+col+'18;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:2px">'+lbl+(det?': <em>'+det+'</em>':'')+'</span>';
-    }).join('<span style="color:#8a9ab5;margin:0 2px;font-size:.8rem">→</span>');
-    return '<div class="cfg-item" style="flex-direction:column;align-items:flex-start;gap:6px">'
-      +'<div style="display:flex;width:100%;align-items:center;gap:8px">'
-      +'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#e4eaf4;color:#5a6a8a">'+trgLabel(b)+'</span>'
+      return '<span style="background:'+col+'18;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:2px;display:inline-flex;align-items:center;gap:3px">'+lbl+(det?': <em>'+det+'</em>':'')+'</span>';
+    }).join('<span style="color:#8a9ab5;margin:0 2px">→</span>');
+    return '<div class="cfg-item flex-column align-items-start gap-2">'
+      +'<div class="d-flex w-100 align-items-center gap-2">'
+      +'<span class="badge bg-secondary text-white" style="font-size:.6rem">'+trgLabel(b)+'</span>'
       +'<span class="cfg-name">'+b.name+'</span>'
-      +'<button class="btn b-slt" style="margin-left:auto;padding:3px 8px;font-size:.65rem" onclick="behEdit('+i+')">'+t('modify')+'</button>'
-      +'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="behDel('+i+')">'+t('delete_btn')+'</button>'
-      +'</div>'
-      +'<div>'+csqHtml+'</div>'
-      +'</div>';
+      +'<button class="btn btn-outline-secondary btn-sm ms-auto py-0" onclick="behEdit('+i+')"><i class="bi bi-pencil"></i> '+t('modify')+'</button>'
+      +'<button class="btn btn-danger btn-sm py-0" onclick="behDel('+i+')"><i class="bi bi-trash3"></i></button>'
+      +'</div><div>'+csqHtml+'</div></div>';
   }).join('');
 }
-
 function behEdit(i){
-  gEditIdx=i;
-  var b=gBehaviors[i];
+  gEditIdx=i;var b=gBehaviors[i];
   document.getElementById('beh-editor-title').textContent=t('modify')+': '+b.name;
-  var trg=b.trigger!==undefined?b.trigger:(b.event===1?0:b.event===2?1:0);
-  document.getElementById('beh-trg').value=trg;
-  behTrgChange();
+  var trg=b.trigger!==undefined?b.trigger:0;
+  document.getElementById('beh-trg').value=trg;behTrgChange();
   if(trg===2)document.getElementById('beh-sensor').value=b.sensor_id||1;
   document.getElementById('beh-name').value=b.name||'';
-  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));
-  csqRender();
+  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));csqRender();
   document.getElementById('beh-editor').style.display='block';
   document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
 }
-
 function behAdd(){
-  gEditIdx=-1;
-  document.getElementById('beh-editor-title').textContent=t('beh.new_title');
-  document.getElementById('beh-trg').value=0;
-  behTrgChange();
-  document.getElementById('beh-name').value='';
-  gEditCsqs=[];
-  csqRender();
+  gEditIdx=-1;document.getElementById('beh-editor-title').textContent=t('beh.new_title');
+  document.getElementById('beh-trg').value=0;behTrgChange();
+  document.getElementById('beh-name').value='';gEditCsqs=[];csqRender();
   document.getElementById('beh-editor').style.display='block';
   document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
 }
-
-function behEditorClose(){
-  document.getElementById('beh-editor').style.display='none';
-  gEditIdx=-1; gEditCsqs=[];
-}
-
-function behDel(i){
-  if(!confirm(t('beh.del_confirm')+' "'+gBehaviors[i].name+'"?'))return;
-  gBehaviors.splice(i,1);
-  behSaveAll();
-}
-
+function behEditorClose(){document.getElementById('beh-editor').style.display='none';gEditIdx=-1;gEditCsqs=[];}
+function behDel(i){if(!confirm(t('beh.del_confirm')+' "'+gBehaviors[i].name+'"?'))return;gBehaviors.splice(i,1);behSaveAll();}
 function behSave(){
-  var trg=parseInt(document.getElementById('beh-trg').value);
-  var sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
+  var trg=parseInt(document.getElementById('beh-trg').value),sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
   var name=document.getElementById('beh-name').value.trim()||t('no_name');
-  csqCollect();
-  var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs};
-  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}
-  else gBehaviors.push(b);
-  behSaveAll();
-  behEditorClose();
+  csqCollect();var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs};
+  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}else gBehaviors.push(b);
+  behSaveAll();behEditorClose();
 }
-
 function behSaveAll(){
   fetch('/behaviors').then(r=>r.json()).then(d=>{
     d.behaviors=gBehaviors;
     return fetch('/behaviors/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
   }).then(r=>r.json()).then(d=>{
     document.getElementById('beh-msg').textContent=d.ok?t('saved'):t('error');
-    setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);
-    behLoad();
+    setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);behLoad();
   });
 }
-
 function behExport(){window.location='/behaviors/export';}
-
 function behImport(inp){
-  var f=inp.files[0]; if(!f)return;
-  var rd=new FileReader();
-  rd.onload=function(e){
-    fetch('/behaviors/import',{method:'POST',headers:{'Content-Type':'application/json'},body:e.target.result})
-      .then(r=>r.json()).then(d=>{
-        document.getElementById('beh-msg').textContent=d.ok?t('imported'):t('error')+' '+(d.error||'?');
-        setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);
-        if(d.ok)persLoad();
-      });
-  };
-  rd.readAsText(f);
+  var f=inp.files[0];if(!f)return;
+  var rd=new FileReader();rd.onload=function(e){
+    fetch('/behaviors/import',{method:'POST',headers:{'Content-Type':'application/json'},body:e.target.result}).then(r=>r.json()).then(d=>{
+      document.getElementById('beh-msg').textContent=d.ok?t('imported'):t('error')+' '+(d.error||'?');
+      setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);if(d.ok)persLoad();
+    });
+  };rd.readAsText(f);
 }
 
-// ======================= CONSEGUENZE =======================
 var gEditCsqs=[];
-
 function csqRender(){
-  var el=document.getElementById('csq-list'); el.innerHTML='';
+  var el=document.getElementById('csq-list');el.innerHTML='';
   gEditCsqs.forEach(function(c,i){el.appendChild(csqCard(c,i));});
   document.getElementById('csq-add-btn').style.display=gEditCsqs.length>=3?'none':'';
 }
-
 function csqCard(c,i){
-  var wrap=document.createElement('div');
-  wrap.style.cssText='border:1.5px solid #e4eaf4;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#f8faff';
-  var typeSel='<select onchange="csqTypeChange('+i+',this.value)" style="font-size:.82rem">'
+  var wrap=document.createElement('div');wrap.className='border rounded p-2 mb-2 bg-light';
+  var typeSel='<select class="form-select form-select-sm" onchange="csqTypeChange('+i+',this.value)">'
     +'<option value="1"'+(c.type==1?' selected':'')+'>'+t('csq.furby_action')+'</option>'
     +'<option value="2"'+(c.type==2?' selected':'')+'>'+t('csq.tts_fixed')+'</option>'
     +'<option value="3"'+(c.type==3?' selected':'')+'>'+t('csq.prompt_fixed')+'</option>'
     +'<option value="4"'+(c.type==4?' selected':'')+'>'+t('csq.llm_decide')+'</option>'
     +'</select>';
-  var del='<button class="btn b-red" style="margin-left:auto;padding:4px 9px;font-size:.72rem" onclick="csqDel('+i+')">✕</button>';
-  var hdr='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+typeSel+del+'</div>';
-  var body='';
-  var ta='width:100%;font-family:monospace;border:1.5px solid #d0d9ee;border-radius:6px;padding:8px;resize:vertical;font-size:.82rem';
-
+  var del='<button class="btn btn-danger btn-sm" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i></button>';
+  var hdr='<div class="d-flex align-items-center gap-2 mb-2">'+typeSel+del+'</div>';
+  var ta='form-control form-control-sm font-monospace';var body='';
   if(c.type==1){
     var opts=gActions.map(function(a){return '<option value="'+a.id+'"'+(c.action_id==a.id?' selected':'')+'>'+a.label+'</option>';}).join('');
-    body='<select id="csq-act-'+i+'" style="width:100%;font-size:.82rem"><option value="">'+t('csq.action_placeholder')+'</option>'+opts+'</select>';
+    body='<select class="form-select form-select-sm" id="csq-act-'+i+'"><option value="">'+t('csq.action_placeholder')+'</option>'+opts+'</select>';
   } else if(c.type==2){
-    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.tts_placeholder')+'" style="'+ta+';height:56px">'+esc(c.text||'')+'</textarea>';
+    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.tts_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>';
   } else if(c.type==3){
-    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.prompt_placeholder')+'" style="'+ta+';height:56px">'+esc(c.text||'')+'</textarea>'
-      +'<label style="display:flex;align-items:center;gap:6px;font-size:.8rem;margin-top:7px;cursor:pointer">'
-      +'<input type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'>'+t('csq.snapshot')+'</label>';
+    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.prompt_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>'
+      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'">'+t('csq.snapshot')+'</label></div>';
   } else if(c.type==4){
-    var checked=[]; if(c.reactions)checked=c.reactions;
+    var checked=c.reactions||[];
     var allAct=gActions.map(function(a){
-      return '<label style="display:flex;align-items:center;gap:5px;font-size:.8rem;margin-bottom:3px;cursor:pointer">'
-        +'<input type="checkbox" name="csq-ract-'+i+'" value="'+a.id+'"'+(checked.indexOf(a.id)>=0?' checked':'')+' onchange="limitReact('+i+')"> '+a.label+'</label>';
+      return '<div class="form-check"><input class="form-check-input" type="checkbox" name="csq-ract-'+i+'" value="'+a.id+'"'+(checked.indexOf(a.id)>=0?' checked':'')+' onchange="limitReact('+i+')">'
+        +'<label class="form-check-label small">'+a.label+'</label></div>';
     }).join('');
-    body='<textarea id="csq-txt-'+i+'" placeholder="'+t('csq.llm_placeholder')+'" style="'+ta+';height:46px;margin-bottom:8px">'+esc(c.text||'')+'</textarea>'
-      +'<label style="display:flex;align-items:center;gap:6px;font-size:.8rem;margin-bottom:8px;cursor:pointer">'
-      +'<input type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'>'+t('csq.snapshot')+'</label>'
-      +'<div style="font-size:.72rem;color:#8a9ab5;margin-bottom:4px">'+t('csq.reactions_label')+'</div>'
-      +'<div id="csq-ract-'+i+'" style="max-height:150px;overflow-y:auto;border:1px solid #e4eaf4;border-radius:6px;padding:8px;background:#fff">'+allAct+'</div>';
+    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.llm_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>'
+      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'">'+t('csq.snapshot')+'</label></div>'
+      +'<div class="small text-muted mt-2 mb-1">'+t('csq.reactions_label')+'</div>'
+      +'<div id="csq-ract-'+i+'" class="border rounded p-2 bg-white" style="max-height:150px;overflow-y:auto">'+allAct+'</div>';
   }
-  wrap.innerHTML=hdr+body;
-  return wrap;
+  wrap.innerHTML=hdr+body;return wrap;
 }
-
-function limitReact(i){
-  var checks=document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked');
-  if(checks.length>3){event.target.checked=false;}
-}
-
-function csqTypeChange(i,v){
-  gEditCsqs[i]={type:parseInt(v),action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0};
-  csqRender();
-}
-
+function limitReact(i){var checks=document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked');if(checks.length>3)event.target.checked=false;}
+function csqTypeChange(i,v){gEditCsqs[i]={type:parseInt(v),action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0};csqRender();}
 function csqDel(i){gEditCsqs.splice(i,1);csqRender();}
-
-function csqAdd(){
-  if(gEditCsqs.length>=3)return;
-  gEditCsqs.push({type:1,action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0});
-  csqRender();
-}
-
+function csqAdd(){if(gEditCsqs.length>=3)return;gEditCsqs.push({type:1,action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0});csqRender();}
 function csqCollect(){
   gEditCsqs.forEach(function(c,i){
     if(c.type==1){var s=document.getElementById('csq-act-'+i);if(s)c.action_id=s.value;}
-    else if(c.type==2||c.type==3||c.type==4){var t=document.getElementById('csq-txt-'+i);if(t)c.text=t.value;}
+    else if(c.type==2||c.type==3||c.type==4){var tt=document.getElementById('csq-txt-'+i);if(tt)c.text=tt.value;}
     if(c.type==3||c.type==4){var sn=document.getElementById('csq-snap-'+i);if(sn)c.snapshot=sn.checked;}
-    if(c.type==4){
-      var racts=[]; document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked').forEach(function(cb){racts.push(cb.value);});
-      c.reactions=racts; c.reaction_count=racts.length;
-    }
+    if(c.type==4){var racts=[];document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked').forEach(function(cb){racts.push(cb.value);});c.reactions=racts;c.reaction_count=racts.length;}
   });
 }
-
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ======================= TEST PANEL =======================
 function testLlmSend(){
-  var text=document.getElementById('test-llm-text').value.trim();
-  if(!text)return;
-  var msg=document.getElementById('test-llm-msg');
-  var resp=document.getElementById('test-llm-resp');
-  msg.textContent=t('sending'); resp.style.display='none';
-  var fd=new FormData(); fd.append('text',text);
-  fetch('/test/llm',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      msg.textContent='';
-      if(d.ok){resp.style.display='block';resp.textContent=d.response;}
-      else{msg.textContent=t('error')+' '+(d.error||'?');}
-    })
-    .catch(function(e){msg.textContent=t('error_conn');});
+  var text=document.getElementById('test-llm-text').value.trim();if(!text)return;
+  var msg=document.getElementById('test-llm-msg'),resp=document.getElementById('test-llm-resp');
+  msg.textContent=t('sending');resp.style.display='none';
+  var fd=new FormData();fd.append('text',text);
+  fetch('/test/llm',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    msg.textContent='';
+    if(d.ok){resp.style.display='block';resp.textContent=d.response;}
+    else{msg.textContent=t('error')+' '+(d.error||'?');}
+  }).catch(function(){msg.textContent=t('error_conn');});
 }
-
 function ttsPanelDestChange(){
   var v=document.querySelector('input[name=tts-panel-dest]:checked').value;
-  document.getElementById('tts-lbl-browser').style.background=v==='browser'?'#3a5298':'#f0f4f8';
-  document.getElementById('tts-lbl-browser').style.color=v==='browser'?'#fff':'#5a6a8a';
-  document.getElementById('tts-lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';
-  document.getElementById('tts-lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';
-  document.getElementById('tts-panel-hint').textContent=
-    v==='browser'?t('tts_browser_hint'):t('tts_board_hint');
+  document.getElementById('tts-panel-hint').textContent=v==='browser'?t('tts_browser_hint'):t('tts_board_hint');
 }
-
 function testTtsSend(){
-  var text=document.getElementById('test-tts-text').value.trim();
-  if(!text)return;
-  var msg=document.getElementById('test-tts-msg');
-  var dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
+  var text=document.getElementById('test-tts-text').value.trim();if(!text)return;
+  var msg=document.getElementById('test-tts-msg'),dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
   if(dest==='browser'){
-    msg.style.color='#5a6a8a';
-    msg.textContent=t('aud.loading');
+    msg.style.color='#5a6a8a';msg.textContent=t('aud.loading');
     fetch('/sys/info').then(function(r){return r.json();}).then(function(cfg){
-      var key=cfg.el_key||'';
-      var vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
-      if(!key){msg.style.color='#dc2626';msg.textContent=t('aud.el_nokey');return;}
-      msg.style.color='#5a6a8a';
-      msg.textContent=t('aud.el_synth');
+      var key=cfg.el_key||'',vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
+      if(!key){msg.className='small mt-1 text-danger';msg.textContent=t('aud.el_nokey');return;}
+      msg.style.color='#5a6a8a';msg.textContent=t('aud.el_synth');
       fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid+'?output_format=mp3_22050_32',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','xi-api-key':key},
+        method:'POST',headers:{'Content-Type':'application/json','xi-api-key':key},
         body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2'})
-      }).then(function(r){
-        if(!r.ok){return r.json().then(function(e){throw new Error(JSON.stringify(e));});}
-        return r.arrayBuffer();
-      }).then(function(buf){
-        var ctx=new (window.AudioContext||window.webkitAudioContext)();
-        ctx.decodeAudioData(buf,function(decoded){
-          var src=ctx.createBufferSource();
-          src.buffer=decoded;
-          src.connect(ctx.destination);
-          src.start(0);
-          msg.style.color='#16a34a';
-          msg.textContent=t('aud.el_playing');
-          src.onended=function(){msg.textContent='';ctx.close();};
-        });
-      }).catch(function(e){
-        msg.style.color='#dc2626';
-        msg.textContent='Errore ElevenLabs: '+e.message;
-      });
-    }).catch(function(){msg.style.color='#dc2626';msg.textContent='Errore connessione ESP32.';});
+      }).then(function(r){if(!r.ok){return r.json().then(function(e){throw new Error(JSON.stringify(e));});}return r.arrayBuffer();})
+      .then(function(buf){
+        var ctx=new(window.AudioContext||window.webkitAudioContext)();
+        ctx.decodeAudioData(buf,function(decoded){var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);msg.className='small mt-1 text-success';msg.textContent=t('aud.el_playing');src.onended=function(){msg.textContent='';ctx.close();};});
+      }).catch(function(e){msg.className='small mt-1 text-danger';msg.textContent='Errore ElevenLabs: '+e.message;});
+    }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent='Errore connessione ESP32.';});
   } else {
-    msg.style.color='#5a6a8a';
-    msg.textContent=t('sending_tts');
-    var fd=new FormData(); fd.append('text',text);
-    fetch('/test/tts',{method:'POST',body:fd})
-      .then(function(r){return r.json();})
-      .then(function(d){
-        msg.style.color=d.ok?'#16a34a':'#dc2626';
-        msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
-        setTimeout(function(){msg.textContent='';},3500);
-      })
-      .catch(function(e){msg.style.color='#dc2626';msg.textContent=t('error_conn');});
+    msg.style.color='#5a6a8a';msg.textContent=t('sending_tts');
+    var fd=new FormData();fd.append('text',text);
+    fetch('/test/tts',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+      msg.style.color=d.ok?'#16a34a':'#dc2626';msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
+      setTimeout(function(){msg.textContent='';},3500);
+    }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
   }
 }
-
 
 function dbBleApply(d){
   var dot=document.getElementById('wb-dot'),lbl=document.getElementById('wb-label');
@@ -1224,254 +903,101 @@ function dbBleApply(d){
   var bu=document.getElementById('ble-uptime');
   if(bu){if(d.connected&&d.ble_uptime){bu.textContent='(conn. '+fmtSec(d.ble_uptime)+')';bu.style.display='';}else{bu.textContent='';bu.style.display='none';}}
   scan.style.display='none';stop.style.display='none';abort.style.display='none';disc.style.display='none';
-  var batEl=document.getElementById('wb-battery');
-  if(batEl)batEl.textContent=d.battery>=0?'🔋'+d.battery+'%':'';
+  var batEl=document.getElementById('wb-battery');if(batEl)batEl.textContent=d.battery>=0?d.battery+'%':'';
   if(d.connected){
-    dot.className='ble-dot on';lbl.textContent=t('ble_bar.connected')+d.name;
-    disc.style.display='';lst.innerHTML='';
-  }else if(d.connecting){
-    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.connecting');
-    abort.style.display='';
-    setTimeout(dbBlePoll,800);
-  }else if(d.scanning){
-    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.scanning');
-    stop.style.display='';
+    dot.className='ble-dot on';lbl.textContent=t('ble_bar.connected')+d.name;disc.style.display='';lst.innerHTML='';
+  } else if(d.connecting){
+    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.connecting');abort.style.display='';setTimeout(dbBlePoll,800);
+  } else if(d.scanning){
+    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.scanning');stop.style.display='';
     if(d.devices&&d.devices.length){
-      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+t('ble_bar.found_so_far')+'</div>';
-      d.devices.forEach(function(dv){
-        h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4">'
-          +'<span style="flex:1;font-size:.78rem;color:#1a2340;font-weight:600">'+dv.name
-          +' <span style="color:#8a9ab5;font-weight:400;font-size:.68rem">'+dv.addr+'</span></span>'
-          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">'+t('ble_bar.conn_btn')+'</button>'
-          +'</div>';
-      });
+      var h='<div class="small fw-bold text-muted text-uppercase py-1">'+t('ble_bar.found_so_far')+'</div>';
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
       lst.innerHTML=h;
     }
     setTimeout(dbBlePoll,1500);
-  }else{
-    dot.className='ble-dot';lbl.textContent=t('ble_bar.not_connected');
-    scan.style.display='';
+  } else {
+    dot.className='ble-dot';lbl.textContent=t('ble_bar.not_connected');scan.style.display='';
     if(d.devices&&d.devices.length){
-      var h='<div style="padding:6px 0;font-size:.68rem;color:#5a6a8a;font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+t('ble_bar.furby_found')+'</div>';
-      d.devices.forEach(function(dv){
-        h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e4eaf4">'
-          +'<span style="flex:1;font-size:.78rem;color:#1a2340;font-weight:600">'+dv.name
-          +' <span style="color:#8a9ab5;font-weight:400;font-size:.68rem">'+dv.addr+'</span></span>'
-          +'<button class="btn b-grn" style="padding:4px 10px;font-size:.7rem" onclick="dbBleConn(\''+dv.addr+'\')">'+t('ble_bar.conn_btn')+'</button>'
-          +'</div>';
-      });
+      var h='<div class="small fw-bold text-muted text-uppercase py-1">'+t('ble_bar.furby_found')+'</div>';
+      d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success btn-sm" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
       lst.innerHTML=h;
     }else{lst.innerHTML='';}
   }
 }
 function dbBlePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(dbBleApply).catch(function(){});}
-function dbBleScan(){
-  document.getElementById('db-ble-list').innerHTML='';
-  dbBleApply({connected:false,scanning:true,name:'',devices:[]});
-  fetch('/ble/scan',{method:'POST'}).catch(function(){});
-}
-function dbBleConn(addr){
-  var fd=new FormData();fd.append('addr',addr);
-  fetch('/ble/connect',{method:'POST',body:fd}).then(function(){
-    dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});
-    dbBleConnPoll();
-  }).catch(function(){});
-}
-function dbBleConnPoll(){
-  fetch('/ble/status').then(function(r){return r.json();}).then(function(d){
-    dbBleApply(d);if(d.connecting)setTimeout(dbBleConnPoll,800);
-  }).catch(function(){setTimeout(dbBleConnPoll,1000);});
-}
-function dbBleStop() {fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleDisc() {fetch('/ble/disconnect',{method:'POST'}).then(dbBlePoll).catch(function(){});}
+function dbBleScan(){document.getElementById('db-ble-list').innerHTML='';dbBleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
+function dbBleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});dbBleConnPoll();}).catch(function(){});}
+function dbBleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){dbBleApply(d);if(d.connecting)setTimeout(dbBleConnPoll,800);}).catch(function(){setTimeout(dbBleConnPoll,1000);});}
+function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
+function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleReset(){
-  if(!confirm(t('ble_bar.reset_confirm')))return;
-  fetch('/ble/reset',{method:'POST'}).then(function(){
-    setTimeout(dbBlePoll,1500);
-  }).catch(function(){});
-}
-dbBlePoll();
-setInterval(dbBlePoll,5000);
-
-setLang(gLang);
+function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
+dbBlePoll();setInterval(dbBlePoll,5000);
 
 function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
 function wbCmd(label,bytes){espCmd(label,bytes);}
-function espCmd(label,bytes){
-  var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));
-  fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));
-}
-function espCmdN(label,bytes){
-  var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fd.append('channel','nordic');
-  fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP-N '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));
-}
+function espCmd(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
+function espCmdN(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP-N '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 
-var ACTIONS_DIRECT=[
-  [1,0,0,0,'Accarezza (rnd)'],[2,0,0,0,'Accarezza 2'],[3,0,0,0,'Accarezza 3'],
-  [4,0,0,0,'Coccola'],[5,0,0,0,'Coccola 2'],
-  [6,0,0,0,'Peto 1'],[6,1,0,0,'Peto 2'],[6,2,0,0,'Peto 3'],[6,3,0,0,'Peto 4'],
-  [7,0,0,0,'Rutto 1'],[7,1,0,0,'Rutto 2'],[7,2,0,0,'Rutto 3'],
-  [8,0,0,0,'Starnuto'],[9,0,0,0,'Sbadiglio'],
-  [10,0,0,0,'Risposta conv.'],[11,0,0,0,'Risposta 2'],[12,0,0,0,'Risposta 3'],
-  [13,0,0,0,'Saluto'],[14,0,0,0,'Saluto 2'],
-  [15,0,0,0,'Movimento 1'],[16,0,0,0,'Movimento 2'],[17,0,0,0,'Danza'],
-  [18,0,0,0,'Danza 2'],[19,0,0,0,'Danza 3'],[20,0,0,0,'Felicità'],
-  [21,0,0,0,'Addormenta'],[22,0,0,0,'Sveglia'],
-  [23,0,0,0,'Sogno 1'],[24,0,0,0,'Sogno 2'],
-  [25,0,0,0,'Fame'],[26,0,0,0,'Noia'],
-  [27,0,0,0,'Sorpresa'],[28,0,0,0,'Paura'],
-];
-var ACTIONS_NOTES=[
-  [71,0,0,0,'Do'],[71,1,0,0,'Re'],[71,2,0,0,'Mi'],[71,3,0,0,'Fa'],
-  [71,4,0,0,'Sol'],[71,5,0,0,'La'],[71,6,0,0,'Ti'],[71,7,0,0,'Do alta'],
-];
-var ACTIONS_WORLD=[
-  [29,0,0,0,'Chiedi nome'],[30,0,0,0,'Ricorda nome'],[31,0,0,0,'Amicizia'],
-  [32,0,0,0,'Miglior amico'],[33,0,0,0,'Canzone amicizia'],
-  [34,0,0,0,'Personalità DJ'],[35,0,0,0,'Pers. Princess'],
-  [36,0,0,0,'Quest start'],[37,0,0,0,'Quest complete'],[38,0,0,0,'Quest fail'],
-  [39,3,8,1,'Legendary!'],[39,4,6,1,'Nice'],[39,3,1,1,'Hey hey'],
-  [40,0,0,0,'Colleziona'],[41,0,0,0,'Regalo ricevuto'],[42,0,0,0,'Regalo inviato'],
-  [43,0,0,0,'Scambio'],[44,0,0,0,'Vittoria'],[45,0,0,0,'Sconfitta'],
-  [50,0,0,0,'Festa'],[51,0,0,0,'Celebrazione'],
-  [60,0,0,0,'Apprendimento'],[61,0,0,0,'Conta 1'],[62,0,0,0,'Conta 2'],
-  [63,0,0,0,'Colori'],[64,0,0,0,'Animali'],
-  [70,0,0,0,'Frase generica 1'],[70,1,0,0,'Frase generica 2'],
-  [72,0,0,0,'Ciao mondo'],[73,0,0,0,'Buonanotte'],
-  [74,0,0,0,'Sogno personalità'],[75,0,4,4,'DLC action'],
-];
-function buildActGrid(containerId,actions){
-  var el=document.getElementById(containerId);
+var ACTIONS_DIRECT=[[1,0,0,0,'Accarezza (rnd)'],[2,0,0,0,'Accarezza 2'],[3,0,0,0,'Accarezza 3'],[4,0,0,0,'Coccola'],[5,0,0,0,'Coccola 2'],[6,0,0,0,'Peto 1'],[6,1,0,0,'Peto 2'],[6,2,0,0,'Peto 3'],[6,3,0,0,'Peto 4'],[7,0,0,0,'Rutto 1'],[7,1,0,0,'Rutto 2'],[7,2,0,0,'Rutto 3'],[8,0,0,0,'Starnuto'],[9,0,0,0,'Sbadiglio'],[10,0,0,0,'Risposta conv.'],[11,0,0,0,'Risposta 2'],[12,0,0,0,'Risposta 3'],[13,0,0,0,'Saluto'],[14,0,0,0,'Saluto 2'],[15,0,0,0,'Movimento 1'],[16,0,0,0,'Movimento 2'],[17,0,0,0,'Danza'],[18,0,0,0,'Danza 2'],[19,0,0,0,'Danza 3'],[20,0,0,0,'Felicità'],[21,0,0,0,'Addormenta'],[22,0,0,0,'Sveglia'],[23,0,0,0,'Sogno 1'],[24,0,0,0,'Sogno 2'],[25,0,0,0,'Fame'],[26,0,0,0,'Noia'],[27,0,0,0,'Sorpresa'],[28,0,0,0,'Paura']];
+var ACTIONS_NOTES=[[71,0,0,0,'Do'],[71,1,0,0,'Re'],[71,2,0,0,'Mi'],[71,3,0,0,'Fa'],[71,4,0,0,'Sol'],[71,5,0,0,'La'],[71,6,0,0,'Ti'],[71,7,0,0,'Do alta']];
+var ACTIONS_WORLD=[[29,0,0,0,'Chiedi nome'],[30,0,0,0,'Ricorda nome'],[31,0,0,0,'Amicizia'],[32,0,0,0,'Miglior amico'],[33,0,0,0,'Canzone amicizia'],[34,0,0,0,'Personalità DJ'],[35,0,0,0,'Pers. Princess'],[36,0,0,0,'Quest start'],[37,0,0,0,'Quest complete'],[38,0,0,0,'Quest fail'],[39,3,8,1,'Legendary!'],[39,4,6,1,'Nice'],[39,3,1,1,'Hey hey'],[40,0,0,0,'Colleziona'],[41,0,0,0,'Regalo ricevuto'],[42,0,0,0,'Regalo inviato'],[43,0,0,0,'Scambio'],[44,0,0,0,'Vittoria'],[45,0,0,0,'Sconfitta'],[50,0,0,0,'Festa'],[51,0,0,0,'Celebrazione'],[60,0,0,0,'Apprendimento'],[61,0,0,0,'Conta 1'],[62,0,0,0,'Conta 2'],[63,0,0,0,'Colori'],[64,0,0,0,'Animali'],[70,0,0,0,'Frase generica 1'],[70,1,0,0,'Frase generica 2'],[72,0,0,0,'Ciao mondo'],[73,0,0,0,'Buonanotte'],[74,0,0,0,'Sogno personalità'],[75,0,4,4,'DLC action']];
+function buildActGrid(id,actions){
+  var el=document.getElementById(id);
   actions.forEach(function(a){
-    var b=document.createElement('button');
-    b.className='btn act-btn';b.textContent=a[0]+' – '+a[4];
+    var b=document.createElement('button');b.className='btn btn-primary act-btn';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[0]+' – '+a[4];
     b.title='[0x13,0x00,'+a[0]+','+a[1]+','+a[2]+','+a[3]+']';
-    b.onclick=function(){wbCmd(a[4],[0x13,0x00,a[0],a[1],a[2],a[3]]);};
-    el.appendChild(b);
+    b.onclick=function(){wbCmd(a[4],[0x13,0x00,a[0],a[1],a[2],a[3]]);};el.appendChild(b);
   });
 }
-buildActGrid('act-grid-direct',ACTIONS_DIRECT);
-buildActGrid('act-grid-notes',ACTIONS_NOTES);
-buildActGrid('act-grid-world',ACTIONS_WORLD);
+buildActGrid('act-grid-direct',ACTIONS_DIRECT);buildActGrid('act-grid-notes',ACTIONS_NOTES);buildActGrid('act-grid-world',ACTIONS_WORLD);
+function sendCustomAction(){wbCmd('custom',[0x13,0x00,+document.getElementById('ap-in').value,+document.getElementById('ap-ix').value,+document.getElementById('ap-sx').value,+document.getElementById('ap-sp').value]);}
 
-function sendCustomAction(){
-  wbCmd('custom',[0x13,0x00,
-    +document.getElementById('ap-in').value,+document.getElementById('ap-ix').value,
-    +document.getElementById('ap-sx').value,+document.getElementById('ap-sp').value]);
-}
-
-// ── Test behavior ───────────────────────────────────────────────────────────
 function tbehTrgChange(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value);
-  var wrap=document.getElementById('tbeh-sensor-wrap');
+  var trg=parseInt(document.getElementById('tbeh-trg').value),wrap=document.getElementById('tbeh-sensor-wrap');
   wrap.style.display=(trg===2)?'block':'none';
-  if(trg===2){
-    var sel=document.getElementById('tbeh-sensor');
-    var prev=sel.value; sel.innerHTML='';
-    SENSOR_KEYS.forEach(function(k,i){
-      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
-    });
-    if(prev)sel.value=prev;
-  }
+  if(trg===2){var sel=document.getElementById('tbeh-sensor'),prev=sel.value;sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});if(prev)sel.value=prev;}
   tbehUpdateLabel();
 }
-
 function tbehUpdateLabel(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value);
-  var sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
-  var lbl='';
-  if(typeof gEventBehaviors!=='undefined'){
-    for(var i=0;i<gEventBehaviors.length;i++){
-      var b=gEventBehaviors[i];
-      if(b.trigger!==trg)continue;
-      if(trg===2&&b.sensor_id!==sid)continue;
-      lbl='→ "'+b.name+'" ('+b.consequence_count+' cons.)';
-      break;
-    }
-  }
-  if(!lbl)lbl=t('act.no_behavior');
-  document.getElementById('tbeh-behavior-label').textContent=lbl;
+  var trg=parseInt(document.getElementById('tbeh-trg').value),sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0,lbl='';
+  if(typeof gEventBehaviors!=='undefined'){for(var i=0;i<gEventBehaviors.length;i++){var b=gEventBehaviors[i];if(b.trigger!==trg)continue;if(trg===2&&b.sensor_id!==sid)continue;lbl='→ "'+b.name+'" ('+b.consequence_count+' cons.)';break;}}
+  if(!lbl)lbl=t('act.no_behavior');document.getElementById('tbeh-behavior-label').textContent=lbl;
 }
-
 function tbehRun(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value);
-  var sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
-  var dry=document.getElementById('tbeh-dry').checked;
-  var msg=document.getElementById('tbeh-msg');
-  msg.style.color='#5a6a8a';
-  msg.textContent=t('act.trigger_sending');
-  var fd=new FormData();
-  fd.append('trigger',trg);
-  fd.append('sensor_id',sid);
-  fd.append('dry_run',dry?'1':'0');
-  fetch('/test/behavior',{method:'POST',body:fd})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){
-        msg.style.color='#16a34a';
-        msg.textContent=dry?t('act.trigger_sent_dry'):t('act.trigger_sent');
-      } else {
-        msg.style.color='#dc2626';
-        msg.textContent=t('act.trigger_err')+(d.error||'?');
-      }
-    })
-    .catch(function(){msg.style.color='#dc2626';msg.textContent=t('error_conn');});
+  var trg=parseInt(document.getElementById('tbeh-trg').value),sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
+  var dry=document.getElementById('tbeh-dry').checked,msg=document.getElementById('tbeh-msg');
+  msg.style.color='#5a6a8a';msg.textContent=t('act.trigger_sending');
+  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('dry_run',dry?'1':'0');
+  fetch('/test/behavior',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){msg.className='small mt-1 text-success';msg.textContent=dry?t('act.trigger_sent_dry'):t('act.trigger_sent');}
+    else{msg.className='small mt-1 text-danger';msg.textContent=t('act.trigger_err')+(d.error||'?');}
+  }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
 }
-
-// init selector sensori al caricamento
 (function(){
   var sel=document.getElementById('tbeh-sensor');
-  if(sel&&SENSOR_KEYS){
-    SENSOR_KEYS.forEach(function(k,i){
-      var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);
-    });
-  }
-  // aggiorna label quando cambia il sensore selezionato
-  var ss=document.getElementById('tbeh-sensor');
-  if(ss)ss.addEventListener('change',tbehUpdateLabel);
+  if(sel)SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});
+  var ss=document.getElementById('tbeh-sensor');if(ss)ss.addEventListener('change',tbehUpdateLabel);
 })();
 
-function updateRgb(){
-  var r=document.getElementById('r').value,g=document.getElementById('g').value,b=document.getElementById('b').value;
-  document.getElementById('rv').textContent=r;document.getElementById('gv').textContent=g;document.getElementById('bv').textContent=b;
-  document.getElementById('rgb-prev').style.background='rgb('+r+','+g+','+b+')';
-}
-function sendRgb(){
-  wbCmd('antenna',[0x14,+document.getElementById('r').value,+document.getElementById('g').value,+document.getElementById('b').value]);
-}
-function sendMood(){
-  wbCmd('mood',[0x24,+document.getElementById('m-well').value,+document.getElementById('m-full').value,
-    +document.getElementById('m-tire').value,+document.getElementById('m-exci').value]);
-}
-function dlcCmd(code){
-  var s=+document.getElementById('dlc-slot').value;
-  if(code===0x61)espCmd('dlc-activate',[code]);else espCmd('dlc-'+code.toString(16),[code,s]);
-}
-
-function sendRaw(ch){
-  var hex=document.getElementById('raw-in').value.trim().split(/\s+/);
-  var bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});
-  if(!bytes.length){log('raw: nessun byte valido');return;}
-  if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);
-}
+function updateRgb(){var r=document.getElementById('r').value,g=document.getElementById('g').value,b=document.getElementById('b').value;document.getElementById('rv').textContent=r;document.getElementById('gv').textContent=g;document.getElementById('bv').textContent=b;document.getElementById('rgb-prev').style.background='rgb('+r+','+g+','+b+')';}
+function sendRgb(){wbCmd('antenna',[0x14,+document.getElementById('r').value,+document.getElementById('g').value,+document.getElementById('b').value]);}
+function sendMood(){wbCmd('mood',[0x24,+document.getElementById('m-well').value,+document.getElementById('m-full').value,+document.getElementById('m-tire').value,+document.getElementById('m-exci').value]);}
+function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;if(code===0x61)espCmd('dlc-activate',[code]);else espCmd('dlc-'+code.toString(16),[code,s]);}
+function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().split(/\s+/),bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});if(!bytes.length){log(t('raw.no_bytes'));return;}if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);}
 
 var cfgEditIdx=-1;
-var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro',
-  'Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua',
-  'Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
-
 function cfgLoad(){
   fetch('/cfg/list').then(r=>r.json()).then(function(d){
     var el=document.getElementById('cfg-list');el.innerHTML='';
     d.configs.forEach(function(c){
-      var div=document.createElement('div');
-      div.className='cfg-item'+(c.idx===d.active?' active-cfg':'');
-      div.innerHTML='<span class="cfg-name">'+(c.idx===d.active?'&#x2605; ':'')+c.name+'</span>'
-        +'<span style="font-size:.65rem;color:#475569">'+c.rules.length+' regole</span>'
-        +'<button class="btn b-grn" onclick="cfgActivate('+c.idx+')">'+t('cfg.activate')+'</button>'
-        +'<button class="btn" onclick="cfgEdit('+c.idx+',\''+c.name+'\')">&#x270F;</button>'
-        +(d.configs.length>1?'<button class="btn b-red" onclick="cfgDel('+c.idx+')">&#x2715;</button>':'');
+      var div=document.createElement('div');div.className='cfg-item'+(c.idx===d.active?' active-cfg':'');
+      div.innerHTML='<span class="cfg-name">'+(c.idx===d.active?'★ ':'')+c.name+'</span>'
+        +'<span class="text-muted small">'+c.rules.length+' regole</span>'
+        +'<button class="btn btn-success btn-sm" onclick="cfgActivate('+c.idx+')"><i class="bi bi-check-circle"></i> '+t('cfg.activate')+'</button>'
+        +'<button class="btn btn-outline-secondary btn-sm" onclick="cfgEdit('+c.idx+',\''+c.name+'\')"><i class="bi bi-pencil"></i></button>'
+        +(d.configs.length>1?'<button class="btn btn-danger btn-sm" onclick="cfgDel('+c.idx+')"><i class="bi bi-trash3"></i></button>':'');
       el.appendChild(div);
     });
   });
@@ -1480,19 +1006,10 @@ function cfgActivate(idx){var fd=new FormData();fd.append('idx',idx);fetch('/cfg
 function cfgNew(){
   var nm=document.getElementById('new-cfg-name').value.trim()||t('cfg.new_default');
   var fd=new FormData();fd.append('name',nm);
-  fetch('/cfg/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
-    document.getElementById('new-cfg-name').value='';cfgLoad();cfgEdit(d.idx,nm);
-  });
+  fetch('/cfg/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){document.getElementById('new-cfg-name').value='';cfgLoad();cfgEdit(d.idx,nm);});
 }
-function cfgDel(idx){
-  if(!confirm(t('cfg.del_confirm')))return;
-  var fd=new FormData();fd.append('idx',idx);
-  fetch('/cfg/del',{method:'POST',body:fd}).then(function(){cfgLoad();document.getElementById('cfg-editor').style.display='none';});
-}
-function cfgEdit(idx,name){
-  cfgEditIdx=idx;document.getElementById('cfg-editor').style.display='';
-  document.getElementById('cfg-editor-name').textContent=name;cfgRulesLoad(idx);
-}
+function cfgDel(idx){if(!confirm(t('cfg.del_confirm')))return;var fd=new FormData();fd.append('idx',idx);fetch('/cfg/del',{method:'POST',body:fd}).then(function(){cfgLoad();document.getElementById('cfg-editor').style.display='none';});}
+function cfgEdit(idx,name){cfgEditIdx=idx;document.getElementById('cfg-editor').style.display='';document.getElementById('cfg-editor-name').textContent=name;cfgRulesLoad(idx);}
 function cfgRulesLoad(idx){
   fetch('/cfg/list').then(r=>r.json()).then(function(d){
     var cfg=d.configs[idx];if(!cfg)return;
@@ -1500,196 +1017,127 @@ function cfgRulesLoad(idx){
     for(var slot=0;slot<16;slot++){
       var rule=cfg.rules.find(function(r){return r.slot===slot;})||{slot:slot,sensorId:0,bytes:[],len:0};
       var row=document.createElement('div');row.className='rule-row';
-      var senSel='<select id="rs-'+slot+'" onchange="cfgRuleChange('+slot+')">';
+      var senSel='<select class="form-select form-select-sm" id="rs-'+slot+'" onchange="cfgRuleChange('+slot+')">';
       SENSOR_NAMES.forEach(function(n,i){senSel+='<option value="'+i+'"'+(rule.sensorId===i?' selected':'')+'>'+n+'</option>';});
       senSel+='</select>';
       var bytesVal=rule.bytes&&rule.bytes.length?rule.bytes.map(function(b){return '0x'+b.toString(16).padStart(2,'0');}).join(' '):'';
-      row.innerHTML='<span style="color:#475569;width:20px">'+slot+'</span>'+senSel
-        +'<input type="text" id="rb-'+slot+'" value="'+bytesVal+'" placeholder="bytes hex (es. 13 00 27 03 08 01)" style="flex:1;font-family:monospace" onchange="cfgRuleChange('+slot+')">'
-        +'<button class="btn b-red" onclick="cfgRuleClear('+slot+')">&#x2715;</button>';
+      row.innerHTML='<span class="text-muted small" style="width:20px">'+slot+'</span>'+senSel
+        +'<input type="text" class="form-control form-control-sm font-monospace flex-fill" id="rb-'+slot+'" value="'+bytesVal+'" placeholder="bytes hex" onchange="cfgRuleChange('+slot+')">'
+        +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+slot+')"><i class="bi bi-x-lg"></i></button>';
       el.appendChild(row);
     }
   });
 }
 function cfgRuleChange(slot){
-  var senId=+document.getElementById('rs-'+slot).value;
-  var rawHex=document.getElementById('rb-'+slot).value.trim().split(/\s+/);
+  var senId=+document.getElementById('rs-'+slot).value,rawHex=document.getElementById('rb-'+slot).value.trim().split(/\s+/);
   var bytes=rawHex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});
-  var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);
-  fd.append('sensorId',senId);fd.append('bytes',JSON.stringify(bytes));
+  var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fd.append('sensorId',senId);fd.append('bytes',JSON.stringify(bytes));
   fetch('/cfg/rule/set',{method:'POST',body:fd});
 }
-function cfgRuleClear(slot){
-  var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);
-  fetch('/cfg/rule/del',{method:'POST',body:fd}).then(function(){cfgRulesLoad(cfgEditIdx);});
-}
+function cfgRuleClear(slot){var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fetch('/cfg/rule/del',{method:'POST',body:fd}).then(function(){cfgRulesLoad(cfgEditIdx);});}
 function cfgRuleAdd(){cfgRulesLoad(cfgEditIdx);}
 
-var sensorMap={
-  'antennaLeft':'s-ant-l','antennaRight':'s-ant-r',
-  'antennaForward':'s-ant-f','antennaBack':'s-ant-b',
-  'tickleHead':'s-t-head','tickleTummy':'s-t-tummy',
-  'tickleRight':'s-t-right','tickleLeft':'s-t-left',
-  'pullTail':'s-tail','pushTongue':'s-tongue',
-  'upright':'s-up','upsideDown':'s-down',
-  'onRightSide':'s-right','onLeftSide':'s-left',
-  'leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'
-};
+var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;
 function pollSensors(){
   if(!_bleConnected)return;
   fetch('/debug/sensors').then(r=>r.json()).then(function(d){
     document.getElementById('sensor-age').textContent=d.sensor_age_ms<5000?(d.sensor_age_ms+'ms fa'):'—';
     for(var k in sensorMap){var el=document.getElementById(sensorMap[k]);if(el)el.className='dot'+(d[k]?' on':'');}
-    document.getElementById('raw-bytes').textContent=
-      'raw: '+[d.rawB1,d.rawB2,d.rawB3,d.rawB4].map(function(x){return '0x'+(x||0).toString(16).padStart(2,'0');}).join(' ');
+    document.getElementById('raw-bytes').textContent='raw: '+[d.rawB1,d.rawB2,d.rawB3,d.rawB4].map(function(x){return '0x'+(x||0).toString(16).padStart(2,'0');}).join(' ');
   }).catch(function(){});
 }
 
 var ampOn=false;
-function ampApply(on){
-  ampOn=on;
-  var btn=document.getElementById('btn-amp'),st=document.getElementById('amp-status');
-  if(on){btn.textContent='ON';btn.className='btn b-grn';st.textContent=t('aud.amp_on');}
-  else{btn.textContent='OFF';btn.className='btn b-red';st.textContent=t('aud.amp_off');}
-}
-function ampToggle(){
-  var fd=new FormData();fd.append('on',ampOn?'0':'1');
-  fetch('/debug/amp',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){if(d.ok)ampApply(d.on);});
-}
+function ampApply(on){ampOn=on;var btn=document.getElementById('btn-amp'),st=document.getElementById('amp-status');if(on){btn.textContent='ON';btn.className='btn btn-success btn-sm';st.textContent=t('aud.amp_on');}else{btn.textContent='OFF';btn.className='btn btn-danger btn-sm';st.textContent=t('aud.amp_off');}}
+function ampToggle(){var fd=new FormData();fd.append('on',ampOn?'0':'1');fetch('/debug/amp',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){if(d.ok)ampApply(d.on);});}
 function ampLoad(){fetch('/debug/amp').then(r=>r.json()).then(function(d){ampApply(d.on);}).catch(function(){});}
-function volChange(v){
-  document.getElementById('vol-val').textContent=v+'%';
-  var b=document.getElementById('vol-bar');if(b){b.value=v;document.getElementById('vol-bar-val').textContent=v+'%';}
-}
-function volBarChange(v){
-  document.getElementById('vol-bar-val').textContent=v+'%';
-  var s=document.getElementById('vol-slider');if(s){s.value=v;document.getElementById('vol-val').textContent=v+'%';}
-}
+function volChange(v){document.getElementById('vol-val').textContent=v+'%';var b=document.getElementById('vol-bar');if(b){b.value=v;document.getElementById('vol-bar-val').textContent=v+'%';}}
+function volBarChange(v){document.getElementById('vol-bar-val').textContent=v+'%';var s=document.getElementById('vol-slider');if(s){s.value=v;document.getElementById('vol-val').textContent=v+'%';}}
 function volSend(v){var fd=new FormData();fd.append('vol',v);fetch('/debug/vol',{method:'POST',body:fd});}
 function tonePlay(freq){
-  var fd=new FormData();
-  fd.append('freq',freq!=null?freq:document.getElementById('tone-freq').value);
-  fd.append('ms',document.getElementById('tone-ms').value);
+  var fd=new FormData();fd.append('freq',freq!=null?freq:document.getElementById('tone-freq').value);fd.append('ms',document.getElementById('tone-ms').value);
   var res=document.getElementById('tone-result');res.textContent=t('aud.tone_sending');
-  fetch('/debug/tone',{method:'POST',body:fd}).then(r=>r.json())
-    .then(function(d){res.textContent=d.ok?'OK — '+d.freq+'Hz per '+d.ms+'ms':'ERR: '+(d.error||'');})
-    .catch(function(){res.textContent='errore di rete';});
+  fetch('/debug/tone',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){res.textContent=d.ok?'OK — '+d.freq+'Hz per '+d.ms+'ms':'ERR: '+(d.error||'');}).catch(function(){res.textContent='errore di rete';});
 }
 function micRecord(){
   var btn=document.getElementById('btn-rec'),res=document.getElementById('rec-result');
   btn.disabled=true;res.textContent=t('aud.rec_running');
-  fetch('/debug/mic/record',{method:'POST'}).then(r=>r.json())
-    .then(function(d){
-      if(d.ok){
-        var countdown=d.duration||3;
-        var iv=setInterval(function(){
-          res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;
-          if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');
-            setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;},3500);}
-        },1000);
-      }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
-    }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
+  fetch('/debug/mic/record',{method:'POST'}).then(r=>r.json()).then(function(d){
+    if(d.ok){
+      var countdown=d.duration||3,iv=setInterval(function(){res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;},3500);}},1000);
+    }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
+  }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
 }
 var micPollIv=null;
 function startMicPoll(){
   if(micPollIv)return;
   micPollIv=setInterval(function(){
     fetch('/debug/mic/rms').then(r=>r.json()).then(function(d){
-      var maxRms=5000;
-      var p1=Math.min(100,Math.round(d.rms1/maxRms*100));
-      var p2=Math.min(100,Math.round(d.rms2/maxRms*100));
-      document.getElementById('rms-bar-l').style.width=p1+'%';
-      document.getElementById('rms-bar-r').style.width=p2+'%';
-      document.getElementById('rms-val-l').textContent=d.rms1;
-      document.getElementById('rms-val-r').textContent=d.rms2;
+      var p1=Math.min(100,Math.round(d.rms1/5000*100)),p2=Math.min(100,Math.round(d.rms2/5000*100));
+      document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
+      document.getElementById('rms-val-l').textContent=d.rms1;document.getElementById('rms-val-r').textContent=d.rms2;
       var badge=document.getElementById('vad-badge');
-      if(d.vad){badge.textContent=t('aud.vad_speech');badge.style.background='#dcfce7';badge.style.color='#16a34a';}
-      else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent=t('aud.vad_noise');badge.style.background='#fef3c7';badge.style.color='#d97706';}
-      else{badge.textContent=t('aud.vad_silence');badge.style.background='#e4eaf4';badge.style.color='#5a6a8a';}
+      if(d.vad){badge.textContent=t('aud.vad_speech');badge.className='badge bg-success';}
+      else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent=t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
+      else{badge.textContent=t('aud.vad_silence');badge.className='badge bg-secondary';}
     }).catch(function(){});
   },150);
 }
 function stopMicPoll(){if(micPollIv){clearInterval(micPollIv);micPollIv=null;}}
 
-// ---- File manager ----
 var fmCurrentPath='';
 function fmFmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}
 function fmLoad(){
   fetch('/fs/list').then(r=>r.json()).then(function(d){
-    document.getElementById('fm-quota').textContent=
-      'SPIFFS: '+fmFmtSize(d.used)+' / '+fmFmtSize(d.total)+' usati';
+    document.getElementById('fm-quota').textContent='SPIFFS: '+fmFmtSize(d.used)+' / '+fmFmtSize(d.total)+' usati';
     var tb=document.getElementById('fm-tbody');
-    if(!d.files||!d.files.length){
-      tb.innerHTML='<tr><td colspan="5" style="color:#8a9ab5;text-align:center;padding:12px">'+t('fm.no_files')+'</td></tr>';
-      return;
-    }
+    if(!d.files||!d.files.length){tb.innerHTML='<tr><td colspan="5" class="text-center text-muted">'+t('fm.no_files')+'</td></tr>';return;}
     var rows='';
     d.files.forEach(function(f){
       var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
       var ro=f.name.endsWith('.html');
-      rows+='<tr>'
-        +'<td class="fm-name">'+n+(ro?' <span style="font-size:.6rem;color:#8a9ab5;font-weight:700">RO</span>':'')+'</td>'
+      rows+='<tr><td class="fm-name">'+n+(ro?' <span class="badge bg-secondary" style="font-size:.55rem">RO</span>':'')+'</td>'
         +'<td class="fm-size">'+fmFmtSize(f.size)+'</td>'
-        +'<td>'+(ro?'':'<button class="btn" style="padding:3px 8px;font-size:.65rem" onclick="fmEdit(\''+n+'\')">&#x270F;</button>')+'</td>'
-        +'<td><a class="btn b-slt" style="padding:3px 8px;font-size:.65rem;text-decoration:none" href="/fs/get'+n+'" download>&#x2193;</a></td>'
-        +'<td>'+(ro?'':'<button class="btn b-red" style="padding:3px 8px;font-size:.65rem" onclick="fmDel(\''+n+'\')">&#x2715;</button>')+'</td>'
-        +'</tr>';
+        +'<td>'+(ro?'':'<button class="btn btn-outline-secondary btn-sm py-0" onclick="fmEdit(\''+n+'\')"><i class="bi bi-pencil"></i></button>')+'</td>'
+        +'<td><a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none" href="/fs/get'+n+'" download>↓</a></td>'
+        +'<td>'+(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+n+'\')"><i class="bi bi-trash3"></i></button>')+'</td></tr>';
     });
     tb.innerHTML=rows;
-  }).catch(function(){
-    document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" style="color:#ef4444">'+t('fm.net_err')+'</td></tr>';
-  });
+  }).catch(function(){document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" class="text-danger">'+t('fm.net_err')+'</td></tr>';});
 }
 function fmEdit(path){
-  fmCurrentPath=path;
-  document.getElementById('fm-editor-card').style.display='';
+  fmCurrentPath=path;document.getElementById('fm-editor-card').style.display='';
   document.getElementById('fm-editor-title').textContent='Editor: '+path;
-  document.getElementById('fm-editor-msg').textContent=t('fm.loading');
-  document.getElementById('fm-editor-ta').value='';
-  fetch('/fs/get'+path).then(r=>r.text()).then(function(txt){
-    document.getElementById('fm-editor-ta').value=txt;
-    document.getElementById('fm-editor-msg').textContent='';
-  }).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
+  document.getElementById('fm-editor-msg').textContent=t('fm.loading');document.getElementById('fm-editor-ta').value='';
+  fetch('/fs/get'+path).then(r=>r.text()).then(function(txt){document.getElementById('fm-editor-ta').value=txt;document.getElementById('fm-editor-msg').textContent='';}).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
 }
-function fmEditorClose(){
-  document.getElementById('fm-editor-card').style.display='none';
-  fmCurrentPath='';
-}
+function fmEditorClose(){document.getElementById('fm-editor-card').style.display='none';fmCurrentPath='';}
 function fmSave(){
   if(!fmCurrentPath)return;
-  var content=document.getElementById('fm-editor-ta').value;
-  var fd=new FormData();fd.append('path',fmCurrentPath);fd.append('content',new Blob([content],{type:'text/plain'}),fmCurrentPath.split('/').pop());
-  var msg=document.getElementById('fm-editor-msg');msg.textContent=t('fm.saving');
-  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json())
-    .then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmLoad();})
-    .catch(function(){msg.textContent='Errore di rete';});
+  var content=document.getElementById('fm-editor-ta').value,fd=new FormData(),msg=document.getElementById('fm-editor-msg');
+  fd.append('path',fmCurrentPath);fd.append('content',new Blob([content],{type:'text/plain'}),fmCurrentPath.split('/').pop());
+  msg.textContent=t('fm.saving');
+  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmLoad();}).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 function fmDel(path){
   if(!confirm(t('fm.del_confirm')+' '+path+'?'))return;
   var fd=new FormData();fd.append('path',path);
-  fetch('/fs/del',{method:'POST',body:fd}).then(r=>r.json())
-    .then(function(d){if(!d.ok)alert('ERR: '+(d.error||''));fmLoad();if(fmCurrentPath===path)fmEditorClose();})
-    .catch(function(){alert('Errore di rete');});
+  fetch('/fs/del',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){if(!d.ok)alert('ERR: '+(d.error||''));fmLoad();if(fmCurrentPath===path)fmEditorClose();}).catch(function(){alert(t('fm.net_err2'));});
 }
 function fmUpload(){
-  var path=document.getElementById('fm-up-path').value.trim();
-  var file=document.getElementById('fm-up-file').files[0];
-  var msg=document.getElementById('fm-up-msg');
+  var path=document.getElementById('fm-up-path').value.trim(),file=document.getElementById('fm-up-file').files[0],msg=document.getElementById('fm-up-msg');
   if(!path||!file){msg.textContent=t('fm.upload_missing');return;}
   if(path[0]!=='/')path='/'+path;
   var fd=new FormData();fd.append('path',path);fd.append('content',file,file.name);
   msg.textContent=t('fm.loading');
-  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json())
-    .then(function(d){
-      msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
-      if(d.ok){document.getElementById('fm-up-path').value='';document.getElementById('fm-up-file').value='';fmLoad();}
-    }).catch(function(){msg.textContent='Errore di rete';});
+  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
+    if(d.ok){document.getElementById('fm-up-path').value='';document.getElementById('fm-up-file').value='';fmLoad();}
+  }).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 
-updateRgb();
-cfgLoad();
-setInterval(pollSensors,500);
-pollSensors();
+updateRgb();cfgLoad();setInterval(pollSensors,500);pollSensors();
+setLang(gLang);
 </script>
 </body></html>

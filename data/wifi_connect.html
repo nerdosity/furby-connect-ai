@@ -1,51 +1,46 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html><html lang="it"><head>
+<meta charset="UTF-8"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Connecting…</title>
+<link rel="stylesheet" href="/bootstrap.min.css">
+<link rel="stylesheet" href="/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/shared.css">
-<style>
-.wrap{display:flex;align-items:center;justify-content:center;min-height:60vh}
-.box{background:#fff;border-radius:14px;padding:32px 40px;text-align:center;
-  box-shadow:0 4px 20px rgba(0,0,0,.1);max-width:320px;width:100%}
-.spinner{width:36px;height:36px;border:3px solid #e4eaf4;border-top-color:#3a5298;
-  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.msg{color:#5a6a8a;font-size:.9rem;margin-bottom:8px}
-.detail{color:#8a9ab5;font-size:.75rem}
-.back-link{display:inline-block;margin-top:8px;color:#3a5298;font-size:.8rem;text-decoration:none}
-</style>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center min-vh-100">
 <script src="/shared.js"></script>
-<div class="wrap">
-  <div class="box">
-    <div class="spinner" id="spin"></div>
-    <p class="msg" id="msg" data-i18n="wc.connecting">Connessione in corso…</p>
-    <p class="detail" id="detail"></p>
-    <a class="back-link" id="back" href="/" style="display:none" data-i18n="wc.back">Torna alla home</a>
+<div class="card shadow text-center" style="max-width:340px;width:100%">
+  <div class="card-body py-4 px-4">
+    <div class="spinner-border text-primary mb-3" id="spin" role="status" style="width:2.5rem;height:2.5rem">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+    <p class="mb-1 text-secondary" id="msg" data-i18n="wc.connecting">Connessione in corso…</p>
+    <p class="small text-muted mb-2" id="detail"></p>
+    <a class="btn btn-outline-primary btn-sm mt-1 d-none" id="back" href="/" data-i18n="wc.back"><i class="bi bi-house"></i> Torna alla home</a>
   </div>
 </div>
+<script src="/bootstrap.bundle.min.js"></script>
 <script>
+var spin=document.getElementById('spin');
+var msg=document.getElementById('msg');
+var detail=document.getElementById('detail');
+var back=document.getElementById('back');
+function spinColor(cls){spin.classList.replace('text-primary',cls)||spin.classList.add(cls);}
 (function(){
-  var t = setInterval(function(){
+  var t=setInterval(function(){
     fetch('/wifi/connect/status').then(function(r){return r.json();}).then(function(d){
       if(d.state===2){
         clearInterval(t);
-        document.getElementById('spin').style.borderTopColor='#22c55e';
-        document.getElementById('msg').textContent=T('wc.connected');
-        document.getElementById('detail').textContent=(d.ssid||'')+' — '+(d.ip||'');
+        spinColor('text-success');
+        msg.textContent=T('wc.connected');
+        detail.textContent=(d.ssid||'')+' — '+(d.ip||'');
         setTimeout(function(){location.href='http://'+d.ip+'/';},800);
       } else if(d.state===3){
         clearInterval(t);
-        document.getElementById('spin').style.borderTopColor='#ef4444';
-        document.getElementById('msg').textContent=T('wc.failed');
-        document.getElementById('back').style.display='inline-block';
+        spinColor('text-danger');
+        msg.textContent=T('wc.failed');
+        back.classList.remove('d-none');
       }
     }).catch(function(){});
   },1000);
 })();
 </script>
-</body>
-</html>
+</body></html>

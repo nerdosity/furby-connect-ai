@@ -1,125 +1,92 @@
 <!DOCTYPE html><html lang="it"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Furby Camera</title>
+<link rel="stylesheet" href="/bootstrap.min.css">
+<link rel="stylesheet" href="/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/shared.css">
-<style>
-.wrap{max-width:780px;margin:16px auto;padding:0 16px}
-.frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;
-  background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 12px rgba(0,0,0,.12)}
-#camimg{width:100%;height:100%;object-fit:contain}
-.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.btn{padding:9px 16px;border-radius:9px;border:none;cursor:pointer;font-size:.8rem;
-  font-weight:700;background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff}
-.status{font-size:.7rem;color:#8a9ab5;margin-top:6px}
-.card{background:#fff;border-radius:14px;padding:16px 20px;margin-top:14px;
-  border:1px solid #e4eaf4;box-shadow:0 2px 8px rgba(0,0,0,.07)}
-.card h3{font-size:.72rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
-  letter-spacing:1px;margin-bottom:10px}
-textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0d9ee;
-  border-radius:8px;padding:8px;resize:vertical;background:#f5f8ff;color:#1a2340}
-#desc-out{display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;
-  border-radius:8px;padding:10px;font-size:.85rem;color:#1a2340;white-space:pre-wrap;line-height:1.5}
-.b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}
-.b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}
-</style>
 </head>
 <body>
-<div class="nav-overlay" id="nav-overlay" onclick="navClose()"></div>
-<div class="nav-drawer" id="nav-drawer">
-  <div class="nav-header"><span>Menu</span><button class="nav-close" onclick="navClose()">&#x2715;</button></div>
-  <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-i18n="nav.config">Configurazione</span></a>
-  <a class="nav-item" href="/debug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/></svg><span data-i18n="nav.debug">Debug Furby</span></a>
-  <a class="nav-item active" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="nav.camera">Camera</span></a>
-  <a class="nav-item" href="#" onclick="if(confirm(T('nav.confirm_reset'))){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span data-i18n="nav.reset">Reset ESP32</span></a>
-</div>
-<script src="/shared.js"></script>
 
-<div class="header">
-  <div class="logo-wrap">
-    <img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display='none'">
-  </div>
-  <div class="header-text">
-    <img src="/img/title.png" alt="FurbyMind" style="height:34px;display:block;margin-bottom:3px;opacity:.95" onerror="this.outerHTML='<h1 style=&quot;color:#fff;font-size:1.25rem;font-weight:800&quot;>FurbyMind</h1>'">
-    <p>IP: <span id="esp-ip">&#x2014;</span> &nbsp;&#x2022;&nbsp; Uptime: <span id="esp-uptime">&#x2014;</span></p>
-  </div>
-  <nav class="desktop-nav">
-    <a href="/">&#x2302; <span data-i18n="nav.config">Configurazione</span></a>
-    <a href="/debug"><span data-i18n="nav.debug">Debug</span></a>
-    <a href="/camera" class="active"><span data-i18n="nav.camera">Camera</span></a>
-  </nav>
-  <select id="lang-sel-shared" onchange="setSharedLang(this.value)" style="width:auto;background:#ffffff22;border:1.5px solid #ffffff44;border-radius:7px;color:#c8d8f0;font-size:.78rem;font-weight:700;padding:4px 8px;cursor:pointer;flex-shrink:0;appearance:none"><option value="it">IT</option><option value="en">EN</option></select>
-  <button class="nav-toggle" onclick="navOpen()"><span></span><span></span><span></span></button>
-</div>
+<!-- offcanvas nav -->
+<script src="/shared.js"></script>
+<script>renderNav('camera');</script>
 
 <div id="sys-bar" data-i18n="sys.loading">carico...</div>
 
-<div class="wrap">
-<div class="frame-box">
-  <img id="camimg" src="/camera/stream" alt="camera">
-</div>
-<div class="status" id="status" data-i18n="cam.streaming">Streaming MJPEG attivo</div>
-<div class="controls">
-  <button class="btn" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause">&#x23F8; Pausa</button>
-  <button class="btn" onclick="setQuality(12)" data-i18n="cam.quality_high">Qualit&#224; alta</button>
-  <button class="btn" onclick="setQuality(25)" data-i18n="cam.quality_low">Qualit&#224; bassa</button>
-</div>
+<div class="container py-3 fb-page">
 
-<div class="card">
-  <h3 data-i18n="cam.describe_title">&#x1F9E0; Descrivi frame con LLM</h3>
-  <div style="font-size:.72rem;color:#8a9ab5;margin-bottom:8px" data-i18n="cam.describe_hint">
-    Cattura un frame e chiedi all'LLM configurato di descriverlo con il prompt qui sotto.
-  </div>
-  <textarea id="desc-prompt" rows="4" placeholder="Sei un Furby maleducato..."></textarea>
-  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-    <button class="btn b-tel" onclick="descSavePrompt()" style="flex:1" data-i18n="cam.save_prompt">&#x1F4BE; Salva prompt</button>
-    <button class="btn b-grn" onclick="descRun()" id="btn-desc" style="flex:1" data-i18n="cam.describe_now">&#x1F50D; Descrivi ora</button>
-  </div>
-  <div style="margin-top:12px;border:1.5px solid #e4eaf4;border-radius:10px;overflow:hidden">
-    <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;gap:10px" onclick="ttsToggle()">
-      <span style="font-size:.82rem;font-weight:700;color:#1a2340" data-i18n="cam.tts_voice">&#x1F50A; Output vocale</span>
-      <span id="tts-toggle-track" style="position:relative;width:40px;height:22px;border-radius:11px;background:#d0d9ee;transition:background .2s;flex-shrink:0">
-        <span id="tts-toggle-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .2s"></span>
-      </span>
-      <input type="checkbox" id="chk-tts" style="display:none">
-    </label>
-    <div id="tts-dest-row" style="display:none;border-top:1.5px solid #e4eaf4;padding:10px 14px;background:#f5f8ff;gap:8px;flex-direction:column">
-      <div style="display:flex;border-radius:8px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;width:100%">
-        <label id="lbl-browser" style="flex:1;padding:8px 0;text-align:center;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
-          <input type="radio" name="tts-dest" value="browser" checked style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_browser">&#x1F5A5; Browser</span>
-        </label>
-        <label id="lbl-board" style="flex:1;padding:8px 0;text-align:center;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
-          <input type="radio" name="tts-dest" value="board" style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_board">&#x1F4E1; Board</span>
-        </label>
+  <!-- stream -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body p-2">
+      <div class="ratio ratio-4x3 bg-black rounded overflow-hidden">
+        <img id="camimg" src="/camera/stream" alt="camera" style="object-fit:contain">
       </div>
-      <span style="font-size:.7rem;color:#8a9ab5" data-i18n="cam.tts_hint">Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32</span>
+      <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+        <span class="text-muted small flex-fill" id="cam-status" data-i18n="cam.streaming">Streaming MJPEG attivo</span>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause"><i class="bi bi-pause-fill"></i> Pausa</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="setQuality(12)" data-i18n="cam.quality_high"><i class="bi bi-arrow-up-circle"></i> Qualità alta</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="setQuality(25)" data-i18n="cam.quality_low"><i class="bi bi-arrow-down-circle"></i> Qualità bassa</button>
+      </div>
     </div>
   </div>
-  <div id="desc-status" style="font-size:.7rem;color:#8a9ab5;margin-top:5px"></div>
-  <div id="desc-out"></div>
-</div>
+
+  <!-- LLM describe -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="cam.describe_title"><i class="bi bi-cpu"></i> Descrivi frame con LLM</h6>
+      <p class="text-muted small mb-2" data-i18n="cam.describe_hint">Cattura un frame e chiedi all'LLM configurato di descriverlo con il prompt qui sotto.</p>
+      <textarea class="form-control form-control-sm font-monospace mb-2" id="desc-prompt" rows="4" placeholder="Sei un Furby maleducato..."></textarea>
+      <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-primary flex-fill" onclick="descSavePrompt()" data-i18n="cam.save_prompt"><i class="bi bi-floppy"></i> Salva prompt</button>
+        <button class="btn btn-success flex-fill" onclick="descRun()" id="btn-desc" data-i18n="cam.describe_now"><i class="bi bi-eye"></i> Descrivi ora</button>
+      </div>
+
+      <!-- TTS toggle -->
+      <div class="border rounded overflow-hidden">
+        <!-- toggle row -->
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="cursor:pointer" onclick="ttsToggle()">
+          <span class="fw-semibold small" data-i18n="cam.tts_voice"><i class="bi bi-volume-up"></i> Output vocale</span>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="chk-tts" style="pointer-events:none">
+          </div>
+        </div>
+        <!-- dest row (collapsed by default) -->
+        <div id="tts-dest-row" class="border-top px-3 py-2 bg-light" style="display:none">
+          <div class="btn-group w-100 mb-2" role="group">
+            <input type="radio" class="btn-check" name="tts-dest" id="tts-browser" value="browser" checked>
+            <label class="btn btn-outline-primary" for="tts-browser" data-i18n="cam.tts_browser">Browser</label>
+            <input type="radio" class="btn-check" name="tts-dest" id="tts-board" value="board">
+            <label class="btn btn-outline-primary" for="tts-board" data-i18n="cam.tts_board">Board</label>
+          </div>
+          <p class="text-muted small mb-0" data-i18n="cam.tts_hint">Browser: Web Speech API — Board: ElevenLabs via ESP32</p>
+        </div>
+      </div>
+
+      <div id="desc-status" class="text-muted small mt-2"></div>
+      <div id="desc-out" class="mt-2 p-3 rounded border bg-light small" style="display:none;white-space:pre-wrap;line-height:1.5"></div>
+    </div>
+  </div>
+
 </div>
 
+<script src="/bootstrap.bundle.min.js"></script>
 <script>
 var running=true;
 function toggleStream(){
   running=!running;
   var img=document.getElementById('camimg');
-  var st=document.getElementById('status');
+  var st=document.getElementById('cam-status');
   var btn=document.getElementById('btn-tog');
-  btn.textContent=running?T('cam.pause'):T('cam.resume');
-  if(running){
-    img.src='/camera/stream';
-    st.textContent=T('cam.streaming');
-  } else {
-    img.src='';
-    st.textContent=T('cam.paused');
-  }
+  btn.innerHTML=running?T('cam.pause'):T('cam.resume');
+  if(running){img.src='/camera/stream';st.textContent=T('cam.streaming');}
+  else{img.src='';st.textContent=T('cam.paused');}
 }
 function setQuality(q){fetch('/camera/quality?q='+q,{method:'POST'}).catch(function(){});}
+
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){
   document.getElementById('desc-prompt').value=d.prompt||'';
 }).catch(function(){});
+
 function descSavePrompt(){
   var fd=new FormData();
   fd.append('prompt',document.getElementById('desc-prompt').value);
@@ -131,24 +98,13 @@ function descSavePrompt(){
       setTimeout(function(){st.textContent='';},2000);
     });
 }
+
 function ttsToggle(){
   var chk=document.getElementById('chk-tts');
   chk.checked=!chk.checked;
-  var on=chk.checked;
-  var track=document.getElementById('tts-toggle-track');
-  var thumb=document.getElementById('tts-toggle-thumb');
-  var row=document.getElementById('tts-dest-row');
-  track.style.background=on?'#3a5298':'#d0d9ee';
-  thumb.style.left=on?'21px':'3px';
-  row.style.display=on?'flex':'none';
+  document.getElementById('tts-dest-row').style.display=chk.checked?'block':'none';
 }
-function ttsDestChange(){
-  var v=document.querySelector('input[name=tts-dest]:checked').value;
-  document.getElementById('lbl-browser').style.background=v==='browser'?'#3a5298':'#f0f4f8';
-  document.getElementById('lbl-browser').style.color=v==='browser'?'#fff':'#5a6a8a';
-  document.getElementById('lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';
-  document.getElementById('lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';
-}
+
 function speakBrowser(text){
   if(!window.speechSynthesis){alert(T('cam.speech_unsupported'));return;}
   window.speechSynthesis.cancel();
@@ -159,7 +115,7 @@ function speakBrowser(text){
 function speakBoard(text){
   var st=document.getElementById('desc-status');
   st.textContent=T('cam.tts_sending');
-  var fd=new FormData(); fd.append('text',text);
+  var fd=new FormData();fd.append('text',text);
   fetch('/test/tts',{method:'POST',body:fd})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -172,33 +128,25 @@ function descRun(){
   var btn=document.getElementById('btn-desc');
   var st=document.getElementById('desc-status');
   var out=document.getElementById('desc-out');
-  btn.disabled=true; st.textContent=T('cam.sending'); out.style.display='none';
+  btn.disabled=true;st.textContent=T('cam.sending');out.style.display='none';
   fetch('/camera/describe',{method:'POST'})
     .then(function(r){return r.json();})
     .then(function(d){
-      btn.disabled=false; st.textContent='';
+      btn.disabled=false;st.textContent='';
       if(d.ok){
-        out.style.display='block';
-        out.textContent=d.text;
+        out.style.display='block';out.textContent=d.text;
         if(document.getElementById('chk-tts').checked){
           var dest=document.querySelector('input[name=tts-dest]:checked').value;
-          if(dest==='browser') speakBrowser(d.text);
-          else speakBoard(d.text);
+          if(dest==='browser')speakBrowser(d.text);else speakBoard(d.text);
         }
-      } else {
-        st.textContent=T('cam.error')+' '+(d.error||'?');
-      }
+      } else {st.textContent=T('cam.error')+' '+(d.error||'?');}
     })
-    .catch(function(){btn.disabled=false; st.textContent=T('cam.error_conn');});
+    .catch(function(){btn.disabled=false;st.textContent=T('cam.error_conn');});
 }
 window.addEventListener('beforeunload',function(){
   document.getElementById('camimg').src='';
   navigator.sendBeacon('/camera/off');
 });
-// sync lang selector on load
-(function(){
-  var sel=document.getElementById('lang-sel-shared');
-  if(sel)sel.value=localStorage.getItem('furby_lang')||'it';
-})();
+(function(){var sel=document.getElementById('lang-sel-shared');if(sel)sel.value=localStorage.getItem('furby_lang')||'it';})();
 </script>
 </body></html>
