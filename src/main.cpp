@@ -512,7 +512,7 @@ int readBatteryMv() {
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(0x06);
     if (Wire.endTransmission(false) != 0) return -1;
-    if (Wire.requestFrom(CH32_ADDR, (uint8_t)2) != 2) return -1;
+    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) return -1;
     uint8_t lo = Wire.read(), hi = Wire.read();
     uint16_t raw = (uint16_t)(hi << 8 | lo);
     // raw è 12-bit (0-4095), Vref=3.3V, partitore 1:2
