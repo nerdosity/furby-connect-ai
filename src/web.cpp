@@ -1383,6 +1383,7 @@ void startWebServer() {
                 return;
             }
         }
+        if (uri.endsWith(".map")) { server.send(204); return; }
         Serial.println("HTTP 404: " + uri + " [" + String(server.method()) + "]");
         if (isConfigMode) handleCaptiveRedirect();
         else server.send(404, "text/plain", "Not found");

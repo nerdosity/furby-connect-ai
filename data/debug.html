@@ -296,11 +296,11 @@ function setLang(l){
   <span id="wb-battery" class="text-muted small ms-2"></span>
   <span id="ble-uptime" class="text-muted small ms-1" style="display:none"></span>
   <div class="ms-auto d-flex gap-1">
-    <button id="btn-scan"  class="btn btn-primary btn-sm"   onclick="dbBleScan()"  data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca</button>
-    <button id="btn-stop"  class="btn btn-danger btn-sm"    onclick="dbBleStop()"  style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop</button>
-    <button id="btn-abort" class="btn btn-danger btn-sm"    onclick="dbBleAbort()" style="display:none" data-i18n="ble.abort"><i class="bi bi-x-octagon"></i> Abort</button>
-    <button id="btn-disc"  class="btn btn-danger btn-sm"    onclick="dbBleDisc()"  style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disc</button>
-    <button id="btn-rst"   class="btn btn-warning btn-sm"   onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i></button>
+    <button id="btn-scan"  class="btn btn-primary px-3"   onclick="dbBleScan()"  data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca</button>
+    <button id="btn-stop"  class="btn btn-danger px-3"    onclick="dbBleStop()"  style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop</button>
+    <button id="btn-abort" class="btn btn-danger px-3"    onclick="dbBleAbort()" style="display:none" data-i18n="ble.abort"><i class="bi bi-x-octagon"></i> Abort</button>
+    <button id="btn-disc"  class="btn btn-danger px-3"    onclick="dbBleDisc()"  style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disc</button>
+    <button id="btn-rst"   class="btn btn-warning px-3"   onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i> Riconnetti</button>
   </div>
 </div>
 <div id="db-ble-list" class="px-3 py-1 bg-light border-bottom small"></div>
@@ -375,7 +375,9 @@ function setLang(l){
       <div class="col"><div class="text-muted small mb-1">subindex</div><input type="number" class="form-control form-control-sm" id="ap-sx" min="0" max="30" value="8"></div>
       <div class="col"><div class="text-muted small mb-1">specific</div><input type="number" class="form-control form-control-sm" id="ap-sp" min="0" max="10" value="1"></div>
     </div>
-    <button class="btn btn-primary w-100" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
+    </div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="act.test_title"><i class="bi bi-flask"></i> Test behavior</h6>
@@ -401,7 +403,9 @@ function setLang(l){
       </div>
       <div id="tbeh-behavior-label" class="text-muted small ms-auto"></div>
     </div>
-    <button class="btn btn-success w-100" onclick="tbehRun()" data-i18n="act.test_run"><i class="bi bi-play-fill"></i> Simula trigger</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-success px-3" onclick="tbehRun()" data-i18n="act.test_run"><i class="bi bi-play-fill"></i> Simula trigger</button>
+    </div>
     <div id="tbeh-msg" class="small mt-2 text-muted"></div>
   </div></div>
 </div>
@@ -413,8 +417,8 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
     <div class="d-flex align-items-center gap-3">
       <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px;height:40px;padding:2px">
-      <button class="btn btn-success flex-fill" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
-      <button class="btn btn-outline-secondary" id="btn-eyes" onclick="eyesToggle()" style="min-width:110px"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
+      <button class="btn btn-success px-3" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
+      <button class="btn btn-outline-secondary px-3" id="btn-eyes" onclick="eyesToggle()"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
     </div>
   </div></div>
   <!-- Mood -->
@@ -434,24 +438,22 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
     <div class="d-flex gap-2 flex-wrap mb-3">
-      <button class="btn btn-warning btn-sm" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button>
-      <button class="btn btn-danger btn-sm" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button>
-      <button class="btn btn-outline-secondary btn-sm" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button>
+      <button class="btn btn-outline-secondary px-3" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button>
+      <button class="btn btn-outline-secondary px-3" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button>
+      <button class="btn btn-outline-secondary px-3" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button>
     </div>
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
     <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
-      <div class="input-group input-group-sm" style="width:auto">
+      <div class="input-group" style="width:110px">
         <span class="input-group-text">Slot</span>
-        <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0" style="width:60px">
+        <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0">
       </div>
-      <button class="btn btn-success btn-sm" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
-      <button class="btn btn-primary btn-sm" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button>
-      <button class="btn btn-outline-secondary btn-sm" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button>
-      <button class="btn btn-danger btn-sm" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button>
-    </div>
-    <div class="d-flex gap-2 flex-wrap mb-2">
-      <button class="btn btn-outline-info btn-sm flex-fill" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
-      <button class="btn btn-outline-info btn-sm flex-fill" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
+      <button class="btn btn-outline-primary px-3" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
+      <button class="btn btn-outline-success px-3" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button>
+      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button>
+      <button class="btn btn-outline-danger px-3" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button>
+      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
+      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
     </div>
     <div id="dlc-log" class="fb-log" style="display:none;max-height:120px"></div>
   </div></div>
@@ -464,13 +466,15 @@ function setLang(l){
     <div id="cfg-list"></div>
     <div class="d-flex gap-2 mt-2">
       <input type="text" class="form-control form-control-sm flex-fill" id="new-cfg-name" data-i18n-attr="placeholder" data-i18n="cfg.new_placeholder" placeholder="Nome nuova configurazione">
-      <button class="btn btn-success btn-sm" onclick="cfgNew()" data-i18n="cfg.new_btn"><i class="bi bi-plus-lg"></i> Nuova</button>
+      <button class="btn btn-success px-3" onclick="cfgNew()" data-i18n="cfg.new_btn"><i class="bi bi-plus-lg"></i> Nuova</button>
     </div>
   </div></div>
   <div class="card shadow-sm mb-3" id="cfg-editor" style="display:none"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h6>
     <div id="cfg-rules"></div>
-    <button class="btn btn-success w-100 mt-2" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add"><i class="bi bi-plus-lg"></i> Aggiungi regola</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-success px-3" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add"><i class="bi bi-plus-lg"></i> Aggiungi regola</button>
+    </div>
   </div></div>
 </div>
 
@@ -480,7 +484,7 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.amp">Amplificatore &amp; volume</h6>
     <div class="d-flex align-items-center gap-3 mb-3">
       <span class="text-muted small" data-i18n="aud.amp_lbl">AMP</span>
-      <button class="btn btn-secondary btn-sm" id="btn-amp" onclick="ampToggle()" style="min-width:60px">...</button>
+      <button class="btn btn-secondary px-3" id="btn-amp" onclick="ampToggle()" style="min-width:60px"><i class="bi bi-three-dots"></i> ...</button>
       <span class="text-muted small" id="amp-status"></span>
     </div>
     <div class="d-flex align-items-center gap-3">
@@ -496,19 +500,19 @@ function setLang(l){
       <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
     </div>
     <div class="d-flex gap-2 flex-wrap mb-3">
-      <button class="btn btn-success btn-sm" onclick="tonePlay(220)">220 Hz</button>
-      <button class="btn btn-success btn-sm" onclick="tonePlay(440)">440 Hz (La)</button>
-      <button class="btn btn-primary btn-sm" onclick="tonePlay(880)">880 Hz</button>
-      <button class="btn btn-primary btn-sm" onclick="tonePlay(1000)">1 kHz</button>
-      <button class="btn btn-primary btn-sm" onclick="tonePlay(1760)">1760 Hz</button>
-      <button class="btn btn-primary btn-sm" onclick="tonePlay(4000)">4 kHz</button>
+      <button class="btn btn-success px-3" onclick="tonePlay(220)"><i class="bi bi-music-note"></i> 220 Hz</button>
+      <button class="btn btn-success px-3" onclick="tonePlay(440)"><i class="bi bi-music-note"></i> 440 Hz (La)</button>
+      <button class="btn btn-primary px-3" onclick="tonePlay(880)"><i class="bi bi-music-note"></i> 880 Hz</button>
+      <button class="btn btn-primary px-3" onclick="tonePlay(1000)"><i class="bi bi-music-note"></i> 1 kHz</button>
+      <button class="btn btn-primary px-3" onclick="tonePlay(1760)"><i class="bi bi-music-note"></i> 1760 Hz</button>
+      <button class="btn btn-primary px-3" onclick="tonePlay(4000)"><i class="bi bi-music-note"></i> 4 kHz</button>
     </div>
     <div class="d-flex gap-2 align-items-end">
       <div class="flex-fill">
         <label class="form-label small" data-i18n="aud.tone_freq">Frequenza (Hz)</label>
         <input type="number" class="form-control form-control-sm" id="tone-freq" value="440" min="20" max="20000">
       </div>
-      <button class="btn btn-warning btn-sm" onclick="tonePlay(null)" data-i18n="aud.tone_play"><i class="bi bi-play-fill"></i> Play</button>
+      <button class="btn btn-warning px-3" onclick="tonePlay(null)" data-i18n="aud.tone_play"><i class="bi bi-play-fill"></i> Play</button>
     </div>
     <div id="tone-result" class="small mt-2 text-muted"></div>
   </div></div>
@@ -532,7 +536,9 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
-    <button class="btn btn-warning w-100" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end">
+      <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
+    </div>
     <div id="rec-result" class="small mt-2 text-muted"></div>
   </div></div>
 </div>
@@ -543,8 +549,8 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
     <div class="d-flex gap-2">
       <input type="text" class="form-control form-control-sm font-monospace flex-fill" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
-      <button class="btn btn-success btn-sm" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
-      <button class="btn btn-primary btn-sm" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
+      <button class="btn btn-success px-3" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
+      <button class="btn btn-primary px-3" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
     </div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
@@ -558,7 +564,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <div class="d-flex align-items-center gap-2 mb-3">
       <span class="text-muted small" id="fm-quota">—</span>
-      <button class="btn btn-success btn-sm ms-auto" onclick="fmLoad()" data-i18n="fm.refresh"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
+      <button class="btn btn-success px-3 ms-auto" onclick="fmLoad()" data-i18n="fm.refresh"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover">
@@ -571,8 +577,8 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-2" id="fm-editor-title">Editor</h6>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
     <div class="d-flex gap-2 mt-2">
-      <button class="btn btn-success flex-fill" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
-      <button class="btn btn-outline-secondary" onclick="fmEditorClose()" data-i18n="fm.close"><i class="bi bi-x-lg"></i> Chiudi</button>
+      <button class="btn btn-success px-3" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
+      <button class="btn btn-outline-secondary px-3" onclick="fmEditorClose()" data-i18n="fm.close"><i class="bi bi-x-lg"></i> Chiudi</button>
     </div>
     <div id="fm-editor-msg" class="small mt-1 text-muted"></div>
   </div></div>
@@ -588,7 +594,9 @@ function setLang(l){
         <input type="file" class="form-control form-control-sm" id="fm-up-file">
       </div>
       <div class="col-12 col-md-3">
-        <button class="btn btn-warning w-100" onclick="fmUpload()" data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
+        <div class="d-grid d-sm-flex justify-content-sm-end">
+          <button class="btn btn-warning px-3" onclick="fmUpload()" data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
+        </div>
       </div>
     </div>
     <div id="fm-up-msg" class="small mt-2 text-muted"></div>
@@ -604,10 +612,12 @@ function setLang(l){
     <label class="form-label small" data-i18n="persona.voice_label">Voce ElevenLabs</label>
     <div class="d-flex gap-2 mb-2">
       <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">— carica voci —</option></select>
-      <button class="btn btn-outline-secondary btn-sm" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i> Carica</button>
+      <button class="btn btn-outline-secondary px-3" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i> Carica</button>
     </div>
     <div id="voice-load-msg" class="small text-muted mb-2"></div>
-    <button class="btn btn-success w-100" onclick="persSave()" data-i18n="persona.save_btn"><i class="bi bi-floppy"></i> Salva personalità</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-success px-3" onclick="persSave()" data-i18n="persona.save_btn"><i class="bi bi-floppy"></i> Salva personalità</button>
+    </div>
     <div id="pers-msg" class="small mt-1 text-muted"></div>
   </div></div>
 
@@ -616,8 +626,8 @@ function setLang(l){
     <p class="text-muted small mb-3" data-i18n="persona.beh_desc">Ogni comportamento mappa un evento su 1-3 conseguenze.</p>
     <div id="beh-list"></div>
     <div class="d-flex gap-2 flex-wrap mt-2">
-      <button class="btn btn-success btn-sm" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
-      <button class="btn btn-primary btn-sm" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
+      <button class="btn btn-success px-3" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+      <button class="btn btn-primary px-3" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
       <label class="btn btn-warning btn-sm mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
     </div>
     <div id="beh-msg" class="small mt-2 text-muted"></div>
@@ -645,10 +655,10 @@ function setLang(l){
       </div>
     </div>
     <div id="csq-list"></div>
-    <button class="btn btn-success btn-sm mt-2" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-primary flex-fill" onclick="behSave()" data-i18n="beh.save"><i class="bi bi-floppy"></i> Salva</button>
-      <button class="btn btn-outline-secondary" onclick="behEditorClose()" data-i18n="beh.cancel"><i class="bi bi-x-lg"></i> Annulla</button>
+    <button class="btn btn-success px-3 mt-2" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-3">
+      <button class="btn btn-primary px-3" onclick="behSave()" data-i18n="beh.save"><i class="bi bi-floppy"></i> Salva</button>
+      <button class="btn btn-outline-secondary px-3" onclick="behEditorClose()" data-i18n="beh.cancel"><i class="bi bi-x-lg"></i> Annulla</button>
     </div>
   </div></div>
 
@@ -680,7 +690,9 @@ function setLang(l){
         <label class="form-check-label small" for="sim-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
       </div>
     </div>
-    <button class="btn btn-warning w-100" onclick="simRun()" id="btn-sim-run" data-i18n="sim.run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+      <button class="btn btn-warning px-3" onclick="simRun()" id="btn-sim-run" data-i18n="sim.run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    </div>
     <div id="sim-msg" class="small mt-2 text-muted"></div>
     <div id="sim-log" class="fb-log mt-2" style="display:none"></div>
   </div></div>
@@ -690,7 +702,9 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.llm_title">Test LLM</h6>
     <p class="text-muted small mb-2" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente</p>
     <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
-    <button class="btn btn-primary w-100" onclick="testLlmSend()" data-i18n="test.llm_send"><i class="bi bi-send"></i> Invia</button>
+    <div class="d-grid d-sm-flex justify-content-sm-end">
+      <button class="btn btn-primary px-3" onclick="testLlmSend()" data-i18n="test.llm_send"><i class="bi bi-send"></i> Invia</button>
+    </div>
     <div id="test-llm-resp" class="mt-2 p-3 rounded border bg-light small font-monospace" style="display:none;white-space:pre-wrap"></div>
     <div id="test-llm-msg" class="small mt-1 text-muted"></div>
   </div></div>

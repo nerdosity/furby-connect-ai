@@ -29,8 +29,8 @@
       <tbody id="wifi-rows"><tr><td colspan="4" class="text-muted" data-i18n="sys.loading">carico...</td></tr></tbody>
     </table>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-primary flex-fill" onclick="wifiConnect()" data-i18n="wifi.btn_connect"><i class="bi bi-wifi"></i> Connetti ora</button>
-      <button type="button" class="btn btn-outline-secondary flex-fill" onclick="wifiScan()" data-i18n="wifi.btn_scan"><i class="bi bi-search"></i> Scansiona</button>
+      <button type="button" class="btn btn-primary px-3" onclick="wifiConnect()" data-i18n="wifi.btn_connect"><i class="bi bi-wifi"></i> Connetti ora</button>
+      <button type="button" class="btn btn-outline-secondary px-3" onclick="wifiScan()" data-i18n="wifi.btn_scan"><i class="bi bi-search"></i> Scansiona</button>
     </div>
     <div id="wifi-scan-results"></div>
     <hr class="my-3">
@@ -261,7 +261,7 @@ function applyHome(d){
   var sdBtn=document.getElementById('sd-btn');
   if(d.sd_present){
     sdRow.innerHTML='<span class="fb-dot fb-dot-ok"></span><span class="fw-semibold">'+T('sd.present')+'</span><span class="ms-auto text-muted small">'+d.sd_used_mb+' / '+d.sd_total_mb+' MB</span>';
-    sdBtn.innerHTML='<form action="/sd/format" method="POST"><button type="submit" class="btn btn-danger btn-sm" onclick="return confirm(\''+T('sd.format_confirm')+'\')">'+T('sd.btn_format')+'</button></form>';
+    sdBtn.innerHTML='<form action="/sd/format" method="POST"><button type="submit" class="btn btn-danger px-3" onclick="return confirm(\''+T('sd.format_confirm')+'\')"><i class="bi bi-exclamation-triangle"></i> '+T('sd.btn_format')+'</button></form>';
   } else {
     sdRow.innerHTML='<span class="fb-dot fb-dot-warn"></span><span class="fw-semibold">'+T('sd.absent')+'</span><span class="ms-auto text-muted small">'+T('sd.absent_sub')+'</span>';
     sdBtn.innerHTML='';
