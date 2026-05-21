@@ -371,6 +371,7 @@ void streamAndPlayTTS_RAM(String text);
 String base64Encode(uint8_t* data, size_t length);
 String callLLM(const String& base64Img, const String& systemPrompt, const String& userText);
 String transcribeAudio();
+static String elOutputFormat();
 void loadEventBehaviors();
 void saveEventBehaviors();
 const FurbyActionDef* findFurbyAction(const char* id);
