@@ -95,9 +95,7 @@ tr:last-child td{border-bottom:none}
   <table><thead><tr><th>#</th><th>SSID</th><th>Priorità</th><th></th></tr></thead>
   <tbody id="wifi-rows"><tr><td colspan="4" style="color:#aaa">carico...</td></tr></tbody></table>
   <div class="btn-row" style="margin-top:12px">
-    <form action="/wifi/connect" method="POST" style="flex:1">
-      <button type="submit" class="btn btn-blue">&#x26A1; Connetti ora</button>
-    </form>
+    <button type="button" class="btn btn-blue" style="flex:1" onclick="wifiConnect()">&#x26A1; Connetti ora</button>
     <button type="button" class="btn btn-ghost" style="flex:1" onclick="wifiScan()">&#x1F50D; Scansiona</button>
   </div>
   <div id="wifi-scan-results"></div>
@@ -386,6 +384,14 @@ function onProvChange(){
 }
 function testLlm(){var el=document.getElementById('llm-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=llm').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';if(d.ok)loadModels('');}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
 function testEl(){var el=document.getElementById('el-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=el').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
+
+// ── WiFi connect ─────────────────────────────────────────────────────────────
+function wifiConnect(){
+  fetch('/wifi/connect',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok) location.href='/wifi/connecting';
+    else alert(d.error||'Errore');
+  }).catch(function(){alert('Errore di rete');});
+}
 
 // ── WiFi scan ────────────────────────────────────────────────────────────────
 function wifiScan(){

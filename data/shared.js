@@ -99,8 +99,21 @@ document.addEventListener('DOMContentLoaded',function(){
   var ipEl=document.getElementById('esp-ip');
   if(ipEl)ipEl.textContent=window.location.hostname;
   if(_bootRef){_uptimeTimer=setInterval(_uptimeTick,1000);_uptimeTick();}
-  (function sysLoop(){
-    fetch('/sys/info').then(function(r){return r.json();}).then(_updateSysBar).catch(function(){});
-    setTimeout(sysLoop,60000);
-  })();
+
+  var _sysTimer=null;
+  function scheduleSys(ms){
+    clearTimeout(_sysTimer);
+    if(!document.hidden) _sysTimer=setTimeout(sysLoop,ms);
+  }
+  function sysLoop(){
+    if(document.hidden){return;}
+    fetch('/sys/info').then(function(r){return r.json();}).then(function(d){
+      _updateSysBar(d);
+      scheduleSys(60000);
+    }).catch(function(){scheduleSys(60000);});
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) scheduleSys(0);
+  });
+  sysLoop();
 });

@@ -23,7 +23,7 @@
 #include "AudioFileSourceBuffer.h"
 #include "AudioFileSourcePROGMEM.h"
 
-#define FW_VERSION "2026.0521.1113"
+#define FW_VERSION "2026.0521.1119"
 
 // ==========================================
 // PINOUT E CONFIG HARDWARE
@@ -1162,51 +1162,35 @@ static void wifiConnectTask(void*) {
 }
 
 void handleWifiConnect() {
-    if (wifiNetCount == 0) {
-        server.send(200, "text/html",
-            "<meta charset='UTF-8'><p>Nessuna rete salvata. <a href='/'>Torna</a></p>");
-        return;
-    }
-    // Risponde subito con pagina di attesa; il browser fa polling su /wifi/connect/status
+    if (wifiNetCount == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"no_nets\"}"); return; }
     wifiConnectState = 1;
     xTaskCreatePinnedToCore(wifiConnectTask, "wifiConn", 4096, NULL, 1, NULL, 1);
-    server.send(200, "text/html",
-        "<meta charset='UTF-8'>"
-        "<style>body{font-family:sans-serif;background:#f0f4f8;display:flex;align-items:center;"
-        "justify-content:center;height:100vh;margin:0}"
-        ".box{background:#fff;border-radius:14px;padding:32px 40px;text-align:center;"
-        "box-shadow:0 4px 20px rgba(0,0,0,.1)}"
-        "p{color:#5a6a8a;font-size:.9rem}</style>"
-        "<div class='box'><p>Connessione in corso...</p></div>"
-        "<script>setInterval(function(){"
-        "fetch('/wifi/connect/status').then(function(r){return r.json();}).then(function(d){"
-        "if(d.state===2)location.href='http://'+d.ip+'/';"
-        "else if(d.state===3)location.href='/';});"
-        "},1000);</script>");
+    server.send(200, "application/json", "{\"ok\":true}");
 }
 
 void handleWifiConnectStatus() {
     int s = wifiConnectState;
-    String j = "{\"state\":" + String(s);
-    if (s == 2) j += ",\"ip\":\"" + wifiConnectIP + "\",\"ssid\":\"" + wifiConnectSSID + "\"";
-    j += "}";
-    server.send(200, "application/json", j);
+    JsonDocument doc;
+    doc["state"] = s;
+    if (s == 2) { doc["ip"] = wifiConnectIP; doc["ssid"] = wifiConnectSSID; }
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // GET /api/wifi/scan — scansiona e restituisce JSON
 void handleApiWifiScan() {
     int n = WiFi.scanNetworks(false, true);
-    String j = "{\"nets\":[";
+    JsonDocument doc;
+    JsonArray nets = doc["nets"].to<JsonArray>();
     for (int i = 0; i < n && i < 20; i++) {
-        if (i) j += ",";
-        String ssid = WiFi.SSID(i);
-        ssid.replace("\"", "\\\"");
-        bool open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
-        j += "{\"ssid\":\"" + ssid + "\",\"rssi\":" + String(WiFi.RSSI(i)) + ",\"open\":" + (open?"true":"false") + "}";
+        JsonObject net = nets.add<JsonObject>();
+        net["ssid"] = WiFi.SSID(i);
+        net["rssi"] = WiFi.RSSI(i);
+        net["open"] = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
     }
-    j += "]}";
     WiFi.scanDelete();
-    server.send(200, "application/json", j);
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // Aggiunge/aggiorna rete WiFi
@@ -1451,11 +1435,10 @@ void handleApiVoices() {
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/voices");
     http.addHeader("xi-api-key", elevenlabs_api_key);
-    String result = "[]";
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
     if (http.GET() == 200) {
         String body = http.getString();
-        result = "[";
-        bool first = true;
         int pos = 0;
         while (true) {
             int vi = body.indexOf("\"voice_id\":\"", pos);
@@ -1467,18 +1450,16 @@ void handleApiVoices() {
             if (ni < 0) break;
             ni += 8;
             int ne = body.indexOf("\"", ni);
-            String vname = body.substring(ni, ne);
-            vname.replace("\"", "\\\"");
-            if (!first) result += ",";
-            result += "{\"id\":\"" + vid + "\",\"name\":\"" + vname + "\"}";
-            first = false;
+            JsonObject vo = arr.add<JsonObject>();
+            vo["id"]   = vid;
+            vo["name"] = body.substring(ni, ne);
             pos = ve + 1;
         }
-        result += "]";
     }
     http.end();
+    String out; serializeJson(doc, out);
     server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.send(200, "application/json", result);
+    server.send(200, "application/json", out);
 }
 
 // Salva config LLM
@@ -1791,10 +1772,11 @@ void handleCaptiveAndroid() {
 
 // GET /personality
 void handlePersonalityGet() {
-    String j = "{\"prompt\":";
-    j += "\"" + jsonEscape(gPersonalityPrompt) + "\"";
-    j += ",\"voice_id\":\"" + gPersonalityVoiceId + "\"}";
-    server.send(200, "application/json", j);
+    JsonDocument doc;
+    doc["prompt"]   = gPersonalityPrompt;
+    doc["voice_id"] = gPersonalityVoiceId;
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // POST /personality/save  (form: prompt, voice_id)
@@ -1854,14 +1836,15 @@ void handleBehaviorsImport() {
 
 // GET /behaviors/actions  →  lista azioni Furby disponibili
 void handleBehaviorsActions() {
-    String j = "[";
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
     for (int i = 0; i < FURBY_ACTIONS_COUNT; i++) {
-        if (i > 0) j += ",";
-        j += "{\"id\":\""; j += FURBY_ACTIONS[i].id;
-        j += "\",\"label\":\""; j += FURBY_ACTIONS[i].label; j += "\"}";
+        JsonObject o = arr.add<JsonObject>();
+        o["id"]    = FURBY_ACTIONS[i].id;
+        o["label"] = FURBY_ACTIONS[i].label;
     }
-    j += "]";
-    server.send(200, "application/json", j);
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // POST /test/llm  (form: text)  →  chiama LLM con personality prompt corrente, senza immagine
@@ -1870,7 +1853,9 @@ void handleTestLlm() {
     String text = server.arg("text");
     if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
     String answer = callLLM("", gPersonalityPrompt, text);
-    server.send(200, "application/json", "{\"ok\":true,\"response\":\"" + jsonEscape(answer) + "\"}");
+    JsonDocument doc; doc["ok"] = true; doc["response"] = answer;
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 // POST /test/tts  (form: text)  →  invia ad ElevenLabs e riproduce sull'ESP32
@@ -1995,21 +1980,19 @@ void handleDebugPage() {
 // HANDLER FILE MANAGER SPIFFS (/fs/*)
 // ==========================================
 void handleFsList() {
-    String json = "{\"total\":" + String(SPIFFS.totalBytes()) +
-                  ",\"used\":"  + String(SPIFFS.usedBytes())  + ",\"files\":[";
+    JsonDocument doc;
+    doc["total"] = SPIFFS.totalBytes();
+    doc["used"]  = SPIFFS.usedBytes();
+    JsonArray files = doc["files"].to<JsonArray>();
     File root = SPIFFS.open("/");
-    File file = root.openNextFile();
-    bool first = true;
-    while (file) {
-        if (!first) json += ",";
-        String nm = file.name();
-        if (nm[0] != '/') nm = "/" + nm;
-        json += "{\"name\":\"" + nm + "\",\"size\":" + String(file.size()) + "}";
-        first = false;
-        file = root.openNextFile();
+    for (File f = root.openNextFile(); f; f = root.openNextFile()) {
+        JsonObject o = files.add<JsonObject>();
+        String nm = f.name();
+        o["name"] = (nm[0] == '/') ? nm : "/" + nm;
+        o["size"] = f.size();
     }
-    json += "]}";
-    server.send(200, "application/json", json);
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 void handleFsGet() {
@@ -2504,6 +2487,7 @@ void startWebServer() {
     server.on("/redirect",                   HTTP_GET,  handleCaptiveRedirect);
     server.on("/wifi/connect",        HTTP_POST, handleWifiConnect);
     server.on("/wifi/connect/status", HTTP_GET,  handleWifiConnectStatus);
+    server.on("/wifi/connecting",     HTTP_GET,  []() { serveSpiffs("/wifi_connect.html", "text/html; charset=utf-8", "no-cache"); });
     server.on("/api/wifi/scan",  HTTP_GET,  handleApiWifiScan);
     server.on("/wifi/add",       HTTP_POST, handleWifiAdd);
     server.on("/wifi/del",       HTTP_POST, handleWifiDel);
