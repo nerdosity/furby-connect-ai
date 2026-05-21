@@ -2789,7 +2789,7 @@ void handleApiTest() {
         if (elevenlabs_api_key.length() == 0) { server.send(200,"application/json","{\"ok\":false,\"error\":\"token assente\"}"); return; }
         // Usa TTS con testo minimo — funziona su qualsiasi account, anche free senza voices_read
         Serial.println("API test ElevenLabs (via TTS probe)");
-        http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=pcm_16000_16_mono");
+        http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id + "?output_format=" + elOutputFormat());
         http.addHeader("Content-Type", "application/json");
         http.addHeader("xi-api-key", elevenlabs_api_key);
         int code = http.POST("{\"text\":\"ok\",\"model_id\":\"eleven_multilingual_v2\"}");
