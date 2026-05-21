@@ -429,22 +429,27 @@ static void handleElSave() {
 
 static void handleVadSave() {
     HTTP_LOG();
+    Preferences p; p.begin("furby", false);
     String thr = server.arg("threshold");
     if (thr.length() > 0) {
         vad_threshold = constrain(thr.toInt(), 0, 32767);
-        preferences.putInt("vad_thr", vad_threshold);
+        p.putInt("vad_thr", vad_threshold);
     }
     String en = server.arg("enabled");
     if (en.length() > 0) {
         vadEnabled = (en == "1");
-        preferences.putBool("vad_en", vadEnabled);
+        p.putBool("vad_en", vadEnabled);
     }
     String stt = server.arg("stt_enabled");
     if (stt.length() > 0) {
         sttEnabled = (stt == "1");
-        preferences.putBool("stt_en", sttEnabled);
+        p.putBool("stt_en", sttEnabled);
     }
-    server.sendHeader("Location", "/"); server.send(303);
+    p.end();
+    server.send(200, "application/json",
+        "{\"ok\":true,\"vad_enabled\":" + String(vadEnabled ? "true" : "false") +
+        ",\"stt_enabled\":"             + String(sttEnabled ? "true" : "false") +
+        ",\"vad_threshold\":"           + String(vad_threshold) + "}");
 }
 
 static void handleCfgList() {

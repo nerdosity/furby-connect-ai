@@ -24,7 +24,7 @@
       <span class="fw-semibold" id="wifi-label" data-i18n="sys.loading">carico...</span>
       <span class="ms-auto text-muted small" id="wifi-ip"></span>
     </div>
-    <table class="table table-sm table-borderless mb-2">
+    <table class="table table-sm table-hover mb-2">
       <thead class="table-light"><tr><th>#</th><th data-i18n="wifi.col_ssid">SSID</th><th data-i18n="wifi.col_prio">Priorità</th><th></th></tr></thead>
       <tbody id="wifi-rows"><tr><td colspan="4" class="text-muted" data-i18n="sys.loading">carico...</td></tr></tbody>
     </table>
@@ -47,7 +47,9 @@
         <label class="form-label" data-i18n="wifi.label_prio">Priorità (0 = massima)</label>
         <input type="text" class="form-control form-control-sm" name="prio" value="0" >
       </div>
-      <button type="submit" class="btn btn-primary w-100" data-i18n="wifi.btn_add"><i class="bi bi-plus-lg"></i> Aggiungi / Aggiorna rete</button>
+      <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary" data-i18n="wifi.btn_add"><i class="bi bi-plus-lg"></i> Aggiungi / Aggiorna rete</button>
+      </div>
     </form>
   </div>
 </div>
@@ -77,9 +79,9 @@
         <label class="form-label" data-i18n="llm.label_key">Token API</label>
         <input type="text" class="form-control form-control-sm" name="api_key" id="tok" placeholder="...">
       </div>
-      <div class="d-flex gap-2 justify-content-end mt-2">
-        <button type="submit" class="btn btn-primary flex-fill" data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-flask"></i> Test</button>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary" data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-flask"></i> Test</button>
       </div>
       <div id="llm-test-result" class="small mt-1"></div>
     </form>
@@ -116,9 +118,9 @@
         </div>
         <div id="fmt-hint" class="form-text"></div>
       </div>
-      <div class="d-flex gap-2 justify-content-end mt-2">
-        <button type="submit" class="btn btn-primary flex-fill" data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-flask"></i> Test</button>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary" data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-flask"></i> Test</button>
       </div>
       <div id="el-test-result" class="small mt-1"></div>
     </form>
@@ -154,7 +156,7 @@
     <div class="d-flex gap-2 align-items-end mb-2">
       <div class="flex-fill">
         <label class="form-label" data-i18n="vad.label_thresh">Soglia sensibilità (RMS 0–32767, default 800)</label>
-        <input type="text" class="form-control form-control-sm" id="vad-thresh">
+        <input type="number" class="form-control form-control-sm" id="vad-thresh" min="0" max="32767" onchange="vadSaveThresh()" onblur="vadSaveThresh()">
       </div>
       <button class="btn btn-outline-secondary btn-sm" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic"></i></button>
     </div>
@@ -205,7 +207,9 @@
         <label class="form-label" data-i18n="ble.label_char">Characteristic UUID TX</label>
         <input type="text" class="form-control form-control-sm font-monospace" name="char_uuid" id="ble-char-uuid">
       </div>
-      <button type="submit" class="btn btn-primary w-100" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
+      <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
+      </div>
     </form>
   </div>
 </div>
@@ -264,19 +268,9 @@ function applyHome(d){
   }
 
   // VAD / STT
-  document.getElementById('vad-dot').className='fb-dot '+(d.vad_enabled?'fb-dot-ok':'fb-dot-warn');
-  document.getElementById('vad-label').textContent=d.vad_enabled?T('vad.active'):T('vad.disabled');
-  document.getElementById('vad-thresh').value=d.vad_threshold||'';
-  _vadEnabled=!!d.vad_enabled; _vadThresh=d.vad_threshold||800;
-  var bv=document.getElementById('btn-vad-tog');
-  bv.className=_vadEnabled?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
-  bv.innerHTML=_vadEnabled?'<i class="bi bi-mic-fill"></i>':'<i class="bi bi-mic-mute"></i>';
-  document.getElementById('stt-dot').className='fb-dot '+(d.stt_enabled?'fb-dot-ok':'fb-dot-warn');
-  document.getElementById('stt-label').textContent=d.stt_enabled?T('stt.active'):T('stt.disabled');
-  _sttEnabled=!!d.stt_enabled;
-  var bs=document.getElementById('btn-stt-tog');
-  bs.className=_sttEnabled?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
-  bs.innerHTML=_sttEnabled?'<i class="bi bi-soundwave"></i>':'<i class="bi bi-soundwave"></i>';
+  _vadThresh=d.vad_threshold||800;
+  document.getElementById('vad-thresh').value=_vadThresh;
+  vadApplyUI(!!d.vad_enabled, !!d.stt_enabled);
 
   // BLE UUID
   document.getElementById('ble-svc-uuid').value=d.ble_svc_uuid||'';
@@ -285,26 +279,36 @@ function applyHome(d){
 fetch('/api/home').then(function(r){return r.json();}).then(applyHome).catch(function(){});
 
 var _vadEnabled=false,_vadThresh=800,_sttEnabled=false;
-function vadToggle(){
-  _vadEnabled=!_vadEnabled;
-  var fd=new FormData();fd.append('threshold',document.getElementById('vad-thresh').value||_vadThresh);fd.append('enabled',_vadEnabled?'1':'0');
+function vadSaveThresh(){
+  var thr=document.getElementById('vad-thresh').value;
+  if(!thr)return;
+  var fd=new FormData();fd.append('threshold',thr);fd.append('enabled',_vadEnabled?'1':'0');
+  fetch('/vad/save',{method:'POST',body:fd}).catch(function(){});
+}
+function vadApplyUI(vad_en, stt_en){
+  _vadEnabled=vad_en; _sttEnabled=stt_en;
+  document.getElementById('vad-dot').className='fb-dot '+(vad_en?'fb-dot-ok':'fb-dot-warn');
+  document.getElementById('vad-label').textContent=vad_en?T('vad.active'):T('vad.disabled');
+  var bv=document.getElementById('btn-vad-tog');
+  bv.className=vad_en?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
+  bv.innerHTML=vad_en?'<i class="bi bi-mic-fill"></i>':'<i class="bi bi-mic-mute"></i>';
+  document.getElementById('stt-dot').className='fb-dot '+(stt_en?'fb-dot-ok':'fb-dot-warn');
+  document.getElementById('stt-label').textContent=stt_en?T('stt.active'):T('stt.disabled');
+  var bs=document.getElementById('btn-stt-tog');
+  bs.className=stt_en?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
+}
+function vadSaveAndApply(fd){
   fetch('/vad/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    document.getElementById('vad-dot').className='fb-dot '+(_vadEnabled?'fb-dot-ok':'fb-dot-warn');
-    document.getElementById('vad-label').textContent=_vadEnabled?T('vad.active'):T('vad.disabled');
-    var b=document.getElementById('btn-vad-tog');
-    b.className=_vadEnabled?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
-    b.innerHTML=_vadEnabled?'<i class="bi bi-mic-fill"></i>':'<i class="bi bi-mic-mute"></i>';
+    if(d.ok) vadApplyUI(d.vad_enabled, d.stt_enabled);
   }).catch(function(){});
 }
+function vadToggle(){
+  var fd=new FormData();fd.append('threshold',document.getElementById('vad-thresh').value||_vadThresh);fd.append('enabled',_vadEnabled?'0':'1');
+  vadSaveAndApply(fd);
+}
 function sttToggle(){
-  _sttEnabled=!_sttEnabled;
-  var fd=new FormData();fd.append('stt_enabled',_sttEnabled?'1':'0');
-  fetch('/vad/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    document.getElementById('stt-dot').className='fb-dot '+(_sttEnabled?'fb-dot-ok':'fb-dot-warn');
-    document.getElementById('stt-label').textContent=_sttEnabled?T('stt.active'):T('stt.disabled');
-    var b=document.getElementById('btn-stt-tog');
-    b.className=_sttEnabled?'btn btn-success btn-sm':'btn btn-outline-secondary btn-sm';
-  }).catch(function(){});
+  var fd=new FormData();fd.append('stt_enabled',_sttEnabled?'0':'1');
+  vadSaveAndApply(fd);
 }
 function fmtChange(){
   var fmt=document.querySelector('input[name=el_fmt]:checked').value;
@@ -394,10 +398,15 @@ function wifiScan(){
   el.innerHTML='<p class="small text-warning mt-2">'+T('wifi.scan_wait')+'</p>';
   fetch('/api/wifi/scan').then(function(r){return r.json();}).then(function(d){
     if(!d.nets||!d.nets.length){el.innerHTML='<p class="small text-muted mt-2">'+T('wifi.scan_none')+'</p>';return;}
-    var h='<table class="table table-sm mt-2"><thead><tr><th>SSID</th><th>dBm</th><th></th><th></th></tr></thead><tbody>';
+    var h='<table class="table table-sm table-hover mt-2"><thead class="table-light"><tr><th>SSID</th><th>dBm</th><th></th><th></th></tr></thead><tbody>';
     d.nets.forEach(function(n){
-      h+='<tr><td class="ssid-name">'+n.ssid+'</td><td>'+n.rssi+'</td><td>'+(n.open?T('wifi.open'):'WPA')+'</td>'
-        +'<td><button type="button" class="btn btn-success btn-sm" onclick="document.getElementById(\'ssid-inp\').value=\''+n.ssid+'\'">'+T('wifi.scan_use')+'</button></td></tr>';
+      var rc=n.rssi>-60?'text-success':n.rssi>-75?'text-warning':'text-danger';
+      h+='<tr>'
+        +'<td class="align-middle fw-semibold">'+n.ssid+'</td>'
+        +'<td class="align-middle small '+rc+'">'+n.rssi+'</td>'
+        +'<td class="align-middle">'+(n.open?'<span class="badge bg-warning text-dark">'+T('wifi.open')+'</span>':'<span class="badge bg-secondary">WPA</span>')+'</td>'
+        +'<td class="align-middle text-end"><button type="button" class="btn btn-success btn-sm" onclick="document.getElementById(\'ssid-inp\').value=\''+n.ssid+'\'">'+T('wifi.scan_use')+'</button></td>'
+        +'</tr>';
     });
     el.innerHTML=h+'</tbody></table>';
   }).catch(function(){el.innerHTML='<p class="small text-danger mt-2">'+T('wifi.scan_err')+'</p>';});

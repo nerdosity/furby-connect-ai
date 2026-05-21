@@ -131,3 +131,11 @@ body { background: var(--fb-bg); }
 
 /* misc */
 .fb-raw { font-size:.72rem; color:var(--fb-muted); margin-top:8px; font-family:monospace; }
+
+/* form actions — mobile: flex-fill (50/50); desktop: auto width allineati a destra */
+.fb-actions { display:flex; gap:.5rem; margin-top:.75rem; }
+.fb-actions .btn { flex:1 1 0; }
+@media(min-width:900px){
+  .fb-actions { justify-content:flex-end; }
+  .fb-actions .btn { flex:0 0 auto; }
+}
