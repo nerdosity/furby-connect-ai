@@ -1,54 +1,20 @@
 <!DOCTYPE html><html lang="it"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Furby Debug</title>
+<link rel="stylesheet" href="/shared.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:15px}
-.header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);
-  padding:14px 24px;display:flex;align-items:center;gap:16px;
-  box-shadow:0 3px 12px rgba(0,0,0,.35)}
-.logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden}
-.logo-wrap img{width:100%;height:100%;object-fit:cover}
-.header-text h1{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.5px;line-height:1.1}
-.header-text p{color:#8fb3e8;font-size:.75rem;margin-top:2px;letter-spacing:.3px}
-.nav-toggle{background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-shrink:0}
-.nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}
-/* ── desktop: hamburger nascosto, link inline ─────────────── */
-.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}
-.desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}
-.desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;
-  padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}
-.desktop-nav a:hover{background:#ffffff22}
-.desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}
-@media(min-width:900px){
-  .nav-toggle{display:none}
-  .desktop-nav{display:flex}
-}
-.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}
-.nav-overlay.open{display:block}
-.nav-drawer{position:fixed;top:0;right:-240px;width:220px;height:100%;background:#1a2340;
-  z-index:100;transition:right .22s ease;padding:0;box-shadow:-4px 0 18px rgba(0,0,0,.4)}
-.nav-drawer.open{right:0}
-.nav-header{display:flex;align-items:center;padding:18px 16px 14px;border-bottom:1px solid #2d3f6e}
-.nav-header span{color:#8fb3e8;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-.nav-close{background:none;border:none;color:#8fb3e8;font-size:1.2rem;cursor:pointer;margin-left:auto;padding:2px 6px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:13px 18px;color:#c8d8f0;
-  font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}
-.nav-item:hover,.nav-item.active{background:#243050;color:#fff}
-/* ── layout principale ───────────────────────────────────────────────── */
+body{font-size:15px}
 .ble-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:#fff;
   border-bottom:1px solid #e4eaf4;font-size:.8rem;color:#1a2340}
 .ble-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;
   box-shadow:0 0 5px #ef444488}
 .ble-dot.on{background:#22c55e;box-shadow:0 0 5px #22c55e88}
 .ble-dot.scan{background:#f59e0b;box-shadow:0 0 5px #f59e0b88}
-/* tab bar orizzontale */
-.tabs{display:flex;gap:0;border-bottom:2px solid #e4eaf4;background:#fff;overflow-x:auto}
+.tabs{display:flex;gap:0;border-bottom:2px solid #e4eaf4;background:#fff;overflow-x:clip}
 .tab{padding:11px 20px;font-size:.82rem;font-weight:700;color:#8a9ab5;cursor:pointer;
   border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
 .tab.active{color:#3a5298;border-bottom-color:#3a5298}
 .tab:hover{color:#3a5298}
-/* contenuto tab: max-width ampio su desktop */
 .tab-pane{display:none;padding:20px 24px;max-width:1400px;margin:0 auto}
 .tab-pane.active{display:block}
 @media(min-width:900px){
@@ -67,10 +33,6 @@ body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-seri
   .log{font-size:.8rem;height:160px}
   .raw{font-size:.78rem}
 }
-.card{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:12px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e4eaf4}
-.card h3{font-size:.78rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;
-  letter-spacing:1.2px;margin-bottom:12px}
 .sensors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px}
 .sensor{display:flex;align-items:center;gap:7px;font-size:.85rem;padding:4px 0;color:#1a2340}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#e4eaf4;transition:background .12s}
@@ -108,7 +70,6 @@ input:focus,select:focus{outline:none;border-color:#3a5298;box-shadow:0 0 0 2px 
 textarea{font-size:.82rem}
 .log{background:#1a2340;border-radius:8px;padding:10px 12px;font-family:monospace;
   font-size:.75rem;color:#8fb3e8;height:130px;overflow-y:auto;margin-top:6px}
-/* file manager */
 .fm-table{width:100%;border-collapse:collapse;font-size:.82rem}
 .fm-table th{text-align:left;padding:6px 10px;color:#5a6a8a;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e4eaf4}
@@ -282,7 +243,7 @@ function setLang(l){
   <a class="nav-item" href="/camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</a>
   <a class="nav-item" href="#" onclick="if(confirm('Riavviare l\'ESP32?')){fetch('/reset',{method:'POST'});}" style="color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;opacity:.75"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Reset ESP32</a>
 </div>
-<script>function navOpen(){document.getElementById('nav-drawer').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}function navClose(){document.getElementById('nav-drawer').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}</script>
+<script src="/shared.js"></script>
 
 <div class="header">
   <div class="logo-wrap">
@@ -1094,13 +1055,13 @@ function testTtsSend(){
 }
 
 
-function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;var p=ss<10?'0':'';return(h?h+'h ':'')+m+'m '+p+ss+'s';}
 function dbBleApply(d){
   var dot=document.getElementById('wb-dot'),lbl=document.getElementById('wb-label');
   var scan=document.getElementById('btn-scan'),stop=document.getElementById('btn-stop');
   var abort=document.getElementById('btn-abort'),disc=document.getElementById('btn-disc');
   var lst=document.getElementById('db-ble-list');
-  if(d.uptime!==undefined){var u=document.getElementById('esp-uptime');if(u)u.textContent=fmtSec(d.uptime);}
+  _bleConnected=!!d.connected;
+  if(d.uptime!==undefined){_bootRef={t:Date.now(),s:d.uptime};_uptimeTick();}
   var bu=document.getElementById('ble-uptime');
   if(bu){if(d.connected&&d.ble_uptime){bu.textContent='(conn. '+fmtSec(d.ble_uptime)+')';bu.style.display='';}else{bu.textContent='';bu.style.display='none';}}
   scan.style.display='none';stop.style.display='none';abort.style.display='none';disc.style.display='none';
@@ -1174,27 +1135,6 @@ function dbBleReset(){
 dbBlePoll();
 setInterval(dbBlePoll,5000);
 
-// ---- System info ----
-function fmtKB(kb){if(kb>=1024)return(kb/1024).toFixed(1)+' MB';return kb+' KB';}
-function buildSysBarText(d){
-  var s='CPU: '+d.cpu_mhz+'MHz'
-    +' | Heap: '+fmtKB(d.heap_free)+'/'+fmtKB(d.heap_total)
-    +' | PSRAM: '+fmtKB(d.psram_free)+'/'+fmtKB(d.psram_total)
-    +' | Sketch: '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
-    +' | SPIFFS: '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
-    +' | Flash: '+d.flash_mb+'MB';
-  if(d.sd_total) s+=' | SD: '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total);
-  return s;
-}
-function sysInfoPoll(){
-  fetch('/sys/info').then(r=>r.json()).then(function(d){
-    var el=document.getElementById('sys-info-bar');if(!el)return;
-    el.textContent=buildSysBarText(d);
-    document.getElementById('esp-ip').textContent=window.location.hostname;
-  }).catch(function(){});
-}
-sysInfoPoll();
-setInterval(sysInfoPoll,8000);
 setLang(gLang);
 
 function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
@@ -1437,7 +1377,9 @@ var sensorMap={
   'onRightSide':'s-right','onLeftSide':'s-left',
   'leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'
 };
+var _bleConnected=false;
 function pollSensors(){
+  if(!_bleConnected)return;
   fetch('/debug/sensors').then(r=>r.json()).then(function(d){
     document.getElementById('sensor-age').textContent=d.sensor_age_ms<5000?(d.sensor_age_ms+'ms fa'):'—';
     for(var k in sensorMap){var el=document.getElementById(sensorMap[k]);if(el)el.className='dot'+(d[k]?' on':'');}
