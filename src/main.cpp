@@ -1937,7 +1937,7 @@ void handleTestBehavior() {
 // ==========================================
 void handleDebugPage() {
     File f = SPIFFS.open("/debug.html", "r");
-    if (!f) { server.send_P(200, "text/html", HTML_DEBUG); return; }
+    if (!f) { server.send(503, "text/plain", "debug.html non trovato — eseguire uploadfs"); return; }
     server.sendHeader("Cache-Control", "no-cache, must-revalidate");
     server.streamFile(f, "text/html; charset=utf-8");
     f.close();
@@ -2285,262 +2285,8 @@ void handleCameraPage() {
         "<p><a href='/'>Home</a></p></body></html>"));
 }
 
-// ==========================================
-// CAMERA PAGE (LEGACY INLINE — NON USATO SE SPIFFS OK)
-// ==========================================
-static void handleCameraPageLegacy() {
-    String ip = WiFi.localIP().toString();
-    String html = F("<!DOCTYPE html><html lang='it'><head>"
-        "<meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>Furby Camera</title>"
-        "<style>"
-        "*{box-sizing:border-box;margin:0;padding:0}"
-        "body{background:#f0f4f8;color:#1a2340;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}"
-        ".header{background:linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);"
-          "padding:18px 20px 14px;display:flex;align-items:center;gap:14px;"
-          "box-shadow:0 3px 12px rgba(0,0,0,.35)}"
-        ".logo-wrap{width:52px;height:52px;flex-shrink:0;border-radius:8px;overflow:hidden}"
-        ".logo-wrap img{width:100%;height:100%;object-fit:cover}"
-        ".header-text h1{color:#fff;font-size:1.35rem;font-weight:800;letter-spacing:.5px;line-height:1.1}"
-        ".header-text p{color:#8fb3e8;font-size:.72rem;margin-top:2px;letter-spacing:.3px}"
-        ".nav-toggle{background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0}"
-        ".nav-toggle span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:all .2s}"
-        ".nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99}"
-        ".nav-overlay.open{display:block}"
-        ".nav-drawer{position:fixed;top:0;right:-220px;width:210px;height:100%;background:#1a2340;"
-          "z-index:100;transition:right .22s ease;padding:0;box-shadow:-4px 0 18px rgba(0,0,0,.4)}"
-        ".nav-drawer.open{right:0}"
-        ".nav-header{display:flex;align-items:center;padding:18px 16px 14px;border-bottom:1px solid #2d3f6e}"
-        ".nav-header span{color:#8fb3e8;font-size:.8rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}"
-        ".nav-close{background:none;border:none;color:#8fb3e8;font-size:1.2rem;cursor:pointer;margin-left:auto;padding:2px 6px}"
-        ".nav-item{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#c8d8f0;"
-          "font-size:.88rem;font-weight:600;text-decoration:none;border-bottom:1px solid #243050;transition:background .15s}"
-        ".nav-item:hover,.nav-item.active{background:#243050;color:#fff}"
-        ".nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.75}"
-        ".desktop-nav{display:none;align-items:center;gap:4px;margin-left:auto}"
-        ".desktop-nav a{color:#c8d8f0;text-decoration:none;font-size:.88rem;font-weight:600;"
-          "padding:6px 13px;border-radius:7px;transition:background .15s;white-space:nowrap}"
-        ".desktop-nav a:hover{background:#ffffff22}"
-        ".desktop-nav a.active{background:#ffffff22;color:#fff;font-weight:700}"
-        "@media(min-width:900px){.nav-toggle{display:none}.desktop-nav{display:flex}}"
-        ".wrap{max-width:780px;margin:16px auto;padding:0 16px}"
-        ".frame-box{border-radius:14px;overflow:hidden;border:2px solid #e4eaf4;"
-          "background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;"
-          "box-shadow:0 2px 12px rgba(0,0,0,.12)}"
-        "#camimg{width:100%;height:100%;object-fit:contain}"
-        ".controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}"
-        ".btn{padding:9px 16px;border-radius:9px;border:none;cursor:pointer;font-size:.8rem;"
-          "font-weight:700;background:linear-gradient(135deg,#3a5298,#5b7fe0);color:#fff}"
-        ".btn.stop{background:linear-gradient(135deg,#dc2626,#ef4444)}"
-        ".status{font-size:.7rem;color:#8a9ab5;margin-top:6px}"
-        ".card{background:#fff;border-radius:14px;padding:16px 20px;margin-top:14px;"
-          "border:1px solid #e4eaf4;box-shadow:0 2px 8px rgba(0,0,0,.07)}"
-        ".card h3{font-size:.72rem;font-weight:700;color:#5a6a8a;text-transform:uppercase;"
-          "letter-spacing:1px;margin-bottom:10px}"
-        "textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0d9ee;"
-          "border-radius:8px;padding:8px;resize:vertical;background:#f5f8ff;color:#1a2340}"
-        "#desc-out{display:none;margin-top:10px;background:#f0f4ff;border:1.5px solid #c8d4f0;"
-          "border-radius:8px;padding:10px;font-size:.85rem;color:#1a2340;white-space:pre-wrap;"
-          "line-height:1.5}"
-        ".b-tel{background:linear-gradient(135deg,#0f766e,#14b8a6)}"
-        ".b-grn{background:linear-gradient(135deg,#16a34a,#22c55e)}"
-        "#sys-bar{background:#1a2340;padding:4px 16px;font-size:.6rem;font-family:monospace;"
-          "color:#4a6a9a;overflow-x:auto;white-space:nowrap}"
-        "</style></head><body>"
-        "<div class='nav-overlay' id='nav-overlay' onclick='navClose()'></div>"
-        "<div class='nav-drawer' id='nav-drawer'>"
-          "<div class='nav-header'><span>Menu</span><button class='nav-close' onclick='navClose()'>&#x2715;</button></div>"
-          "<a class='nav-item' href='/'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>Configurazione</a>"
-          "<a class='nav-item' href='/debug'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='3'/><path d='M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21'/></svg>Debug Furby</a>"
-          "<a class='nav-item active' href='/camera'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/><circle cx='12' cy='13' r='4'/></svg>Camera</a>"
-          "<a class='nav-item' href='#' onclick=\"if(confirm('Riavviare l\\'ESP32?')){fetch('/reset',{method:'POST'});}\" style='color:#ef4444'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='1 4 1 10 7 10'/><path d='M3.51 15a9 9 0 1 0 .49-3.5'/></svg>Reset ESP32</a>"
-        "</div>"
-        "<script>function navOpen(){document.getElementById('nav-drawer').classList.add('open');document.getElementById('nav-overlay').classList.add('open');}function navClose(){document.getElementById('nav-drawer').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open');}</script>"
-        "<div class='header'>"
-          "<div class='logo-wrap'>"
-            "<img src='data:image/png;base64,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' alt='FurbyMind'>"
-          "</div>"
-          "<div class='header-text'>"
-            "<h1>FurbyMind Camera</h1>"
-            "<p>IP: <span id='esp-ip'>—</span> &nbsp;&#x2022;&nbsp; Uptime: <span id='esp-uptime'>—</span></p>"
-          "</div>"
-          "<nav class='desktop-nav'>"
-            "<a href='/'>&#x2302; Home</a>"
-            "<a href='/debug'>Debug</a>"
-            "<a href='/camera' class='active'>Camera</a>"
-          "</nav>"
-          "<button class='nav-toggle' onclick='navOpen()'><span></span><span></span><span></span></button>"
-        "</div>"
-        "<div id='sys-bar'>carico...</div>"
-        "<script>"
-        "(function(){"
-          "document.getElementById('esp-ip').textContent=window.location.hostname;"
-          "function fkb(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}"
-          "function load(){"
-            "fetch('/sys/info').then(function(r){return r.json();}).then(function(d){"
-              "var sd=d.sd_total?' | SD '+fkb(d.sd_used)+'/'+fkb(d.sd_total):'';"
-              "document.getElementById('sys-bar').textContent="
-                "'CPU '+d.cpu_mhz+'MHz | Heap '+fkb(d.heap_free)+'/'+fkb(d.heap_total)"
-                "+'| PSRAM '+fkb(d.psram_free)+'/'+fkb(d.psram_total)"
-                "+'| Sketch '+fkb(d.sketch_used)+'/'+fkb(d.sketch_total)"
-                "+'| SPIFFS '+fkb(d.spiffs_used)+'/'+fkb(d.spiffs_total)"
-                "+'| Flash '+d.flash_mb+'MB'+sd;"
-              "var u=document.getElementById('esp-uptime');"
-              "if(u&&d.uptime_s!=null){var s=d.uptime_s;u.textContent=(s<3600?Math.floor(s/60):Math.floor(s/3600)+'h '+Math.floor((s%3600)/60))+'m '+(s%60)+'s';}"
-            "}).catch(function(){});}"
-          "load();setInterval(load,10000);"
-        "})();"
-        "</script>"
-        "<div class='wrap'>"
-        "<div class='frame-box'>"
-          "<img id='camimg' src='/camera/frame' alt='camera'>"
-        "</div>"
-        "<div class='status' id='status'>Streaming attivo &nbsp;&#x2022;&nbsp; <span id='fps'>—</span> fps</div>"
-        "<div class='controls'>"
-          "<button class='btn' id='btn-tog' onclick='toggleStream()'>&#x23F8; Pausa</button>"
-          "<button class='btn' onclick='setQuality(12)'>Qualit&#224; alta</button>"
-          "<button class='btn' onclick='setQuality(25)'>Qualit&#224; bassa</button>"
-        "</div>"
 
-        "<div class='card'>"
-          "<h3>&#x1F9E0; Descrivi frame con LLM</h3>"
-          "<div style='font-size:.72rem;color:#8a9ab5;margin-bottom:8px'>"
-            "Cattura un frame e chiedi all'LLM configurato di descriverlo con il prompt qui sotto."
-          "</div>"
-          "<textarea id='desc-prompt' rows='4' placeholder='Sei un Furby maleducato...'></textarea>"
-          "<div style='display:flex;gap:8px;margin-top:8px;flex-wrap:wrap'>"
-            "<button class='btn b-tel' onclick='descSavePrompt()' style='flex:1'>&#x1F4BE; Salva prompt</button>"
-            "<button class='btn b-grn' onclick='descRun()' id='btn-desc' style='flex:1'>&#x1F50D; Descrivi ora</button>"
-          "</div>"
-          "<div style='margin-top:12px;padding:10px 12px;background:#f5f8ff;border:1.5px solid #e4eaf4;"
-            "border-radius:9px;display:flex;align-items:center;gap:14px;flex-wrap:wrap'>"
-            "<label style='display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;"
-              "color:#1a2340;cursor:pointer;user-select:none'>"
-              "<input type='checkbox' id='chk-tts' style='width:16px;height:16px;accent-color:#3a5298'>"
-              "&#x1F50A; Output vocale"
-            "</label>"
-            "<div style='display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;"
-              "font-size:.78rem;font-weight:700'>"
-              "<label id='lbl-browser' style='padding:5px 12px;cursor:pointer;background:#3a5298;color:#fff;"
-                "transition:background .15s'>"
-                "<input type='radio' name='tts-dest' value='browser' checked"
-                  " style='display:none' onchange='ttsDestChange()'>"
-                "&#x1F5A5; Browser"
-              "</label>"
-              "<label id='lbl-board' style='padding:5px 12px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;"
-                "transition:background .15s'>"
-                "<input type='radio' name='tts-dest' value='board'"
-                  " style='display:none' onchange='ttsDestChange()'>"
-                "&#x1F4E1; Board"
-              "</label>"
-            "</div>"
-            "<span id='tts-hint' style='font-size:.7rem;color:#8a9ab5'>"
-              "Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32"
-            "</span>"
-          "</div>"
-          "<div id='desc-status' style='font-size:.7rem;color:#8a9ab5;margin-top:5px'></div>"
-          "<div id='desc-out'></div>"
-        "</div>"
-
-        "</div>"
-        "<script>"
-        "var running=true,last=0,frameCount=0;"
-        "function nextFrame(){"
-          "if(!running)return;"
-          "var img=document.getElementById('camimg');"
-          "var t=Date.now();"
-          "img.onload=function(){"
-            "frameCount++;"
-            "if(t-last>=1000){document.getElementById('fps').textContent=(frameCount/(((t-last)||1000)/1000)).toFixed(1);frameCount=0;last=t;}"
-            "if(running)nextFrame();"
-          "};"
-          "img.onerror=function(){setTimeout(nextFrame,1000);};"
-          "img.src='/camera/frame?t='+Date.now();"
-        "}"
-        "function toggleStream(){"
-          "var st=document.getElementById('status');"
-          "running=!running;"
-          "document.getElementById('btn-tog').textContent=running?'\\u23F8 Pausa':'\\u25B6 Riprendi';"
-          "if(!running)st.textContent='In pausa';"
-          "else st.innerHTML='Streaming attivo &nbsp;&#x2022;&nbsp; <span id=\\'fps\\'>—</span> fps';"
-          "if(running)nextFrame();"
-        "}"
-        "function setQuality(q){"
-          "fetch('/camera/quality?q='+q,{method:'POST'}).catch(function(){});"
-        "}"
-        // Carica il prompt salvato al load
-        "fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){"
-          "document.getElementById('desc-prompt').value=d.prompt||'';"
-        "}).catch(function(){});"
-        "function descSavePrompt(){"
-          "var fd=new FormData();"
-          "fd.append('prompt',document.getElementById('desc-prompt').value);"
-          "fetch('/camera/describe/prompt',{method:'POST',body:fd})"
-            ".then(function(r){return r.json();})"
-            ".then(function(d){"
-              "document.getElementById('desc-status').textContent=d.ok?'Salvato.':'Errore.';"
-              "setTimeout(function(){document.getElementById('desc-status').textContent='';},2000);"
-            "});"
-        "}"
-        "function ttsDestChange(){"
-          "var v=document.querySelector('input[name=tts-dest]:checked').value;"
-          "document.getElementById('lbl-browser').style.background=v==='browser'?'#3a5298':'#f0f4f8';"
-          "document.getElementById('lbl-browser').style.color=v==='browser'?'#fff':'#5a6a8a';"
-          "document.getElementById('lbl-board').style.background=v==='board'?'#3a5298':'#f0f4f8';"
-          "document.getElementById('lbl-board').style.color=v==='board'?'#fff':'#5a6a8a';"
-        "}"
-        "function speakBrowser(text){"
-          "if(!window.speechSynthesis){alert('Web Speech API non supportata in questo browser.');return;}"
-          "window.speechSynthesis.cancel();"
-          "var u=new SpeechSynthesisUtterance(text);"
-          "u.lang=navigator.language||'it-IT';"
-          "window.speechSynthesis.speak(u);"
-        "}"
-        "function speakBoard(text){"
-          "var st=document.getElementById('desc-status');"
-          "st.textContent='Invio a ElevenLabs...';"
-          "var fd=new FormData(); fd.append('text',text);"
-          "fetch('/test/tts',{method:'POST',body:fd})"
-            ".then(function(r){return r.json();})"
-            ".then(function(d){"
-              "st.textContent=d.ok?'In riproduzione sulla board.':'Errore TTS: '+(d.error||'?');"
-              "setTimeout(function(){st.textContent='';},3500);"
-            "})"
-            ".catch(function(){st.textContent='Errore connessione.';});"
-        "}"
-        "function descRun(){"
-          "var btn=document.getElementById('btn-desc');"
-          "var st=document.getElementById('desc-status');"
-          "var out=document.getElementById('desc-out');"
-          "btn.disabled=true; st.textContent='Analisi in corso...'; out.style.display='none';"
-          "fetch('/camera/describe',{method:'POST'})"
-            ".then(function(r){return r.json();})"
-            ".then(function(d){"
-              "btn.disabled=false; st.textContent='';"
-              "if(d.ok){"
-                "out.style.display='block'; out.textContent=d.text;"
-                "if(document.getElementById('chk-tts').checked){"
-                  "var dest=document.querySelector('input[name=tts-dest]:checked').value;"
-                  "if(dest==='browser') speakBrowser(d.text);"
-                  "else speakBoard(d.text);"
-                "}"
-              "} else {"
-                "st.textContent='Errore: '+(d.error||'?');"
-              "}"
-            "})"
-            ".catch(function(){"
-              "btn.disabled=false; st.textContent='Errore connessione.';"
-            "});"
-        "}"
-        "window.addEventListener('beforeunload',function(){"
-          "navigator.sendBeacon('/camera/off');"
-        "});"
-        "nextFrame();"
-        "</script></body></html>");
-    server.send(200, "text/html", html);
-}
-
-// Cattura un frame JPEG e lo invia — init camera on-demand
+// Cattura un frame JPEG e lo invia — usato solo per snapshot singolo
 void handleCameraFrame() {
     if (!camActive && !camInit()) {
         server.send(503, "text/plain", "camera non disponibile"); return;
@@ -2552,6 +2298,42 @@ void handleCameraFrame() {
     server.sendHeader("Cache-Control", "no-store");
     server.send_P(200, "image/jpeg", (const char*)fb->buf, fb->len);
     esp_camera_fb_return(fb);
+}
+
+// Task FreeRTOS che spinge i frame MJPEG su una connessione TCP già aperta.
+// Gira su Core 1 (stesso del WebServer) ma in un task separato così non blocca handleClient().
+static void mjpegTask(void* arg) {
+    WiFiClient client = *((WiFiClient*)arg);
+    delete (WiFiClient*)arg;
+
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: multipart/x-mixed-replace; boundary=fb");
+    client.println("Cache-Control: no-store");
+    client.println("Connection: close");
+    client.println();
+
+    while (client.connected()) {
+        camera_fb_t* fb = esp_camera_fb_get();
+        if (!fb) { vTaskDelay(30 / portTICK_PERIOD_MS); continue; }
+        client.printf("--fb\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n", fb->len);
+        client.write(fb->buf, fb->len);
+        client.print("\r\n");
+        esp_camera_fb_return(fb);
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+    client.stop();
+    vTaskDelete(NULL);
+}
+
+// MJPEG streaming: una sola connessione TCP, frame spinti in multipart
+void handleCameraStream() {
+    if (!camActive && !camInit()) {
+        server.send(503, "text/plain", "camera non disponibile"); return;
+    }
+    // Copia il client prima che il WebServer lo chiuda, poi lancia il task
+    WiFiClient* client = new WiFiClient(server.client());
+    xTaskCreate(mjpegTask, "mjpeg", 4096, client, 1, NULL);
+    // Non chiamare server.send() — il task gestisce la connessione direttamente
 }
 
 void handleCameraOff() {
@@ -2706,6 +2488,7 @@ void startWebServer() {
         ESP.restart();
     });
     server.on("/camera",                  HTTP_GET,  handleCameraPage);
+    server.on("/camera/stream",           HTTP_GET,  handleCameraStream);
     server.on("/camera/frame",            HTTP_GET,  handleCameraFrame);
     server.on("/camera/off",              HTTP_POST, handleCameraOff);
     server.on("/camera/describe",         HTTP_POST, handleCamDescribe);
