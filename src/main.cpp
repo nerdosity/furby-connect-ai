@@ -23,7 +23,7 @@
 #include "AudioFileSourceBuffer.h"
 #include "AudioFileSourcePROGMEM.h"
 
-#define FW_VERSION "2.0.0"
+#define FW_VERSION "2026.0521.1050"
 
 // ==========================================
 // PINOUT E CONFIG HARDWARE
