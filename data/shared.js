@@ -8,6 +8,8 @@ function fmtKB(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
 
 // _bootRef = { t: timestamp_ms, s: uptime_s } — persiste in sessionStorage tra pagine
 var _uptimeTimer = null;
+var _fwUpdateAvailable = false;
+var _fwCurrent = null;
 var _bootRef = (function(){
   try {
     var v=JSON.parse(sessionStorage.getItem('_furby_boot'));
@@ -36,7 +38,7 @@ function _updateSysBar(d){
   var sramPct=d.heap_total?Math.round(sramUsed*100/d.heap_total):0;
   var psramUsed=d.psram_total-d.psram_free;
   var psramPct=d.psram_total?Math.round(psramUsed*100/d.psram_total):0;
-  var fw=d.fw_version?' | FW '+d.fw_version:'';
+  var fw=d.fw_version?' | FW '+d.fw_version+(_fwUpdateAvailable?' ⬆':''):'';
   if(bar)bar.textContent='CPU '+d.cpu_mhz+'MHz'
     +' | SRAM '+fmtKB(sramUsed)+'/'+fmtKB(d.heap_total)+' ('+sramPct+'%)'
     +' | PSRAM '+fmtKB(psramUsed)+'/'+fmtKB(d.psram_total)+' ('+psramPct+'%)'
@@ -48,6 +50,20 @@ function _updateSysBar(d){
     if(!_uptimeTimer)_uptimeTimer=setInterval(_uptimeTick,1000);
   }
   _uptimeTick();
+  if(d.fw_version&&!_fwCurrent){
+    _fwCurrent=d.fw_version;
+    fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt')
+      .then(function(r){return r.text();})
+      .then(function(t){
+        var latest=t.trim();
+        if(latest&&latest!==_fwCurrent){
+          _fwUpdateAvailable=true;
+          // Ridisegna la bar con l'indicatore aggiornamento
+          var bar=document.getElementById('sys-bar')||document.getElementById('sys-info-bar');
+          if(bar)bar.textContent=bar.textContent.replace(' | FW '+_fwCurrent,' | FW '+_fwCurrent+' ⬆ '+latest);
+        }
+      }).catch(function(){});
+  }
 }
 
 document.addEventListener('DOMContentLoaded',function(){
