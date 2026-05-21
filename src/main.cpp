@@ -4010,8 +4010,8 @@ void handleSysInfo() {
     j += "\"psram_total\":"  + String(kb(psramFound() ? ESP.getPsramSize()  : 0)) + ",";
     j += "\"spiffs_used\":"   + String(kb(SPIFFS.usedBytes()))                  + ",";
     j += "\"spiffs_total\":"  + String(kb(SPIFFS.totalBytes()))                 + ",";
-    j += "\"sketch_used\":"   + String(kb(ESP.getSketchSize()))                 + ",";
-    j += "\"sketch_total\":"  + String(kb(ESP.getFreeSketchSpace() + ESP.getSketchSize())) + ",";
+    j += "\"sketch_used\":"   + String(kb(ESP.getSketchSize()))  + ",";
+    j += "\"sketch_total\":"  + String(0x400000 / 1024)          + ",";
     j += "\"flash_mb\":"      + String(ESP.getFlashChipSize() / (1024*1024))    + ",";
     j += "\"uptime_s\":"      + String(millis() / 1000) + ",";
     j += "\"fw_version\":\""  + String(FW_VERSION) + "\",";
