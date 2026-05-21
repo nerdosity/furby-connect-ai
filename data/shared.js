@@ -32,9 +32,13 @@ function _updateSysBar(d){
   var flashFree=d.flash_free_kb!=null?fmtKB(d.flash_free_kb):'?';
   var bat=d.bat_mv>0?' | BAT '+(d.bat_mv/1000).toFixed(2)+'V':'';
   var bar=document.getElementById('sys-bar')||document.getElementById('sys-info-bar');
+  var sramUsed=d.heap_total-d.heap_free;
+  var sramPct=d.heap_total?Math.round(sramUsed*100/d.heap_total):0;
+  var psramUsed=d.psram_total-d.psram_free;
+  var psramPct=d.psram_total?Math.round(psramUsed*100/d.psram_total):0;
   if(bar)bar.textContent='CPU '+d.cpu_mhz+'MHz'
-    +' | Heap '+fmtKB(d.heap_free)+'/'+fmtKB(d.heap_total)
-    +' | PSRAM '+fmtKB(d.psram_free)+'/'+fmtKB(d.psram_total)
+    +' | SRAM '+fmtKB(sramUsed)+'/'+fmtKB(d.heap_total)+' ('+sramPct+'%)'
+    +' | PSRAM '+fmtKB(psramUsed)+'/'+fmtKB(d.psram_total)+' ('+psramPct+'%)'
     +' | Sketch '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
     +' | SPIFFS '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
     +' | Flash '+flashUsed+' usati, '+flashFree+' liberi ('+d.flash_mb+'MB)'+bat+sd;

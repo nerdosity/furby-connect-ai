@@ -360,6 +360,8 @@ struct EventBehavior {
 };
 
 // Forward declarations
+static String hexFmt(const uint8_t* data, size_t len);
+static String jsonEscape(const String& s);
 void saveBehaviorConfigs();
 void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur);
 static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp_ble_addr_type_t addrType);
@@ -882,13 +884,7 @@ static void parseSensorPacket(uint8_t* data, size_t len) {
 
 static void gpListenNotifyCB(BLERemoteCharacteristic*, uint8_t* data, size_t len, bool) {
     if (len == 0) return;
-    String hex;
-    for (size_t i = 0; i < len; i++) {
-        if (data[i] < 0x10) hex += "0";
-        hex += String(data[i], HEX);
-        if (i < len - 1) hex += " ";
-    }
-    Serial.println("BLE RX: " + hex);
+    Serial.println("BLE RX: " + hexFmt(data, len));
 
     if (data[0] == 0x21) parseSensorPacket(data, len);
 
@@ -963,9 +959,7 @@ static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp
         pCharGPListen->registerForNotify(gpListenNotifyCB);
     if (pCharNListen && pCharNListen->canNotify())
         pCharNListen->registerForNotify([](BLERemoteCharacteristic*, uint8_t* data, size_t len, bool) {
-            String hex;
-            for (size_t i = 0; i < len; i++) { if (data[i]<0x10) hex+="0"; hex+=String(data[i],HEX); if(i<len-1)hex+=" "; }
-            Serial.println("BLE RX Nordic: " + hex);
+            Serial.println("BLE RX Nordic: " + hexFmt(data, len));
         });
 
     connected      = true;
@@ -1013,14 +1007,7 @@ bool connectToFurby(BLEAdvertisedDevice* dev = nullptr) {
 static void furbyWrite(const uint8_t* buf, size_t len) {
     if (!connected || !pRemoteCharacteristicTX) return;
 
-    // Log hex del payload
-    String hex;
-    for (size_t i = 0; i < len; i++) {
-        if (buf[i] < 0x10) hex += "0";
-        hex += String(buf[i], HEX);
-        if (i < len - 1) hex += " ";
-    }
-    Serial.println("BLE TX: " + hex);
+    Serial.println("BLE TX: " + hexFmt(buf, len));
 
     try {
         pRemoteCharacteristicTX->writeValue((uint8_t*)buf, len, false);
@@ -1100,6 +1087,31 @@ void lipSyncTask(void* pvParameters) {
 
 
 // ==========================================
+// UTILITY
+// ==========================================
+static String jsonEscape(const String& s) {
+    String o; o.reserve(s.length() + 16);
+    for (char c : s) {
+        if      (c == '"')  o += "\\\"";
+        else if (c == '\\') o += "\\\\";
+        else if (c == '\n') o += "\\n";
+        else if (c == '\r') o += "\\r";
+        else                o += c;
+    }
+    return o;
+}
+
+static String hexFmt(const uint8_t* data, size_t len) {
+    char buf[4]; String o; o.reserve(len * 3);
+    for (size_t i = 0; i < len; i++) {
+        snprintf(buf, sizeof(buf), "%02x", data[i]);
+        if (i) o += ' ';
+        o += buf;
+    }
+    return o;
+}
+
+// ==========================================
 // HANDLERS WEB
 // ==========================================
 void handleRoot() {
@@ -1110,50 +1122,62 @@ void handleRoot() {
     f.close();
 }
 
-// Connette immediatamente alle reti salvate in ordine di priorità
+// Stato connessione WiFi asincrona: 0=idle, 1=in corso, 2=ok, 3=fallita
+static volatile int wifiConnectState = 0;
+static String wifiConnectSSID;
+static String wifiConnectIP;
+
+static void wifiConnectTask(void*) {
+    WiFi.disconnect(true); vTaskDelay(300 / portTICK_PERIOD_MS);
+    WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(false);
+    for (int i = 0; i < wifiNetCount; i++) {
+        WiFi.begin(wifiNets[i].ssid.c_str(), wifiNets[i].pass.c_str());
+        for (int t = 0; t < 20 && WiFi.status() != WL_CONNECTED; t++)
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        if (WiFi.status() == WL_CONNECTED) {
+            isConfigMode = false;
+            wifiConnectSSID = wifiNets[i].ssid;
+            wifiConnectIP   = WiFi.localIP().toString();
+            wifiConnectState = 2;
+            vTaskDelete(NULL); return;
+        }
+        WiFi.disconnect(true); vTaskDelay(200 / portTICK_PERIOD_MS);
+    }
+    wifiConnectState = 3;
+    vTaskDelete(NULL);
+}
+
 void handleWifiConnect() {
     if (wifiNetCount == 0) {
         server.send(200, "text/html",
             "<meta charset='UTF-8'><p>Nessuna rete salvata. <a href='/'>Torna</a></p>");
         return;
     }
-    WiFi.disconnect(true); delay(300);
-    WiFi.mode(WIFI_STA);
-    WiFi.setAutoReconnect(false);
-    bool ok = false;
-    String connectedSSID;
-    for (int i = 0; i < wifiNetCount && !ok; i++) {
-        WiFi.begin(wifiNets[i].ssid.c_str(), wifiNets[i].pass.c_str());
-        for (int t = 0; t < 20 && WiFi.status() != WL_CONNECTED; t++) delay(500);
-        if (WiFi.status() == WL_CONNECTED) { ok = true; connectedSSID = wifiNets[i].ssid; }
-        else { WiFi.disconnect(true); delay(200); }
-    }
-    if (ok) {
-        isConfigMode = false;
-        String ip = WiFi.localIP().toString();
-        server.send(200, "text/html",
-            "<meta charset='UTF-8'>"
-            "<meta http-equiv='refresh' content='3;url=http://" + ip + "/'>"
-            "<style>body{font-family:sans-serif;background:#f0f4f8;display:flex;align-items:center;"
-            "justify-content:center;height:100vh;margin:0}"
-            ".box{background:#fff;border-radius:14px;padding:32px 40px;text-align:center;"
-            "box-shadow:0 4px 20px rgba(0,0,0,.1)}"
-            "h2{color:#16a34a;margin-bottom:8px}p{color:#5a6a8a;font-size:.9rem}</style>"
-            "<div class='box'><h2>&#x2705; Connesso!</h2>"
-            "<p>Rete: <b>" + connectedSSID + "</b><br>IP: <b>" + ip + "</b><br><br>"
-            "Reindirizzo in 3 secondi...</p></div>");
-    } else {
-        server.send(200, "text/html",
-            "<meta charset='UTF-8'>"
-            "<meta http-equiv='refresh' content='3;url=/'>"
-            "<style>body{font-family:sans-serif;background:#f0f4f8;display:flex;align-items:center;"
-            "justify-content:center;height:100vh;margin:0}"
-            ".box{background:#fff;border-radius:14px;padding:32px 40px;text-align:center;"
-            "box-shadow:0 4px 20px rgba(0,0,0,.1)}"
-            "h2{color:#dc2626;margin-bottom:8px}p{color:#5a6a8a;font-size:.9rem}</style>"
-            "<div class='box'><h2>&#x274C; Connessione fallita</h2>"
-            "<p>Controlla SSID e password.<br>Torno alla configurazione...</p></div>");
-    }
+    // Risponde subito con pagina di attesa; il browser fa polling su /wifi/connect/status
+    wifiConnectState = 1;
+    xTaskCreatePinnedToCore(wifiConnectTask, "wifiConn", 4096, NULL, 1, NULL, 1);
+    server.send(200, "text/html",
+        "<meta charset='UTF-8'>"
+        "<style>body{font-family:sans-serif;background:#f0f4f8;display:flex;align-items:center;"
+        "justify-content:center;height:100vh;margin:0}"
+        ".box{background:#fff;border-radius:14px;padding:32px 40px;text-align:center;"
+        "box-shadow:0 4px 20px rgba(0,0,0,.1)}"
+        "p{color:#5a6a8a;font-size:.9rem}</style>"
+        "<div class='box'><p>Connessione in corso...</p></div>"
+        "<script>setInterval(function(){"
+        "fetch('/wifi/connect/status').then(function(r){return r.json();}).then(function(d){"
+        "if(d.state===2)location.href='http://'+d.ip+'/';"
+        "else if(d.state===3)location.href='/';});"
+        "},1000);</script>");
+}
+
+void handleWifiConnectStatus() {
+    int s = wifiConnectState;
+    String j = "{\"state\":" + String(s);
+    if (s == 2) j += ",\"ip\":\"" + wifiConnectIP + "\",\"ssid\":\"" + wifiConnectSSID + "\"";
+    j += "}";
+    server.send(200, "application/json", j);
 }
 
 // GET /api/wifi/scan — scansiona e restituisce JSON
@@ -1772,7 +1796,7 @@ void handleCaptiveAndroid() {
 // GET /personality
 void handlePersonalityGet() {
     String j = "{\"prompt\":";
-    j += "\""; for (char c : gPersonalityPrompt) { if (c=='"') j+="\\\""; else if (c=='\\') j+="\\\\"; else if (c=='\n') j+="\\n"; else j+=c; } j += "\"";
+    j += "\"" + jsonEscape(gPersonalityPrompt) + "\"";
     j += ",\"voice_id\":\"" + gPersonalityVoiceId + "\"}";
     server.send(200, "application/json", j);
 }
@@ -1850,8 +1874,7 @@ void handleTestLlm() {
     String text = server.arg("text");
     if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
     String answer = callLLM("", gPersonalityPrompt, text);
-    String safe; for (char c : answer) { if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c; }
-    server.send(200, "application/json", "{\"ok\":true,\"response\":\"" + safe + "\"}");
+    server.send(200, "application/json", "{\"ok\":true,\"response\":\"" + jsonEscape(answer) + "\"}");
 }
 
 // POST /test/tts  (form: text)  →  invia ad ElevenLabs e riproduce sull'ESP32
@@ -2259,11 +2282,7 @@ void handleDebugMicRecord() {
 
 // GET /camera/describe/prompt  →  {"prompt":"..."}
 void handleCamDescPromptGet() {
-    String safe;
-    for (char c : gCamDescPrompt) {
-        if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c;
-    }
-    server.send(200, "application/json", "{\"prompt\":\"" + safe + "\"}");
+    server.send(200, "application/json", "{\"prompt\":\"" + jsonEscape(gCamDescPrompt) + "\"}");
 }
 
 // POST /camera/describe/prompt  (form: prompt)  →  salva
@@ -2294,11 +2313,7 @@ void handleCamDescribe() {
     if (gCamDescPrompt.length() > 0) sysP += " " + gCamDescPrompt;
     String answer = callLLM(b64, sysP, "Descrivi quello che vedi, in prima persona, come se fossi tu a guardare.");
     Serial.printf("[CAM-DESCRIBE] risposta LLM (%u char): \"%s\"\n", answer.length(), answer.c_str());
-    String safe;
-    for (char c : answer) {
-        if (c=='"') safe+="\\\""; else if (c=='\\') safe+="\\\\"; else if (c=='\n') safe+="\\n"; else safe+=c;
-    }
-    server.send(200, "application/json", "{\"ok\":true,\"text\":\"" + safe + "\"}");
+    server.send(200, "application/json", "{\"ok\":true,\"text\":\"" + jsonEscape(answer) + "\"}");
 }
 
 // ==========================================
@@ -2406,12 +2421,18 @@ void handleBleReset() {
 // GET /sys/info — info sistema (CPU, heap, PSRAM, SPIFFS, SD, flash)
 void handleSysInfo() {
     auto kb = [](size_t b) { return b / 1024; };
+    // SRAM interna: heap_caps include sia heap dinamica che SRAM statica allocata
+    size_t sramTotal = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    size_t sramFree  = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    // PSRAM esterna
+    size_t psramTotal = psramFound() ? heap_caps_get_total_size(MALLOC_CAP_SPIRAM) : 0;
+    size_t psramFree  = psramFound() ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM)  : 0;
     String j = "{";
     j += "\"cpu_mhz\":"      + String(getCpuFrequencyMhz())        + ",";
-    j += "\"heap_free\":"    + String(kb(ESP.getFreeHeap()))        + ",";
-    j += "\"heap_total\":"   + String(kb(ESP.getHeapSize()))        + ",";
-    j += "\"psram_free\":"   + String(kb(psramFound() ? ESP.getFreePsram() : 0)) + ",";
-    j += "\"psram_total\":"  + String(kb(psramFound() ? ESP.getPsramSize()  : 0)) + ",";
+    j += "\"heap_free\":"    + String(kb(sramFree))                 + ",";
+    j += "\"heap_total\":"   + String(kb(sramTotal))                + ",";
+    j += "\"psram_free\":"   + String(kb(psramFree))                + ",";
+    j += "\"psram_total\":"  + String(kb(psramTotal))               + ",";
     j += "\"spiffs_used\":"   + String(kb(SPIFFS.usedBytes()))                  + ",";
     j += "\"spiffs_total\":"  + String(kb(SPIFFS.totalBytes()))                 + ",";
     j += "\"sketch_used\":"   + String(kb(ESP.getSketchSize()))  + ",";
@@ -2483,7 +2504,8 @@ void startWebServer() {
     server.on("/ncsi.txt",                   HTTP_GET,  handleCaptiveWindows);
     // generic
     server.on("/redirect",                   HTTP_GET,  handleCaptiveRedirect);
-    server.on("/wifi/connect",   HTTP_POST, handleWifiConnect);
+    server.on("/wifi/connect",        HTTP_POST, handleWifiConnect);
+    server.on("/wifi/connect/status", HTTP_GET,  handleWifiConnectStatus);
     server.on("/api/wifi/scan",  HTTP_GET,  handleApiWifiScan);
     server.on("/wifi/add",       HTTP_POST, handleWifiAdd);
     server.on("/wifi/del",       HTTP_POST, handleWifiDel);
