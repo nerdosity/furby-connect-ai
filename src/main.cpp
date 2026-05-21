@@ -2542,28 +2542,26 @@ void handleWifiConnect() {
 
 // Scansione reti WiFi vicine
 void handleWifiScan() {
-    int n = WiFi.scanNetworks(false, true); // blocca ~2s, mostra anche reti nascoste
-    wifiScanResultsHTML = "";
-    if (n <= 0) {
-        wifiScanResultsHTML = "<p style='color:#aaa;font-size:.8rem;margin-top:8px'>Nessuna rete trovata.</p>";
-    } else {
-        wifiScanResultsHTML = "<table style='margin-top:10px'>"
-                              "<tr><th>SSID</th><th>dBm</th><th>Sicurezza</th><th></th></tr>";
-        for (int i = 0; i < n; i++) {
-            String enc = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "Aperta" : "WPA/WPA2/WPA3";
-            String ssidEsc = WiFi.SSID(i);
-            ssidEsc.replace("'", "\\'");
-            wifiScanResultsHTML +=
-                "<tr><td>" + WiFi.SSID(i) + "</td>"
-                "<td>" + String(WiFi.RSSI(i)) + "</td>"
-                "<td>" + enc + "</td>"
-                "<td><button type='button' class='btn btn-green btn-sm'"
-                " onclick=\"document.getElementById('ssid_inp').value='" + ssidEsc + "'\">Usa</button></td></tr>";
-        }
-        wifiScanResultsHTML += "</table>";
-    }
+    // legacy POST — redirect per compatibilità con vecchia home PROGMEM
+    WiFi.scanNetworks(false, true);
     WiFi.scanDelete();
     server.sendHeader("Location", "/"); server.send(303);
+}
+
+// GET /api/wifi/scan — scansiona e restituisce JSON
+void handleApiWifiScan() {
+    int n = WiFi.scanNetworks(false, true);
+    String j = "{\"nets\":[";
+    for (int i = 0; i < n && i < 20; i++) {
+        if (i) j += ",";
+        String ssid = WiFi.SSID(i);
+        ssid.replace("\"", "\\\"");
+        bool open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
+        j += "{\"ssid\":\"" + ssid + "\",\"rssi\":" + String(WiFi.RSSI(i)) + ",\"open\":" + (open?"true":"false") + "}";
+    }
+    j += "]}";
+    WiFi.scanDelete();
+    server.send(200, "application/json", j);
 }
 
 // Aggiunge/aggiorna rete WiFi
@@ -4075,6 +4073,7 @@ void startWebServer() {
     server.on("/canonical.html",             HTTP_GET,  handleCaptiveRedirect);
     server.on("/wifi/connect",   HTTP_POST, handleWifiConnect);
     server.on("/wifi/scan",      HTTP_POST, handleWifiScan);
+    server.on("/api/wifi/scan",  HTTP_GET,  handleApiWifiScan);
     server.on("/wifi/add",       HTTP_POST, handleWifiAdd);
     server.on("/wifi/del",       HTTP_POST, handleWifiDel);
     server.on("/wifi/up",        HTTP_POST, handleWifiUp);

@@ -128,14 +128,12 @@ tr:last-child td{border-bottom:none}
     <form action="/wifi/connect" method="POST" style="flex:1">
       <button type="submit" class="btn btn-blue">&#x26A1; Connetti ora</button>
     </form>
-    <form action="/wifi/scan" method="POST" style="flex:1">
-      <button type="submit" class="btn btn-ghost">&#x1F50D; Scansiona</button>
-    </form>
+    <button type="button" class="btn btn-ghost" style="flex:1" onclick="wifiScan()">&#x1F50D; Scansiona</button>
   </div>
   <div id="wifi-scan-results"></div>
   <hr class="divider">
   <form action="/wifi/add" method="POST">
-    <label>SSID</label><input type="text" name="ssid" placeholder="Nome rete" required>
+    <label>SSID</label><input type="text" name="ssid" id="ssid-inp" placeholder="Nome rete" required>
     <label>Password</label><input type="password" name="pass" placeholder="Password (lascia vuoto se aperta)">
     <label>Priorità (0 = massima)</label><input type="text" name="prio" value="0">
     <button type="submit" class="btn btn-blue">+ Aggiungi / Aggiorna rete</button>
@@ -441,6 +439,32 @@ function onProvChange(){
 }
 function testLlm(){var el=document.getElementById('llm-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=llm').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';if(d.ok)loadModels('');}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
 function testEl(){var el=document.getElementById('el-test-result');el.textContent='Test in corso...';el.style.color='#f59e0b';fetch('/api/test?type=el').then(function(r){return r.json();}).then(function(d){el.textContent=d.ok?'✓ OK — '+d.info:'✗ Errore: '+d.error;el.style.color=d.ok?'#16a34a':'#dc2626';}).catch(function(){el.textContent='✗ Timeout/errore';el.style.color='#dc2626';});}
+
+// ── WiFi scan ────────────────────────────────────────────────────────────────
+function wifiScan(){
+  var el=document.getElementById('wifi-scan-results');
+  el.textContent='';
+  var p=document.createElement('p');p.style='font-size:.8rem;color:#f59e0b;margin-top:8px';p.textContent='⌛ Scansione in corso (~2s)...';el.appendChild(p);
+  fetch('/api/wifi/scan').then(function(r){return r.json();}).then(function(d){
+    el.textContent='';
+    if(!d.nets||!d.nets.length){var p2=document.createElement('p');p2.style='color:#aaa;font-size:.8rem;margin-top:8px';p2.textContent='Nessuna rete trovata.';el.appendChild(p2);return;}
+    var tbl=document.createElement('table');tbl.style='margin-top:10px';
+    tbl.createTHead().insertRow().innerHTML='<th>SSID</th><th>dBm</th><th>Sicurezza</th><th></th>';
+    var tb=tbl.createTBody();
+    d.nets.forEach(function(n){
+      var tr=tb.insertRow();
+      tr.insertCell().textContent=n.ssid;
+      tr.insertCell().textContent=n.rssi;
+      tr.insertCell().textContent=n.open?'Aperta':'WPA';
+      var td=tr.insertCell();
+      var btn=document.createElement('button');
+      btn.type='button';btn.className='btn btn-green btn-sm';btn.textContent='Usa';
+      btn.onclick=function(){document.getElementById('ssid-inp').value=n.ssid;};
+      td.appendChild(btn);
+    });
+    el.appendChild(tbl);
+  }).catch(function(){var p3=document.createElement('p');p3.style='color:#ef4444;font-size:.8rem;margin-top:8px';p3.textContent='Errore scansione.';el.textContent='';el.appendChild(p3);});
+}
 
 // ── ElevenLabs voices ────────────────────────────────────────────────────────
 function loadVoices(curVid){
