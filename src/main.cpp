@@ -1744,10 +1744,25 @@ void handleSdFormat() {
     server.sendHeader("Location", "/"); server.send(303);
 }
 
-// Handler captive portal redirect — funzione named per evitare lambda con capture
 void handleCaptiveRedirect() {
     server.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/", true);
     server.send(302, "text/plain", "");
+}
+// iOS: si aspetta body esatto "Success" con titolo specifico, altrimenti non apre il browser
+void handleCaptiveIos() {
+    if (!isConfigMode) { server.send(200, "text/plain", ""); return; }
+    server.send(200, "text/html",
+        "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
+}
+// Windows: si aspetta body esatto "Microsoft Connect Test"
+void handleCaptiveWindows() {
+    if (!isConfigMode) { server.send(200, "text/plain", "Microsoft Connect Test"); return; }
+    handleCaptiveRedirect();
+}
+// Android: 204 fuori dalla config mode, redirect dentro
+void handleCaptiveAndroid() {
+    if (!isConfigMode) { server.send(204, "text/plain", ""); return; }
+    handleCaptiveRedirect();
 }
 
 // ==========================================
@@ -2456,14 +2471,18 @@ void handleApiHome() {
 
 void startWebServer() {
     server.on("/",                           HTTP_GET,  handleRoot);
-    server.on("/hotspot-detect.html",        HTTP_GET,  handleCaptiveRedirect);
-    server.on("/library/test/success.html",  HTTP_GET,  handleCaptiveRedirect);
-    server.on("/generate_204",               HTTP_GET,  handleCaptiveRedirect);
-    server.on("/gen_204",                    HTTP_GET,  handleCaptiveRedirect);
-    server.on("/connecttest.txt",            HTTP_GET,  handleCaptiveRedirect);
+    // iOS
+    server.on("/hotspot-detect.html",        HTTP_GET,  handleCaptiveIos);
+    server.on("/library/test/success.html",  HTTP_GET,  handleCaptiveIos);
+    server.on("/canonical.html",             HTTP_GET,  handleCaptiveIos);
+    // Android
+    server.on("/generate_204",               HTTP_GET,  handleCaptiveAndroid);
+    server.on("/gen_204",                    HTTP_GET,  handleCaptiveAndroid);
+    // Windows
+    server.on("/connecttest.txt",            HTTP_GET,  handleCaptiveWindows);
+    server.on("/ncsi.txt",                   HTTP_GET,  handleCaptiveWindows);
+    // generic
     server.on("/redirect",                   HTTP_GET,  handleCaptiveRedirect);
-    server.on("/ncsi.txt",                   HTTP_GET,  handleCaptiveRedirect);
-    server.on("/canonical.html",             HTTP_GET,  handleCaptiveRedirect);
     server.on("/wifi/connect",   HTTP_POST, handleWifiConnect);
     server.on("/api/wifi/scan",  HTTP_GET,  handleApiWifiScan);
     server.on("/wifi/add",       HTTP_POST, handleWifiAdd);
