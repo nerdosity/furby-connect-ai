@@ -75,20 +75,25 @@ textarea{width:100%;font-family:monospace;font-size:.8rem;border:1.5px solid #d0
     <button class="btn b-tel" onclick="descSavePrompt()" style="flex:1" data-i18n="cam.save_prompt">&#x1F4BE; Salva prompt</button>
     <button class="btn b-grn" onclick="descRun()" id="btn-desc" style="flex:1" data-i18n="cam.describe_now">&#x1F50D; Descrivi ora</button>
   </div>
-  <div style="margin-top:12px;padding:10px 12px;background:#f5f8ff;border:1.5px solid #e4eaf4;border-radius:9px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:#1a2340;cursor:pointer;user-select:none">
-      <input type="checkbox" id="chk-tts" style="width:16px;height:16px;accent-color:#3a5298">
-      <span data-i18n="cam.tts_voice">&#x1F50A; Output vocale</span>
+  <div style="margin-top:12px;border:1.5px solid #e4eaf4;border-radius:10px;overflow:hidden">
+    <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;gap:10px" onclick="ttsToggle()">
+      <span style="font-size:.82rem;font-weight:700;color:#1a2340" data-i18n="cam.tts_voice">&#x1F50A; Output vocale</span>
+      <span id="tts-toggle-track" style="position:relative;width:40px;height:22px;border-radius:11px;background:#d0d9ee;transition:background .2s;flex-shrink:0">
+        <span id="tts-toggle-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .2s"></span>
+      </span>
+      <input type="checkbox" id="chk-tts" style="display:none">
     </label>
-    <div style="display:flex;gap:0;border-radius:7px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.78rem;font-weight:700">
-      <label id="lbl-browser" style="padding:5px 12px;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
-        <input type="radio" name="tts-dest" value="browser" checked style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_browser">&#x1F5A5; Browser</span>
-      </label>
-      <label id="lbl-board" style="padding:5px 12px;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
-        <input type="radio" name="tts-dest" value="board" style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_board">&#x1F4E1; Board</span>
-      </label>
+    <div id="tts-dest-row" style="display:none;border-top:1.5px solid #e4eaf4;padding:10px 14px;background:#f5f8ff;gap:8px;flex-direction:column">
+      <div style="display:flex;border-radius:8px;overflow:hidden;border:1.5px solid #d0d9ee;font-size:.8rem;font-weight:700;width:100%">
+        <label id="lbl-browser" style="flex:1;padding:8px 0;text-align:center;cursor:pointer;background:#3a5298;color:#fff;transition:background .15s">
+          <input type="radio" name="tts-dest" value="browser" checked style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_browser">&#x1F5A5; Browser</span>
+        </label>
+        <label id="lbl-board" style="flex:1;padding:8px 0;text-align:center;cursor:pointer;background:#f0f4f8;color:#5a6a8a;transition:background .15s">
+          <input type="radio" name="tts-dest" value="board" style="display:none" onchange="ttsDestChange()"><span data-i18n="cam.tts_board">&#x1F4E1; Board</span>
+        </label>
+      </div>
+      <span style="font-size:.7rem;color:#8a9ab5" data-i18n="cam.tts_hint">Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32</span>
     </div>
-    <span style="font-size:.7rem;color:#8a9ab5" data-i18n="cam.tts_hint">Browser: Web Speech API &mdash; Board: ElevenLabs via ESP32</span>
   </div>
   <div id="desc-status" style="font-size:.7rem;color:#8a9ab5;margin-top:5px"></div>
   <div id="desc-out"></div>
@@ -125,6 +130,17 @@ function descSavePrompt(){
       st.textContent=d.ok?T('cam.saved'):T('cam.error');
       setTimeout(function(){st.textContent='';},2000);
     });
+}
+function ttsToggle(){
+  var chk=document.getElementById('chk-tts');
+  chk.checked=!chk.checked;
+  var on=chk.checked;
+  var track=document.getElementById('tts-toggle-track');
+  var thumb=document.getElementById('tts-toggle-thumb');
+  var row=document.getElementById('tts-dest-row');
+  track.style.background=on?'#3a5298':'#d0d9ee';
+  thumb.style.left=on?'21px':'3px';
+  row.style.display=on?'flex':'none';
 }
 function ttsDestChange(){
   var v=document.querySelector('input[name=tts-dest]:checked').value;

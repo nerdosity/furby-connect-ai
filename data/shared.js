@@ -191,6 +191,8 @@ var _bootRef = (function(){
 function _bootRefSet(t,s){
   _bootRef={t:t,s:s};
   try{sessionStorage.setItem('_furby_boot',JSON.stringify(_bootRef));}catch(e){}
+  if(!_uptimeTimer)_uptimeTimer=setInterval(_uptimeTick,1000);
+  _uptimeTick();
 }
 
 function _uptimeTick(){
