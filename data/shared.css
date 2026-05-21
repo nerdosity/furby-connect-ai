@@ -90,13 +90,8 @@ body { background: var(--fb-bg); }
 .ble-dot.scan { background:#f59e0b; box-shadow:0 0 5px #f59e0b88; }
 
 /* tabs (debug) */
-.fb-tabs { border-bottom:2px solid var(--fb-border); background:#fff; overflow-x:auto; white-space:nowrap; }
-.fb-tab { display:inline-block; padding:11px 20px; font-size:.82rem; font-weight:700; color:var(--fb-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s; }
-.fb-tab.active { color:var(--fb-blue); border-bottom-color:var(--fb-blue); }
-.fb-tab:hover  { color:var(--fb-blue); }
-.fb-tab-pane { display:none; padding:16px; max-width:1400px; margin:0 auto; }
-.fb-tab-pane.active { display:block; }
-@media(min-width:900px){ .fb-tab{padding:14px 28px;font-size:.95rem;} .fb-tab-pane{padding:32px 40px;} }
+.tab-content > .tab-pane { padding:16px 0; }
+@media(min-width:900px){ .tab-content > .tab-pane { padding:24px 0; } }
 
 /* sensors (debug) */
 .sensors { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px 12px; }
