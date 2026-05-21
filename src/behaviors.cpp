@@ -171,6 +171,64 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
     }
 }
 
+String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText) {
+    String log;
+    auto L = [&](const String& s){ log += s + "\n"; Serial.println(s); };
+
+    bool prevDry = gDryRun;
+    gDryRun = true;
+
+    L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
+      + " behaviors=" + String(gEventBehaviorCount));
+
+    String sttText = vadText;
+    if (sttText.length() > 0)
+        L("[SIM] testo VAD simulato: \"" + sttText + "\"");
+
+    String base64Img;
+    if (camActive || camInit()) {
+        camera_fb_t* fb = esp_camera_fb_get();
+        if (fb) {
+            base64Img = base64Encode(fb->buf, fb->len);
+            esp_camera_fb_return(fb);
+            L("[SIM] camera: frame catturato (" + String(base64Img.length()) + " char base64)");
+        } else {
+            L("[SIM] camera: esp_camera_fb_get() NULL, procedo senza immagine");
+        }
+    } else {
+        L("[SIM] camera: non disponibile");
+    }
+
+    EventBehavior* beh = nullptr;
+    for (int i = 0; i < gEventBehaviorCount; i++) {
+        EventBehavior& b = gEventBehaviors[i];
+        if (b.trigger != trg) continue;
+        if (trg == TRG_SENSOR && b.sensor_id != sensorId) continue;
+        beh = &b;
+        L("[SIM] comportamento trovato: \"" + String(b.name) + "\" (" + String(b.consequence_count) + " conseguenze)");
+        break;
+    }
+
+    if (!beh) {
+        L("[SIM] nessun comportamento specifico — uso processStimulusDefault");
+        processStimulusDefault(base64Img);
+        gDryRun = prevDry;
+        return log;
+    }
+
+    for (int c = 0; c < beh->consequence_count; c++) {
+        const Consequence& csq = beh->consequences[c];
+        L("[SIM] conseguenza " + String(c+1) + "/" + String(beh->consequence_count)
+          + " tipo=" + String(csq.type)
+          + (csq.text[0] ? String(" testo=\"") + csq.text + "\"" : "")
+          + (csq.action_id[0] ? String(" action=") + csq.action_id : ""));
+        executeConsequence(csq, base64Img, sttText);
+    }
+
+    gDryRun = prevDry;
+    return log;
+}
+
 void processStimulusDefault(const String& base64Img) {
     String sysPrompt, userText;
     if (sdAvailable) {
@@ -194,6 +252,11 @@ void processStimulusDefault(const String& base64Img) {
 }
 
 void processStimulus(TriggerType trg, uint8_t sensorId) {
+    // senza Furby connesso e senza dry run non ha senso reagire
+    if (!connected && !gDryRun) {
+        Serial.println("[STIMULUS] skip — Furby non connesso e dry run disattivo");
+        return;
+    }
     Serial.printf("[STIMULUS] trigger=%d sensorId=%d behaviors=%d heap=%u PSRAM=%u\n",
         trg, sensorId, gEventBehaviorCount, esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 

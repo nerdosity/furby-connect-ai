@@ -115,6 +115,10 @@ var TRANSLATIONS={
     'csq.prompt_placeholder':'Prompt fisso (es. \'Commenta in modo irritato la foto\')',
     'csq.llm_placeholder':'Contesto evento (es. \'Qualcuno ti parla\')',
     'csq.action_placeholder':'-- scegli azione --',
+    'sim.title':'<i class="bi bi-lightning-charge"></i> Simulatore eventi',
+    'sim.desc':'Simula un trigger e vedi la catena di conseguenze eseguita. Il dry run skippa le azioni BLE fisiche ma esegue LLM e TTS normalmente.',
+    'sim.trigger':'Trigger','sim.vad_text':'Testo VAD simulato','sim.run':'<i class="bi bi-play-fill"></i> Esegui simulazione',
+    'sim.running':'Simulazione in corso...','sim.done':'Simulazione completata.','sim.err':'Errore simulazione: ',
     'test.llm_title':'Test LLM','test.llm_desc':'Invia un messaggio al modello con il personality prompt corrente (senza foto)',
     'test.llm_send':'<i class="bi bi-send"></i> Invia','test.llm_placeholder':'Cosa pensi del meteo oggi?',
     'test.tts_title':'Test TTS','test.tts_desc':'Invia testo ad ElevenLabs e riproduci sull\'ESP32 (usa la voce corrente)',
@@ -238,6 +242,10 @@ var TRANSLATIONS={
     'csq.prompt_placeholder':'Fixed prompt (e.g. \'Comment the photo in an annoyed way\')',
     'csq.llm_placeholder':'Event context (e.g. \'Someone is talking to you\')',
     'csq.action_placeholder':'-- choose action --',
+    'sim.title':'<i class="bi bi-lightning-charge"></i> Event simulator',
+    'sim.desc':'Simulate a trigger and see the consequence chain executed. Dry run skips physical BLE actions but runs LLM and TTS normally.',
+    'sim.trigger':'Trigger','sim.vad_text':'Simulated VAD text','sim.run':'<i class="bi bi-play-fill"></i> Run simulation',
+    'sim.running':'Running simulation...','sim.done':'Simulation complete.','sim.err':'Simulation error: ',
     'test.llm_title':'Test LLM','test.llm_desc':'Send a message to the model with the current personality prompt (no photo)',
     'test.llm_send':'<i class="bi bi-send"></i> Send','test.llm_placeholder':'What do you think about the weather today?',
     'test.tts_title':'Test TTS','test.tts_desc':'Send text to ElevenLabs and play on the ESP32 (uses current voice)',
@@ -637,6 +645,39 @@ function setLang(l){
     </div>
   </div></div>
 
+  <!-- Simulatore eventi -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="sim.title"><i class="bi bi-lightning-charge"></i> Simulatore eventi</h6>
+    <p class="text-muted small mb-3" data-i18n="sim.desc">Simula un trigger e vedi la catena di conseguenze eseguita. Il dry run skippa le azioni BLE fisiche ma esegue LLM e TTS normalmente.</p>
+    <div class="row g-2 mb-2">
+      <div class="col">
+        <label class="form-label small" data-i18n="sim.trigger">Trigger</label>
+        <select class="form-select form-select-sm" id="sim-trg" onchange="simTrgChange()">
+          <option value="0" data-i18n="beh.trg.vad">VAD (parlato)</option>
+          <option value="1" data-i18n="beh.trg.button">Pulsante ESP32</option>
+          <option value="2" data-i18n="beh.trg.sensor">Sensore Furby</option>
+        </select>
+      </div>
+      <div class="col" id="sim-sensor-wrap" style="display:none">
+        <label class="form-label small" data-i18n="beh.sensor_label">Sensore</label>
+        <select class="form-select form-select-sm" id="sim-sensor"></select>
+      </div>
+    </div>
+    <div id="sim-vad-wrap" class="mb-2">
+      <label class="form-label small" data-i18n="sim.vad_text">Testo VAD simulato <span class="text-muted">(opzionale)</span></label>
+      <input type="text" class="form-control form-control-sm" id="sim-vad-text" placeholder="es. Ciao Furby, come stai?">
+    </div>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="sim-dry" checked>
+        <label class="form-check-label small" for="sim-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
+      </div>
+    </div>
+    <button class="btn btn-warning w-100" onclick="simRun()" id="btn-sim-run" data-i18n="sim.run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    <div id="sim-msg" class="small mt-2 text-muted"></div>
+    <div id="sim-log" class="fb-log mt-2" style="display:none"></div>
+  </div></div>
+
   <!-- Test LLM -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.llm_title">Test LLM</h6>
@@ -880,7 +921,7 @@ function testTtsSend(){
       }).then(function(r){if(!r.ok){return r.json().then(function(e){throw new Error(JSON.stringify(e));});}return r.arrayBuffer();})
       .then(function(buf){
         var ctx=new(window.AudioContext||window.webkitAudioContext)();
-        ctx.decodeAudioData(buf,function(decoded){var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);msg.className='small mt-1 text-success';msg.textContent=t('aud.el_playing');src.onended=function(){msg.textContent='';ctx.close();};});
+        ctx.decodeAudioData(buf,function(decoded){var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);msg.className='small mt-1 text-success';msg.innerHTML=t('aud.el_playing');src.onended=function(){msg.innerHTML='';ctx.close();};});
       }).catch(function(e){msg.className='small mt-1 text-danger';msg.textContent='Errore ElevenLabs: '+e.message;});
     }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent='Errore connessione ESP32.';});
   } else {
@@ -974,6 +1015,28 @@ function tbehRun(){
     if(d.ok){msg.className='small mt-1 text-success';msg.textContent=dry?t('act.trigger_sent_dry'):t('act.trigger_sent');}
     else{msg.className='small mt-1 text-danger';msg.textContent=t('act.trigger_err')+(d.error||'?');}
   }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
+}
+function simTrgChange(){
+  var trg=parseInt(document.getElementById('sim-trg').value);
+  document.getElementById('sim-sensor-wrap').style.display=(trg===2)?'block':'none';
+  document.getElementById('sim-vad-wrap').style.display=(trg===0)?'block':'none';
+  if(trg===2){var sel=document.getElementById('sim-sensor');sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});}
+}
+function simRun(){
+  var trg=parseInt(document.getElementById('sim-trg').value);
+  var sid=(trg===2)?parseInt(document.getElementById('sim-sensor').value||'0'):0;
+  var vadText=(trg===0)?document.getElementById('sim-vad-text').value:'';
+  var dry=document.getElementById('sim-dry').checked;
+  var msg=document.getElementById('sim-msg'),logEl=document.getElementById('sim-log'),btn=document.getElementById('btn-sim-run');
+  msg.className='small mt-2 text-muted';msg.textContent=t('sim.running');logEl.style.display='none';logEl.textContent='';btn.disabled=true;
+  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('vad_text',vadText);fd.append('dry_run',dry?'1':'0');
+  fetch('/test/simulate',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;
+    if(d.ok){
+      msg.className='small mt-2 text-success';msg.textContent=t('sim.done');
+      logEl.style.display='block';logEl.textContent=d.log||'(nessun log)';logEl.scrollTop=logEl.scrollHeight;
+    } else {msg.className='small mt-2 text-danger';msg.textContent=t('sim.err')+(d.error||'?');}
+  }).catch(function(){btn.disabled=false;msg.className='small mt-2 text-danger';msg.textContent=t('error_conn');});
 }
 (function(){
   var sel=document.getElementById('tbeh-sensor');

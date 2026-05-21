@@ -59,7 +59,7 @@ function renderNav(active){
         '<img src="/img/title.png" alt="FurbyMind" onerror="this.outerHTML=\'<h1>FurbyMind</h1>\'">'+
         '<p>IP: <span id="esp-ip">—</span> &nbsp;•&nbsp; Uptime: <span id="esp-uptime">—</span></p>'+
       '</div>'+
-      '<nav class="fb-nav">'+desktopItems+'</nav>'+
+      '<nav class="fb-nav">'+desktopItems+'<a href="#" class="text-danger" onclick="if(confirm('+confirmFn+')){fetch(\'/reset\',{method:\'POST\'});}"><span data-i18n="nav.reset">Reset ESP32</span></a></nav>'+
       langSel+
       '<button class="fb-hamburger" data-bs-toggle="offcanvas" data-bs-target="#nav-offcanvas"><span></span><span></span><span></span></button>'+
     '</div>';

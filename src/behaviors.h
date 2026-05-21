@@ -8,3 +8,4 @@ void speakText(const String& text);
 void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText);
 void processStimulusDefault(const String& base64Img);
 void processStimulus(TriggerType trg, uint8_t sensorId);
+String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText);

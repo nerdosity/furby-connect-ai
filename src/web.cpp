@@ -271,8 +271,8 @@ static void handleApiConfig() {
 
 static void handleApiTest() {
     String type = server.arg("type");
-    WiFiClientSecure client; client.setInsecure();
-    HTTPClient http;
+    WiFiClientSecure client; client.setInsecure(); client.setTimeout(15);
+    HTTPClient http; http.setReuse(false);
     bool ok = false; String info, err;
 
     if (type == "llm") {
@@ -876,6 +876,23 @@ static void handleTestBehavior() {
     }, "beh_test", 16384, a, 1, NULL, 1);
 }
 
+static void handleTestSimulate() {
+    if (isProcessing || isSpeaking) {
+        server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
+    }
+    int trg = server.arg("trigger").toInt();
+    int sid = server.arg("sensor_id").toInt();
+    String vadText = server.arg("vad_text");
+    if (trg < 0 || trg > 2) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger non valido\"}"); return;
+    }
+    isProcessing = true;
+    String simLog = processStimulusSimulated((TriggerType)trg, (uint8_t)sid, vadText);
+    isProcessing = false;
+    simLog.replace("\\", "\\\\"); simLog.replace("\"", "\\\""); simLog.replace("\n", "\\n");
+    server.send(200, "application/json", "{\"ok\":true,\"log\":\"" + simLog + "\"}");
+}
+
 static void handleDebugPage() {
     File f = SPIFFS.open("/debug.html", "r");
     if (!f) { server.send(503, "text/plain", "debug.html non trovato — eseguire uploadfs"); return; }
@@ -1258,6 +1275,7 @@ void startWebServer() {
     server.on("/test/tts",            HTTP_POST, handleTestTts);
     server.on("/test/voices",         HTTP_GET,  handleTestVoices);
     server.on("/test/behavior",       HTTP_POST, handleTestBehavior);
+    server.on("/test/simulate",       HTTP_POST, handleTestSimulate);
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);
