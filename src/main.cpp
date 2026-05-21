@@ -63,6 +63,12 @@ void setup() {
     sttEnabled      = preferences.getBool("stt_en",  false);
     gCamDescPrompt  = preferences.getString("cam_desc_prompt",
         "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
+    Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
+        llm_provider.c_str(), llm_model.c_str(),
+        openai_api_key.length()  ? "OK" : "MANCANTE",
+        claude_api_key.length()  ? "OK" : "MANCANTE",
+        elevenlabs_api_key.length()? "OK" : "MANCANTE",
+        elevenlabs_voice_id.c_str(), el_audio_fmt.c_str());
     loadBehaviorConfigs();
     loadEventBehaviors();
 

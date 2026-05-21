@@ -7,6 +7,29 @@
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+static void nvsPut(const char* key, const String& val) {
+    Preferences p; p.begin("furby", false); p.putString(key, val); p.end();
+}
+
+static void httpLog() {
+    String uri = server.uri();
+    // skippa polling frequente e risorse statiche
+    if (uri == "/sys/info" || uri == "/debug/mic/rms" || uri == "/debug/sensors" ||
+        uri == "/ble/status" || uri.endsWith(".map")) return;
+    String args;
+    for (int i = 0; i < server.args(); i++) {
+        const String& n = server.argName(i);
+        if (n == "api_key" || n == "el_key" || n == "pass" || n == "openai_key" || n == "claude_key")
+            args += " " + n + "=[***]";
+        else
+            args += " " + n + "=" + server.arg(i).substring(0, 60);
+    }
+    Serial.printf("[HTTP] %s %s%s\n",
+        server.method() == HTTP_POST ? "POST" : "GET",
+        uri.c_str(), args.c_str());
+}
+#define HTTP_LOG() httpLog()
+
 static String jsonEscape(const String& s) {
     String o; o.reserve(s.length() + 16);
     for (char c : s) {
@@ -89,6 +112,7 @@ static void handleRoot() {
 }
 
 static void handleWifiConnect() {
+    HTTP_LOG();
     if (wifiNetCount == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"no_nets\"}"); return; }
     wifiConnectState = 1;
     xTaskCreatePinnedToCore(wifiConnectTask, "wifiConn", 4096, NULL, 1, NULL, 1);
@@ -105,6 +129,7 @@ static void handleWifiConnectStatus() {
 }
 
 static void handleApiWifiScan() {
+    HTTP_LOG();
     int n = WiFi.scanNetworks(false, true);
     JsonDocument doc;
     JsonArray nets = doc["nets"].to<JsonArray>();
@@ -120,6 +145,7 @@ static void handleApiWifiScan() {
 }
 
 static void handleWifiAdd() {
+    HTTP_LOG();
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     int    prio = server.arg("prio").toInt();
@@ -128,11 +154,13 @@ static void handleWifiAdd() {
 }
 
 static void handleWifiDel() {
+    HTTP_LOG();
     removeWifiNet(server.arg("idx").toInt());
     server.sendHeader("Location", "/"); server.send(303);
 }
 
 static void handleWifiUp() {
+    HTTP_LOG();
     int idx = server.arg("idx").toInt();
     if (idx > 0) {
         WifiNet tmp = wifiNets[idx];
@@ -144,6 +172,7 @@ static void handleWifiUp() {
 }
 
 static void handleWifiDown() {
+    HTTP_LOG();
     int idx = server.arg("idx").toInt();
     if (idx < wifiNetCount - 1) {
         WifiNet tmp = wifiNets[idx];
@@ -227,38 +256,39 @@ static void handleApiModels() {
 }
 
 static void handleApiConfig() {
+    HTTP_LOG();
     bool changed = false;
     if (server.hasArg("openai_key") && server.arg("openai_key").length()) {
         openai_api_key = server.arg("openai_key");
-        preferences.putString("openai", openai_api_key);
+        nvsPut("openai", openai_api_key);
         changed = true;
     }
     if (server.hasArg("claude_key") && server.arg("claude_key").length()) {
         claude_api_key = server.arg("claude_key");
-        preferences.putString("claude", claude_api_key);
+        nvsPut("claude", claude_api_key);
         changed = true;
     }
     if (server.hasArg("el_key") && server.arg("el_key").length()) {
         elevenlabs_api_key = server.arg("el_key");
-        preferences.putString("11labs", elevenlabs_api_key);
+        nvsPut("11labs", elevenlabs_api_key);
         changed = true;
     }
     if (server.hasArg("el_vid") && server.arg("el_vid").length()) {
         elevenlabs_voice_id = server.arg("el_vid");
-        preferences.putString("11labs_vid", elevenlabs_voice_id);
+        nvsPut("11labs_vid", elevenlabs_voice_id);
         changed = true;
     }
     if (server.hasArg("provider")) {
         String p = server.arg("provider");
         if (p == "openai" || p == "claude") {
             llm_provider = p;
-            preferences.putString("llm_prov", llm_provider);
+            nvsPut("llm_prov", llm_provider);
             changed = true;
         }
     }
     if (server.hasArg("model") && server.arg("model").length()) {
         llm_model = server.arg("model");
-        preferences.putString("llm_model", llm_model);
+        nvsPut("llm_model", llm_model);
         changed = true;
     }
     if (server.hasArg("ssid") && server.arg("ssid").length()) {
@@ -270,6 +300,7 @@ static void handleApiConfig() {
 }
 
 static void handleApiTest() {
+    HTTP_LOG();
     String type = server.arg("type");
     WiFiClientSecure client; client.setInsecure(); client.setTimeout(15);
     HTTPClient http; http.setReuse(false);
@@ -352,49 +383,52 @@ static void handleApiVoices() {
 }
 
 static void handleLlmSave() {
+    HTTP_LOG();
     String newProv  = server.arg("provider");
     String newModel = server.arg("model");
     String newKey   = server.arg("api_key");
     if (newProv == "openai" || newProv == "claude") {
         llm_provider = newProv;
-        preferences.putString("llm_prov", llm_provider);
+        nvsPut("llm_prov", llm_provider);
     }
     if (newModel.length() > 0) {
         llm_model = newModel;
-        preferences.putString("llm_model", llm_model);
+        nvsPut("llm_model", llm_model);
     }
     if (newKey.length() > 0 && !newKey.startsWith("****")) {
         if (llm_provider == "claude") {
             claude_api_key = newKey;
-            preferences.putString("claude", claude_api_key);
+            nvsPut("claude", claude_api_key);
         } else {
             openai_api_key = newKey;
-            preferences.putString("openai", openai_api_key);
+            nvsPut("openai", openai_api_key);
         }
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
 
 static void handleElSave() {
+    HTTP_LOG();
     String newKey = server.arg("el_key");
     String newVid = server.arg("el_vid");
     String newFmt = server.arg("el_fmt");
     if (newKey.length() > 0 && !newKey.startsWith("****")) {
         elevenlabs_api_key = newKey;
-        preferences.putString("11labs", elevenlabs_api_key);
+        nvsPut("11labs", elevenlabs_api_key);
     }
     if (newVid.length() > 0) {
         elevenlabs_voice_id = newVid;
-        preferences.putString("11labs_vid", elevenlabs_voice_id);
+        nvsPut("11labs_vid", elevenlabs_voice_id);
     }
     if (newFmt == "pcm" || newFmt == "mp3") {
         el_audio_fmt = newFmt;
-        preferences.putString("11labs_fmt", el_audio_fmt);
+        nvsPut("11labs_fmt", el_audio_fmt);
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
 
 static void handleVadSave() {
+    HTTP_LOG();
     String thr = server.arg("threshold");
     if (thr.length() > 0) {
         vad_threshold = constrain(thr.toInt(), 0, 32767);
@@ -439,6 +473,7 @@ static void handleCfgList() {
 }
 
 static void handleCfgActivate() {
+    HTTP_LOG();
     int idx = server.arg("idx").toInt();
     if (idx < 0 || idx >= behaviorConfigCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     activeBehaviorConfig = idx;
@@ -447,6 +482,7 @@ static void handleCfgActivate() {
 }
 
 static void handleCfgRename() {
+    HTTP_LOG();
     int idx = server.arg("idx").toInt();
     if (idx < 0 || idx >= behaviorConfigCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     String nm = server.arg("name");
@@ -458,6 +494,7 @@ static void handleCfgRename() {
 }
 
 static void handleCfgNew() {
+    HTTP_LOG();
     if (behaviorConfigCount >= MAX_CONFIGS) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"max configs\"}"); return; }
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Config";
     BehaviorConfig& cfg = behaviorConfigs[behaviorConfigCount];
@@ -469,6 +506,7 @@ static void handleCfgNew() {
 }
 
 static void handleCfgDel() {
+    HTTP_LOG();
     int idx = server.arg("idx").toInt();
     if (idx < 0 || idx >= behaviorConfigCount || behaviorConfigCount <= 1) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     for (int i = idx; i < behaviorConfigCount - 1; i++) behaviorConfigs[i] = behaviorConfigs[i+1];
@@ -479,6 +517,7 @@ static void handleCfgDel() {
 }
 
 static void handleCfgRuleSet() {
+    HTTP_LOG();
     int cfgIdx  = server.arg("idx").toInt();
     int slot    = server.arg("slot").toInt();
     int senId   = server.arg("sensorId").toInt();
@@ -501,6 +540,7 @@ static void handleCfgRuleSet() {
 }
 
 static void handleCfgRuleDel() {
+    HTTP_LOG();
     int cfgIdx = server.arg("idx").toInt();
     int slot   = server.arg("slot").toInt();
     if (cfgIdx < 0 || cfgIdx >= behaviorConfigCount || slot < 0 || slot >= MAX_CFG_RULES) { server.send(400, "application/json", "{\"ok\":false}"); return; }
@@ -510,6 +550,7 @@ static void handleCfgRuleDel() {
 }
 
 static void handleBleScan() {
+    HTTP_LOG();
     if (isConfigMode || bleScanning || connected) {
         server.send(200, "application/json", "{\"ok\":false,\"reason\":\"busy\"}"); return;
     }
@@ -518,6 +559,7 @@ static void handleBleScan() {
 }
 
 static void handleBleScanStop() {
+    HTTP_LOG();
     bleScanStop();
     server.send(200, "application/json", "{\"ok\":true}");
 }
@@ -542,6 +584,7 @@ static void handleBleStatus() {
 }
 
 static void handleBleConnect() {
+    HTTP_LOG();
     if (connected)     { server.send(200, "application/json", "{\"ok\":true,\"already\":true}"); return; }
     if (bleConnecting) { server.send(200, "application/json", "{\"ok\":false,\"error\":\"connecting\"}"); return; }
     String addr = server.arg("addr");
@@ -570,27 +613,30 @@ static void handleBleConnect() {
 }
 
 static void handleBleDisconnect() {
+    HTTP_LOG();
     bleDisconnect();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handleBleSave() {
+    HTTP_LOG();
     String newSvc  = server.arg("svc_uuid");
     String newChar = server.arg("char_uuid");
     if (newSvc.length()  == 36) {
         ble_service_uuid = newSvc;
-        preferences.putString("ble_svc",  ble_service_uuid);
+        nvsPut("ble_svc", ble_service_uuid);
         serviceUUID = BLEUUID(ble_service_uuid.c_str());
     }
     if (newChar.length() == 36) {
         ble_char_uuid_tx = newChar;
-        preferences.putString("ble_char", ble_char_uuid_tx);
+        nvsPut("ble_char", ble_char_uuid_tx);
         charUUID_GPWrite = BLEUUID(ble_char_uuid_tx.c_str());
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
 
 static void handleSdFormat() {
+    HTTP_LOG();
     if (!sdAvailable) { server.send(400, "text/plain", "SD non disponibile"); return; }
     File root = SD_MMC.open("/");
     File file = root.openNextFile();
@@ -607,6 +653,7 @@ static void handleSdFormat() {
 }
 
 static void handleBleAbort() {
+    HTTP_LOG();
     bleUserDisconnect = true;
     bleConnecting     = false;
     if (pBleClient && pBleClient->isConnected()) pBleClient->disconnect();
@@ -615,6 +662,7 @@ static void handleBleAbort() {
 }
 
 static void handleBleReset() {
+    HTTP_LOG();
     server.send(200, "application/json", "{\"ok\":true}");
     xTaskCreatePinnedToCore([](void*) {
         bleUserDisconnect = true;
@@ -710,6 +758,7 @@ static void handlePersonalityGet() {
 }
 
 static void handlePersonalitySave() {
+    HTTP_LOG();
     if (server.hasArg("prompt"))   gPersonalityPrompt  = server.arg("prompt");
     if (server.hasArg("voice_id")) gPersonalityVoiceId = server.arg("voice_id");
     saveEventBehaviors();
@@ -724,6 +773,7 @@ static void handleBehaviorsGet() {
 }
 
 static void handleBehaviorsSave() {
+    HTTP_LOG();
     String body = server.arg("plain");
     if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
     JsonDocument doc;
@@ -738,6 +788,7 @@ static void handleBehaviorsSave() {
 }
 
 static void handleBehaviorsExport() {
+    HTTP_LOG();
     if (!SPIFFS.exists("/behaviors.json")) saveEventBehaviors();
     File f = SPIFFS.open("/behaviors.json", "r");
     if (!f) { server.send(404, "text/plain", "not found"); return; }
@@ -746,6 +797,7 @@ static void handleBehaviorsExport() {
 }
 
 static void handleBehaviorsImport() {
+    HTTP_LOG();
     String body = server.arg("plain");
     if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
     JsonDocument doc;
@@ -760,6 +812,7 @@ static void handleBehaviorsImport() {
 }
 
 static void handleBehaviorsActions() {
+    HTTP_LOG();
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
     for (int i = 0; i < FURBY_ACTIONS_COUNT; i++) {
@@ -772,6 +825,7 @@ static void handleBehaviorsActions() {
 }
 
 static void handleTestLlm() {
+    HTTP_LOG();
     if (isProcessing) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return; }
     String text = server.arg("text");
     if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
@@ -782,6 +836,7 @@ static void handleTestLlm() {
 }
 
 static void handleTestTts() {
+    HTTP_LOG();
     if (isProcessing || isSpeaking) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return; }
     String text = server.arg("text");
     if (text.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"text mancante\"}"); return; }
@@ -820,6 +875,7 @@ static const char EL_BUILTIN_VOICES[] PROGMEM =
     "]}";
 
 static void handleTestVoices() {
+    HTTP_LOG();
     if (elevenlabs_api_key.length() == 0) {
         server.send(200, "application/json", FPSTR(EL_BUILTIN_VOICES)); return;
     }
@@ -852,6 +908,7 @@ static void handleTestVoices() {
 }
 
 static void handleTestBehavior() {
+    HTTP_LOG();
     if (isProcessing || isSpeaking) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
     }
@@ -877,6 +934,7 @@ static void handleTestBehavior() {
 }
 
 static void handleTestSimulate() {
+    HTTP_LOG();
     if (isProcessing || isSpeaking) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
     }
@@ -937,11 +995,13 @@ static File   _uploadFile;
 static String _uploadPath;
 
 static void handleFsPut() {
+    HTTP_LOG();
     if (!_uploadFile && _uploadPath.length() == 0)
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"nessun file ricevuto\"}");
 }
 
 static void handleFsUpload() {
+    HTTP_LOG();
     HTTPUpload& up = server.upload();
     if (up.status == UPLOAD_FILE_START) {
         _uploadPath = server.arg("path");
@@ -957,6 +1017,7 @@ static void handleFsUpload() {
 }
 
 static void handleFsDel() {
+    HTTP_LOG();
     String path = server.arg("path");
     if (path.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"path mancante\"}"); return; }
     if (path[0] != '/') path = "/" + path;
@@ -996,6 +1057,7 @@ static void handleDebugSensors() {
 }
 
 static void handleDebugCmd() {
+    HTTP_LOG();
     String bytesStr = server.arg("bytes");
     String channel  = server.arg("channel");
     if (bytesStr.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"bytes missing\"}"); return; }
@@ -1028,17 +1090,20 @@ static void handleDebugMicRms() {
 }
 
 static void handleDebugAmp() {
+    HTTP_LOG();
     if (server.method() == HTTP_POST) setAmplifier(server.arg("on") == "1");
     bool on = (ch32PortState >> 4) & 1;
     server.send(200, "application/json", "{\"ok\":true,\"on\":" + String(on ? "true" : "false") + "}");
 }
 
 static void handleDebugVol() {
+    HTTP_LOG();
     setVolume(server.arg("vol").toInt());
     server.send(200, "application/json", "{\"ok\":true,\"vol\":" + String(constrain(server.arg("vol").toInt(), 0, 100)) + "}");
 }
 
 static void handleDebugTone() {
+    HTTP_LOG();
     if (isSpeaking) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"speaking\"}"); return; }
     int freq = server.arg("freq").toInt(); if (freq <= 0) freq = 440;
     int ms   = server.arg("ms").toInt();   if (ms  <= 0) ms   = 800;
@@ -1105,6 +1170,7 @@ static void micRecordTask(void*) {
 }
 
 static void handleDebugMicRecord() {
+    HTTP_LOG();
     if (isSpeaking)    { server.send(503, "application/json", "{\"ok\":false,\"error\":\"speaking\"}"); return; }
     if (micTestActive) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"test gia in corso\"}"); return; }
     micTestActive = true;
@@ -1117,12 +1183,14 @@ static void handleCamDescPromptGet() {
 }
 
 static void handleCamDescPromptSave() {
+    HTTP_LOG();
     gCamDescPrompt = server.arg("prompt");
-    preferences.putString("cam_desc_prompt", gCamDescPrompt);
+    nvsPut("cam_desc_prompt", gCamDescPrompt);
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handleCamDescribe() {
+    HTTP_LOG();
     if (!camActive && !camInit()) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"camera non disponibile\"}"); return;
     }
@@ -1139,6 +1207,7 @@ static void handleCamDescribe() {
 }
 
 static void handleCameraPage() {
+    HTTP_LOG();
     if (!camActive) camInit();
     File f = SPIFFS.open("/camera.html", "r");
     if (f) { server.sendHeader("Cache-Control", "public, max-age=3600"); server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
@@ -1148,6 +1217,7 @@ static void handleCameraPage() {
 }
 
 static void handleCameraFrame() {
+    HTTP_LOG();
     if (!camActive && !camInit()) { server.send(503, "text/plain", "camera non disponibile"); return; }
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) { server.send(503, "text/plain", "frame non disponibile"); return; }
@@ -1178,12 +1248,14 @@ static void mjpegTask(void* arg) {
 }
 
 static void handleCameraStream() {
+    HTTP_LOG();
     if (!camActive && !camInit()) { server.send(503, "text/plain", "camera non disponibile"); return; }
     WiFiClient* client = new WiFiClient(server.client());
     xTaskCreate(mjpegTask, "mjpeg", 4096, client, 1, NULL);
 }
 
 static void handleCameraOff() {
+    HTTP_LOG();
     camDeinit();
     server.send(200, "text/plain", "ok");
 }

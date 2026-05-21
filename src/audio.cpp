@@ -83,22 +83,39 @@ String elOutputFormat() {
 class AudioOutputI2SDirect : public AudioOutput {
 public:
     bool begin() override { setAmplifier(true); isSpeaking = true; return true; }
+
+    // chiamato dal decoder quando cambia sample rate (es. MP3 a 22050 Hz)
+    bool SetRate(int hz) override {
+        i2s_set_clk(I2S_NUM, hz, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
+        return true;
+    }
+
     bool ConsumeSample(int16_t sample[2]) override {
-        long amp = (abs((int)sample[0]) + abs((int)sample[1])) / 2;
-        currentAmplitude = (int)amp;
-        i2s_write_mono(sample, 1);
+        // mix stereo→mono
+        int16_t mono = (int16_t)(((int32_t)sample[0] + sample[1]) / 2);
+        currentAmplitude = (int)abs(mono);
+        i2s_write_mono(&mono, 1);
         return true;
     }
     bool stop() override {
         i2s_zero_dma_buffer(I2S_NUM);
         isSpeaking = false; currentAmplitude = 0;
+        // ripristina 16kHz per il microfono
+        i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
         setAmplifier(false); return true;
     }
 };
 
 void i2s_write_mono(const int16_t* buf, int samples) {
+    // Il driver I2S vuole frame stereo (L+R) anche in ONLY_LEFT — duplichiamo ogni campione
+    const int CHUNK = 128;
+    int16_t stereo[CHUNK * 2];
     size_t written;
-    i2s_write(I2S_NUM, buf, samples * sizeof(int16_t), &written, portMAX_DELAY);
+    for (int i = 0; i < samples; i += CHUNK) {
+        int n = (samples - i < CHUNK) ? (samples - i) : CHUNK;
+        for (int k = 0; k < n; k++) { stereo[k*2] = buf[i+k]; stereo[k*2+1] = buf[i+k]; }
+        i2s_write(I2S_NUM, stereo, n * 2 * sizeof(int16_t), &written, portMAX_DELAY);
+    }
 }
 
 // ── MP3 playback ──────────────────────────────────────────────────────────────
