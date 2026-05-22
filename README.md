@@ -1,84 +1,153 @@
 # Furby Connect AI
 
-Firmware per ESP32-S3 che trasforma un Furby classico in un robot interattivo alimentato da AI.
+<p align="center">
+  <img src="graphic/writing_512_154_dark.png#gh-dark-mode-only" alt="Furby LLM" width="420">
+  <img src="graphic/writing_512_154_light.png#gh-light-mode-only" alt="Furby LLM" width="420">
+</p>
 
-## Cosa fa
+<p align="center">
+  Firmware ESP32-S3 che trasforma un Furby Connect (2016) in un robot AI autonomo,<br>
+  con visione camera, sintesi vocale e lipsync via Bluetooth LE.
+</p>
 
-Il Furby guarda con la camera, pensa con GPT-4o-mini (o Claude), risponde a voce tramite ElevenLabs TTS e muove la bocca sincronizzata all'audio via Bluetooth LE. Ha una personalità volutamente maleducata e cinica.
+<p align="center">
+  <a href="README.en.md">🇬🇧 English</a> &nbsp;·&nbsp;
+  <a href="#build--flash">Installazione</a> &nbsp;·&nbsp;
+  <a href="#stato-del-progetto">Stato</a>
+</p>
+
+---
+
+## Come funziona
 
 ```
-Pressione tasto → cattura immagine → GPT-4o-mini (vision)
-  → testo → ElevenLabs TTS → audio MP3/PCM
-  → I2S (ES8311 DAC) + lipsync BLE → bocca Furby
+Pressione tasto / VAD / sensore BLE
+  → captureImage()   → Base64 JPEG
+  → LLM (OpenAI GPT-4o-mini o Anthropic Claude)   ← cache SD card
+  → testo risposta
+  → ElevenLabs TTS   → MP3 / PCM 16-bit 16 kHz mono
+  → I2S → ES8311 DAC → speaker
+  → ampiezza PCM → lipsync BLE → bocca Furby
 ```
+
+Il Furby ha una personalità deliberatamente maleducata e cinica, configurabile dalla web UI.
+
+---
 
 ## Hardware
 
-- **Board**: [Waveshare ESP32-S3-CAM](https://amzn.to/4fyMf8R)
-- **Speaker**: codec ES8311 via I2S
-- **Microfoni**: codec ES7210 (4 mic array) via I2S
-- **Furby**: qualsiasi Furby Connect (2016) con BLE
+| Componente | Dettaglio |
+|---|---|
+| **MCU** | [Waveshare ESP32-S3-CAM](https://amzn.to/4fyMf8R) — 240 MHz, 8 MB PSRAM, 16 MB flash |
+| **Camera** | OV2640 su connettore DVP |
+| **DAC / speaker** | ES8311 via I2S (MCLK 10, BCLK 11, LRCK 12, DOUT 14) |
+| **ADC / microfoni** | ES7210 — array 4 mic via I2S |
+| **SD card** | microSD in modalità 1-bit MMC (CLK 16, CMD 43, D0 44) |
+| **Furby** | Furby Connect (2016) — connessione BLE |
+| **Tasto** | GPIO 0 (ISR su fronte di discesa) |
 
-## Stato del progetto
-
-> Aggiornato a maggio 2026. Le barre indicano il completamento reale, non quello desiderato.
-
-| Componente | Progresso | Note |
-|---|---|---|
-| Camera + vision AI | `████████░░` 80% | Funziona. Latenza alta su immagini grandi |
-| ElevenLabs TTS | `███████░░░` 70% | MP3 funziona (free); PCM solo account pro |
-| ES8311 DAC (speaker) | `█████████░` 90% | Stabile |
-| ES7210 ADC (microfoni) | `████████░░` 80% | VAD funziona, sensibilità da affinare |
-| VAD con filtro 250Hz | `███████░░░` 70% | Falsi negativi con parlato sottovocce |
-| Multi-WiFi (5 reti) | `█████████░` 90% | Stabile, mesh-compatible |
-| Multi-provider LLM | `████████░░` 80% | OpenAI ok; Claude da testare più a fondo |
-| BLE scan + connect | `████████░░` 80% | Connessione stabile ma a volte lenta |
-| Lipsync BLE | `████░░░░░░` 40% | Movimenti bocca grossolani, tuning in corso |
-| Cache audio SD card + prefix | `████████░░` 80% | Cache hit: prefisso cinico generato 1 volta (1 call LLM + 1 TTS), poi tutto da SD |
-| Web UI debug | `████████░░` 80% | Funzionale; UX mobile/desktop ancora ruvida |
-| Decodifica MP3 (ESP32) | `██████░░░░` 60% | Integrato ma poco testato su lungo periodo |
-| Captive portal config | `█████████░` 90% | Stabile al primo avvio |
+---
 
 ## Funzionalità
 
-- Risposta contestuale con visione camera (GPT-4o-mini / Claude)
-- Sintesi vocale multilingua (ElevenLabs) — MP3 per account free, PCM per pro
-- Lipsync bocca via BLE in tempo reale (in tuning)
-- VAD (rilevamento parlato) con filtro passa-alto 250Hz per ignorare rumori meccanici
-- Cache audio su SD card: le risposte già sentite non vengono rigenerate; alla seconda richiesta viene generato un prefisso cinico ("come ti avevo già detto…") con 1 sola call LLM+TTS, poi salvato — dalla terza in poi tutto da SD, zero token
-- Web UI di debug su `http://furby.local`
-- Configurazione WiFi via captive portal (AP `Furby_Config`)
-- Multi-WiFi (fino a 5 reti salvate, priorità configurabile)
-- Multi-provider LLM: OpenAI o Anthropic Claude
+- **Visione contestuale** — cattura JPEG, lo manda al LLM con prompt di personalità
+- **Multi-provider LLM** — OpenAI (GPT-4o-mini di default) o Anthropic Claude; modello configurabile dalla UI
+- **TTS multilingua** — ElevenLabs `multilingual_v2`; MP3 su account free, PCM 16 kHz su pro
+- **Lipsync BLE** — ampiezza PCM → byte open/close inviati in real-time al Furby via BLE
+- **VAD** — rilevamento parlato con filtro passa-alto 250 Hz per ignorare rumori meccanici del Furby stesso
+- **STT** (opzionale) — buffer PSRAM, disattivato di default
+- **Cache audio SD card** — le risposte già sentite vengono riutilizzate; alla seconda richiesta viene generato un prefisso cinico con 1 sola call LLM+TTS, poi salvato su SD — dalla terza in poi zero token
+- **Multi-WiFi** — fino a 5 reti salvate in flash con priorità configurabile; compatibile con mesh
+- **Web UI** — dashboard su `http://furby.local` (o IP) con Bootstrap 5 + Bootstrap Icons
+- **Captive portal** — AP `Furby_Config` al primo avvio per configurare WiFi e API key
+- **Behaviors / personalità** — sistema di trigger (VAD, tasto, sensori BLE) con conseguenze configurabili (azione Furby, TTS fisso, prompt LLM)
 
-## Build e flash
+---
 
-**Requisiti**: PlatformIO (consigliato) o Arduino IDE 2.x con core ESP32-S3.
+## Architettura sorgente
+
+```
+src/
+├── main.cpp          — setup(), loop(), ISR
+├── globals.h/cpp     — variabili condivise, struct, costanti pin
+├── hw.h/cpp          — camera, ES8311 DAC, ES7210 ADC, SD card, I/O expander
+├── audio.h/cpp       — pipeline audio: I2S, MP3, PCM, lipsync
+├── llm.h/cpp         — chiamate OpenAI / Claude, ElevenLabs TTS
+├── ble_furby.h/cpp   — BLE scan, connect, lipsync task (Core 0)
+├── behaviors.h/cpp   — sistema trigger/conseguenze, personalità
+└── web.h/cpp         — WebServer, MJPEG stream, API REST, web UI HTML
+```
+
+### Protocollo BLE
+
+| | UUID |
+|---|---|
+| Service | `dab91435-b5a1-e29c-b041-bcd562613bde` |
+| TX characteristic | `dab91383-b5a1-e29c-b041-bcd562613bde` |
+
+Il task `lipSyncTask` gira su Core 0 e scrive byte derivati dall'ampiezza PCM in real-time.
+
+---
+
+## Stato del progetto
+
+> Aggiornato maggio 2026. Le barre indicano il completamento reale.
+
+| Componente | Progresso | Note |
+|---|---|---|
+| Camera + vision AI | `████████░░` 80% | Funziona; latenza alta su frame grandi |
+| ElevenLabs TTS | `███████░░░` 70% | MP3 funziona (free); PCM solo account pro |
+| ES8311 DAC | `█████████░` 90% | Stabile |
+| ES7210 ADC / VAD | `████████░░` 80% | VAD ok; falsi negativi con parlato sottovocce |
+| Multi-WiFi | `█████████░` 90% | Stabile, mesh-compatible |
+| Multi-provider LLM | `████████░░` 80% | OpenAI ok; Claude in test |
+| BLE scan + connect | `████████░░` 80% | Stabile ma a volte lenta la connessione iniziale |
+| Lipsync BLE | `████░░░░░░` 40% | Movimenti bocca grossolani, tuning in corso |
+| Cache audio SD card | `████████░░` 80% | Cache hit con prefisso cinico — 1 call LLM poi tutto da SD |
+| Behaviors / triggers | `███████░░░` 70% | Funziona; UI di configurazione da rifinire |
+| Web UI | `████████░░` 80% | Funzionale; UX mobile/desktop ancora ruvida |
+| MP3 decoding | `██████░░░░` 60% | Integrato, poco testato su lungo periodo |
+| Captive portal | `█████████░` 90% | Stabile al primo avvio |
+
+---
+
+## Build & flash
+
+**Requisiti:** PlatformIO (consigliato) o Arduino IDE 2.x con core ESP32-S3.
 
 ```bash
 # Build + flash firmware
 pio run -t upload
 
-# Flash filesystem (web UI)
+# Flash filesystem SPIFFS (web UI)
 pio run -t uploadfs
 ```
 
-Al primo avvio (o senza WiFi salvato) il dispositivo crea l'AP `Furby_Config`: collegati e vai su `http://192.168.4.1` per inserire le credenziali WiFi e le API key.
+Al primo avvio (o senza reti WiFi salvate) il dispositivo crea l'AP **`Furby_Config`**.  
+Collegati e vai su `http://192.168.4.1` per inserire WiFi, OpenAI key, ElevenLabs key e Voice ID.
+
+---
 
 ## Configurazione
 
-Le credenziali vengono salvate in flash via `Preferences`.
+Tutti i parametri vengono salvati in flash via `Preferences` (namespace `furby`).
 
 | Parametro | Dove |
 |---|---|
-| WiFi SSID/password | captive portal o web UI |
+| WiFi SSID / password (fino a 5) | captive portal o web UI → Reti |
 | OpenAI API key | web UI → Impostazioni |
 | Anthropic API key | web UI → Impostazioni |
 | ElevenLabs API key + Voice ID | web UI → Impostazioni |
-| Formato TTS (MP3/PCM) | web UI → Impostazioni |
-| Provider LLM (openai/claude) | web UI → Impostazioni |
+| Formato TTS (`mp3` / `pcm`) | web UI → Impostazioni |
+| Provider LLM (`openai` / `claude`) | web UI → Impostazioni |
+| Modello LLM | web UI → Impostazioni |
 | Soglia VAD | web UI → Audio |
+| Qualità / risoluzione camera | web UI → Camera |
+| Prompt personalità | web UI → Personalità |
+| Behaviors e trigger | web UI → Behaviors |
 
-## README in inglese
+---
 
-[README.en.md](README.en.md)
+## Licenza
+
+Nessuna licenza formale — progetto hobbistico. Usa il codice come vuoi, ma non ci sono garanzie di funzionamento.
