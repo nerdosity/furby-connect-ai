@@ -15,6 +15,7 @@ void initI2S();
 bool camInit();
 void camDeinit();
 void camApplySettings(framesize_t size, int quality);
+void camApplyFlicker(int hz);
 
 bool sdMount();
 void sdUnmount();

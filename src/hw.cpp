@@ -337,3 +337,20 @@ void camApplySettings(framesize_t size, int quality) {
     s->set_framesize(s, size);
     s->set_quality(s, quality);
 }
+
+void camApplyFlicker(int hz) {
+    if (!camActive) return;
+    sensor_t* s = esp_camera_sensor_get();
+    if (!s) return;
+    // OV2640 anti-banding: 0=disable, 1=50Hz, 2=60Hz
+    int mode = (hz == 50) ? 1 : (hz == 60) ? 2 : 0;
+    s->set_bpc(s, mode == 0 ? 0 : 1);
+    s->set_wpc(s, mode == 0 ? 0 : 1);
+    s->set_lenc(s, mode == 0 ? 0 : 1);
+    if (s->set_gain_ctrl) s->set_gain_ctrl(s, mode == 0 ? 1 : 0);
+    if (s->set_aec2)      s->set_aec2(s, mode != 0 ? 1 : 0);
+    // light frequency hint via raw register (0xA8): 0=50Hz, 1=60Hz
+    if (mode != 0) {
+        s->set_reg(s, 0xA8, 0xFF, (mode == 2) ? 1 : 0);
+    }
+}

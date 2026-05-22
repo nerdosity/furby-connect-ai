@@ -107,6 +107,7 @@ int          camStreamQuality = 12;
 framesize_t  camStreamSize    = FRAMESIZE_QVGA;
 int          camSnapQuality   = 8;
 framesize_t  camSnapSize      = FRAMESIZE_VGA;
+int          camFlicker       = 0; // 0=nessuno, 50=50Hz, 60=60Hz
 EventBehavior* gEventBehaviors     = nullptr;  // allocato in PSRAM da setup()
 int            gEventBehaviorCount = 0;
 

@@ -1622,6 +1622,7 @@ void startWebServer() {
         d["stream_size"]    = framesizeToStr(camStreamSize);
         d["snap_quality"]   = camSnapQuality;
         d["snap_size"]      = framesizeToStr(camSnapSize);
+        d["flicker"]        = camFlicker;
         String out; serializeJson(d, out);
         server.send(200, "application/json", out);
     });
@@ -1651,6 +1652,15 @@ void startWebServer() {
             camSnapSize = strToFramesize(server.arg("snap_size"));
             Preferences p; p.begin("furby", false); p.putInt("cam_sns", (int)camSnapSize); p.end();
             changed = true;
+        }
+        if (server.hasArg("flicker")) {
+            int hz = server.arg("flicker").toInt();
+            if (hz == 0 || hz == 50 || hz == 60) {
+                camFlicker = hz;
+                Preferences p; p.begin("furby", false); p.putInt("cam_flk", hz); p.end();
+                camApplyFlicker(hz);
+                changed = true;
+            }
         }
         server.send(200, "application/json", "{\"ok\":true}");
     });

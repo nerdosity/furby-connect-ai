@@ -45,6 +45,13 @@
             <option value="UXGA">UXGA 1600×1200</option>
           </select>
         </div>
+        <div class="col-auto">
+          <select class="form-select form-select-sm" id="flicker-sel" onchange="onFlicker(this.value)">
+            <option value="0" selected data-i18n="cam.flicker_none">nessuno</option>
+            <option value="50" data-i18n="cam.flicker_50">50 Hz</option>
+            <option value="60" data-i18n="cam.flicker_60">60 Hz</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -168,6 +175,10 @@ function onSnapSize(v){
   var fd=new FormData();fd.append('snap_size',v);
   fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
 }
+function onFlicker(v){
+  var fd=new FormData();fd.append('flicker',v);
+  fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+}
 function jpegToQual(q){return Math.round(10-(q-4)*(10-1)/(40-4));}
 fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
   var sq=jpegToQual(d.stream_quality||12);
@@ -180,6 +191,8 @@ fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
   document.getElementById('snap-q-label').textContent=nq;
   var ns=document.getElementById('snap-size-sel');
   for(var i=0;i<ns.options.length;i++){if(ns.options[i].value===d.snap_size)ns.selectedIndex=i;}
+  var fl=document.getElementById('flicker-sel');
+  for(var i=0;i<fl.options.length;i++){if(parseInt(fl.options[i].value)===(d.flicker||0))fl.selectedIndex=i;}
 }).catch(function(){});
 
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){
