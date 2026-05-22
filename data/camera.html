@@ -94,14 +94,14 @@
       <textarea class="form-control form-control-sm font-monospace mb-2" id="desc-prompt" rows="4" placeholder="Sei un Furby maleducato..."></textarea>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
         <button class="btn btn-primary px-3" onclick="descSavePrompt()" data-i18n="cam.save_prompt"><i class="bi bi-floppy"></i> Salva prompt</button>
-        <button class="btn btn-success px-3" onclick="descRun()" id="btn-desc" data-i18n="cam.describe_now"><i class="bi bi-eye"></i> Descrivi ora</button>
+        <button class="btn btn-success px-3" onclick="descRun()" id="btn-desc" data-i18n="cam.describe_now" disabled><i class="bi bi-eye"></i> Descrivi ora</button>
       </div>
 
       <!-- TTS toggle -->
       <div class="border rounded overflow-hidden">
         <!-- toggle row -->
         <div class="d-flex align-items-center justify-content-between px-3 py-2" style="cursor:pointer" onclick="ttsToggle()">
-          <span class="fw-semibold small" data-i18n="cam.tts_voice"><i class="bi bi-volume-up"></i> output vocale</span>
+          <span class="fw-semibold small" data-i18n="cam.tts_voice"><i class="bi bi-volume-up"></i> Output vocale</span>
           <div class="form-check form-switch mb-0">
             <input class="form-check-input" type="checkbox" id="chk-tts" style="pointer-events:none">
           </div>
@@ -255,6 +255,17 @@ function descRun(){
     })
     .catch(function(){btn.disabled=false;st.textContent=T('cam.error_conn');});
 }
+fetch('/api/home').then(function(r){return r.json();}).then(function(d){
+  var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
+  var btn=document.getElementById('btn-desc');
+  if(hasLlm){
+    btn.disabled=false;
+  } else {
+    btn.disabled=true;
+    btn.title=T('cam.no_llm_token');
+    new bootstrap.Tooltip(btn,{trigger:'hover focus',title:T('cam.no_llm_token')});
+  }
+}).catch(function(){});
 window.addEventListener('beforeunload',function(){
   document.getElementById('camimg').src='';
   navigator.sendBeacon('/camera/off');

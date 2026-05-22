@@ -687,8 +687,8 @@ function setLang(l){
       <input type="text" class="form-control form-control-sm" id="dbg-vad-text" placeholder="es. Ciao Furby, come stai?">
     </div>
     <div id="dbg-rule-hint" class="small text-info mb-2"></div>
-    <div class="form-check mb-2">
-      <input class="form-check-input" type="checkbox" id="dbg-skip-llm">
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" id="dbg-skip-llm" role="switch">
       <label class="form-check-label small" for="dbg-skip-llm">Salta chiamate LLM <span class="text-muted">(mostra prompt, risparmia token)</span></label>
     </div>
     <!-- Pulsanti rapidi per stimoli configurati -->
@@ -1382,7 +1382,9 @@ fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
 setInterval(pollSensors,500);pollSensors();
 setLang(gLang);
 fetch('/api/home').then(r=>r.json()).then(function(d){
-  llmMaskApply(!!(d.cur_key&&d.cur_key.length>0),!!(d.el_key&&d.el_key.length>0));
-}).catch(function(){llmMaskApply(false,false);});
+  var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
+  llmMaskApply(hasLlm,!!(d.el_key&&d.el_key.length>0));
+  if(!hasLlm){document.getElementById('dbg-skip-llm').checked=true;}
+}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;});
 </script>
 </body></html>

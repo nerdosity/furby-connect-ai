@@ -399,11 +399,12 @@ static void handleApiTest() {
 }
 
 static void handleApiVoices() {
-    if (elevenlabs_api_key.length() == 0) { server.send(200, "application/json", "[]"); return; }
+    String key = server.hasArg("key") ? server.arg("key") : elevenlabs_api_key;
+    if (key.length() == 0) { server.send(200, "application/json", "[]"); return; }
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/voices");
-    http.addHeader("xi-api-key", elevenlabs_api_key);
+    http.addHeader("xi-api-key", key);
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
     if (http.GET() == 200) {

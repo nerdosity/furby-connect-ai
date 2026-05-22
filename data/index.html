@@ -113,7 +113,7 @@
       </div>
       <div class="mb-2">
         <label class="form-label" data-i18n="llm.label_key">token API</label>
-        <input type="text" class="form-control form-control-sm" name="api_key" id="tok" oninput="llmKeyChange()">
+        <input type="text" class="form-control form-control-sm" name="api_key" id="tok" oninput="llmKeyChange()" onblur="llmKeyBlur()">
       </div>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
         <button type="submit" class="btn btn-primary px-3" id="llm-save-btn" disabled data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
