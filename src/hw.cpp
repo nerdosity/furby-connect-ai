@@ -104,8 +104,7 @@ void ch32Init() {
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
     ch32SetBit(6, true);
-    ch32SetBit(4, true);
-    Serial.println("IO expander: init OK, IO6+IO4=1");
+    Serial.println("IO expander: init OK, IO6=1");
 }
 
 void setAmplifier(bool enable) {

@@ -745,13 +745,18 @@ static void handleSdFormat() {
 // tenta di rimontare la SD senza riavvio — prova 20MHz poi 4MHz
 static void handleSdReinit() {
     HTTP_LOG();
-    SD_MMC.end(); delay(100);
+    SD_MMC.end();
+    Serial.end();
+    uart_driver_delete(UART_NUM_0);
+    pinMode(43, INPUT); pinMode(44, INPUT);
+    delay(100);
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
     if (!sdAvailable) {
         SD_MMC.end(); delay(50);
         sdAvailable = SD_MMC.begin("/sdcard", true, false, 4000);
     }
+    Serial.begin(115200);
     if (sdAvailable) {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
@@ -764,12 +769,17 @@ static void handleSdReinit() {
     }
 }
 
-// formatta la SD in FAT32 (distrugge tutti i dati) — usa 4MHz per compatibilità
+// formatta la SD in FAT32 (distrugge tutti i dati)
 static void handleSdFormatFAT() {
     HTTP_LOG();
-    SD_MMC.end(); delay(100);
+    SD_MMC.end();
+    Serial.end();
+    uart_driver_delete(UART_NUM_0);
+    pinMode(43, INPUT); pinMode(44, INPUT);
+    delay(100);
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true, true, 4000);
+    Serial.begin(115200);
     if (sdAvailable) {
         Preferences prefs; prefs.begin("furby_sys", false);
         prefs.putInt("file_id", 0); prefs.end();
