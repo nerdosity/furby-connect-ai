@@ -46,9 +46,29 @@ static String jsonEscape(const String& s) {
     return o;
 }
 
+static String _spiffsVersion;
+static const String& spiffsVersion() {
+    if (_spiffsVersion.length()) return _spiffsVersion;
+    File f = SPIFFS.open("/version.txt", "r");
+    if (f) { _spiffsVersion = f.readStringUntil('\n'); _spiffsVersion.trim(); f.close(); }
+    if (!_spiffsVersion.length()) _spiffsVersion = FW_VERSION;
+    return _spiffsVersion;
+}
+
 static void serveSpiffs(const char* path, const char* mime, const char* cache) {
     File f = SPIFFS.open(path, "r");
     if (!f) { server.send(404); return; }
+    server.sendHeader("Cache-Control", cache);
+    server.streamFile(f, mime);
+    f.close();
+}
+
+static void serveSpiffsETag(const char* path, const char* mime, const char* cache) {
+    String etag = "\"" + spiffsVersion() + "\"";
+    if (server.header("If-None-Match") == etag) { server.send(304); return; }
+    File f = SPIFFS.open(path, "r");
+    if (!f) { server.send(404); return; }
+    server.sendHeader("ETag", etag);
     server.sendHeader("Cache-Control", cache);
     server.streamFile(f, mime);
     f.close();
@@ -846,7 +866,7 @@ static void handleSysInfo() {
     d["uptime_s"]     = millis() / 1000;
     d["bat_mv"]       = readBatteryMv();
     d["chip_temp_c"]  = (int)temperatureRead();
-    d["fw_version"]   = FW_VERSION;
+    d["fw_version"]   = spiffsVersion();
     d["el_key"]       = elevenlabs_api_key;
     d["el_voice_id"]  = elevenlabs_voice_id;
     d["el_fmt"]       = el_audio_fmt;
@@ -1613,14 +1633,10 @@ void startWebServer() {
     server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                            "public, max-age=86400"); });
     server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                            "public, max-age=86400"); });
     server.on("/shared.css", HTTP_GET, []() {
-        server.sendHeader("ETag", "\"" FW_VERSION "\"");
-        if (server.header("If-None-Match") == "\"" FW_VERSION "\"") { server.send(304); return; }
-        serveSpiffs("/shared.css", "text/css; charset=utf-8", "public, max-age=3600");
+        serveSpiffsETag("/shared.css", "text/css; charset=utf-8", "public, max-age=3600");
     });
     server.on("/shared.js",  HTTP_GET, []() {
-        server.sendHeader("ETag", "\"" FW_VERSION "\"");
-        if (server.header("If-None-Match") == "\"" FW_VERSION "\"") { server.send(304); return; }
-        serveSpiffs("/shared.js", "application/javascript; charset=utf-8", "public, max-age=3600");
+        serveSpiffsETag("/shared.js", "application/javascript; charset=utf-8", "public, max-age=3600");
     });
 
     static const char* hdrs[] = {"If-None-Match"};
