@@ -107,7 +107,7 @@
           </select>
         </div>
         <div class="col-8">
-          <label class="form-label d-flex align-items-center gap-2" id="tok-lbl"><span data-i18n="llm.label_model">modello</span> <small class="text-muted fw-normal" id="mdl-st"></small><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="loadModels(document.getElementById('mdl').value)" title="Ricarica modelli"><i class="bi bi-arrow-clockwise"></i></button></label>
+          <label class="form-label d-flex align-items-center gap-2" id="tok-lbl"><span data-i18n="llm.label_model">modello</span> <small class="text-muted fw-normal" id="mdl-st"></small><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="loadModels(document.getElementById('mdl').value,document.getElementById('tok').value.trim())" title="Ricarica modelli"><i class="bi bi-arrow-clockwise"></i></button></label>
           <select class="form-select form-select-sm" name="model" id="mdl" disabled></select>
         </div>
       </div>
@@ -134,7 +134,7 @@
     <form id="el-form" onsubmit="return elSubmit(event)">
       <div class="mb-2">
         <label class="form-label" data-i18n="el.label_key">token API ElevenLabs</label>
-        <input type="text" class="form-control form-control-sm" name="el_key" id="el-key" oninput="elKeyChange()">
+        <input type="text" class="form-control form-control-sm" name="el_key" id="el-key" oninput="elKeyChange()" onblur="elKeyBlur()">
       </div>
       <div class="mb-2">
         <label class="form-label d-flex align-items-center gap-2"><span data-i18n="el.label_voice">Voce</span><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button></label>
@@ -505,14 +505,12 @@ function showAlert(id,type,msg){
   el.innerHTML='<div class="alert alert-'+type+' alert-dismissible py-2 px-3 mb-0 small" role="alert">'
     +msg+'<button type="button" class="btn-close btn-sm py-2" data-bs-dismiss="alert"></button></div>';
 }
-var _llmKeyTimer=null;
 function llmKeyChange(){
   _llmUpdateBtns();
-  clearTimeout(_llmKeyTimer);
+}
+function llmKeyBlur(){
   var k=document.getElementById('tok').value.trim();
-  if(k.length>20){
-    _llmKeyTimer=setTimeout(function(){loadModels(document.getElementById('mdl').value||null);},600);
-  }
+  if(k.length>0) loadModels(document.getElementById('mdl').value||null, k);
 }
 function llmSubmit(e){
   e.preventDefault();
@@ -533,13 +531,13 @@ function fillSelect(list,cur){
   list.forEach(function(m){var o=document.createElement('option');o.value=m;o.text=m;if(m===cur){o.selected=true;found=true;}sel.appendChild(o);});
   if(!found&&cur){var o=document.createElement('option');o.value=cur;o.text=cur;o.selected=true;sel.insertBefore(o,sel.firstChild);}
 }
-function loadModels(cur){
+function loadModels(cur, keyOverride){
   var p=document.getElementById('prov').value,st=document.getElementById('mdl-st');
-  var hasKey=document.getElementById('tok').value.trim().length>0;
-  if(!hasKey){st.textContent='';_llmUpdateBtns();return;}
+  var k=keyOverride||document.getElementById('tok').value.trim();
+  if(!k){st.textContent='';_llmUpdateBtns();return;}
   _llmSetLoading(true);
   st.textContent=T('llm.models_loading');
-  fetch('/api/models?provider='+p).then(function(r){return r.json();}).then(function(d){
+  fetch('/api/models?provider='+p+'&key='+encodeURIComponent(k)).then(function(r){return r.json();}).then(function(d){
     if(!d.ok&&d.error==='no_key'){st.textContent=T('llm.models_no_key');}
     else{
       var list=Array.isArray(d)?d:(d.models||[]);
@@ -582,11 +580,10 @@ function _elUpdateBtns(){
 }
 function elKeyChange(){
   _elUpdateBtns();
-  clearTimeout(_elKeyTimer);
+}
+function elKeyBlur(){
   var k=document.getElementById('el-key').value.trim();
-  _elKeyTimer=setTimeout(function(){
-    elUpdateVoiceState(k,document.getElementById('el-voice-sel').value);
-  },800);
+  if(k.length>0) elUpdateVoiceState(k, document.getElementById('el-voice-sel').value);
 }
 function elSubmit(e){
   e.preventDefault();
@@ -693,7 +690,7 @@ function elUpdateVoiceState(key, curVid){
   }
   _elSetLoading(true);
   if(hint)hint.textContent=T('el.voice_loading');
-  fetch('/api/voices').then(function(r){return r.json();}).then(function(voices){
+  fetch('/api/voices?key='+encodeURIComponent(key.trim())).then(function(r){return r.json();}).then(function(voices){
     if(!voices||!voices.length){
       sel.innerHTML='<option value="'+(curVid||'')+'">'+((curVid&&curVid.length>8?curVid.substring(0,8)+'…':curVid)||'-')+'</option>';
       if(hint)hint.textContent=T('el.voice_empty');

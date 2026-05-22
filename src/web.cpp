@@ -258,7 +258,9 @@ static void handleApiModels() {
     if (openai_api_key.length() == 0) { Preferences p; p.begin("furby",true); openai_api_key = p.getString("openai",""); p.end(); }
     if (claude_api_key.length() == 0) { Preferences p; p.begin("furby",true); claude_api_key  = p.getString("claude",""); p.end(); }
 
-    const String& key = (provider == "claude") ? claude_api_key : openai_api_key;
+    String tmpKey = server.arg("key");
+    String key = tmpKey.length() > 0 ? tmpKey
+               : (provider == "claude") ? claude_api_key : openai_api_key;
     if (key.length() == 0) {
         server.send(200, "application/json", "{\"ok\":false,\"error\":\"no_key\"}"); return;
     }
@@ -272,7 +274,7 @@ static void handleApiModels() {
 
     if (provider == "openai") {
         http.begin(client, "https://api.openai.com/v1/models");
-        http.addHeader("Authorization", "Bearer " + openai_api_key);
+        http.addHeader("Authorization", "Bearer " + key);
         int code = http.GET();
         if (code == 200) {
             String body = http.getString();
@@ -287,13 +289,15 @@ static void handleApiModels() {
                 bool isExcl = id.indexOf("embed") >= 0 || id.indexOf("tts") >= 0 ||
                               id.indexOf("dall-e") >= 0 || id.indexOf("whisper") >= 0 ||
                               id.indexOf("babbage") >= 0 || id.indexOf("davinci") >= 0 ||
-                              id.indexOf("ada") >= 0;
+                              id.indexOf("ada") >= 0    || id.indexOf("image") >= 0 ||
+                              id.indexOf("audio") >= 0  || id.indexOf("transcri") >= 0 ||
+                              id.indexOf("search") >= 0 || id.indexOf("realtime") >= 0;
                 if (isText && !isExcl) models.add(id);
             }
         }
     } else if (provider == "claude") {
         http.begin(client, "https://api.anthropic.com/v1/models");
-        http.addHeader("x-api-key", claude_api_key);
+        http.addHeader("x-api-key", key);
         http.addHeader("anthropic-version", "2023-06-01");
         if (http.GET() == 200) extractJsonIds(http.getString(), models);
     }
