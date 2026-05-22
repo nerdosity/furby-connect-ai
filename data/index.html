@@ -171,6 +171,9 @@
       <span class="fb-dot fb-dot-warn"></span>
       <span class="fw-semibold" data-i18n="sys.loading">carico...</span>
     </div>
+    <div id="sd-progress" class="progress mb-2" style="height:6px;display:none" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-bar" style="width:0%"></div>
+    </div>
     <div id="sd-btn" class="mb-1"></div>
     <div id="sd-msg" class="small text-muted mt-1"></div>
   </div>
@@ -316,9 +319,15 @@ function applyHome(d){
   var sdBtn=document.getElementById('sd-btn');
   var sdMsg=document.getElementById('sd-msg');
   if(d.sd_present){
-    sdRow.innerHTML='<span class="fb-dot fb-dot-ok"></span><span class="fw-semibold">'+T('sd.present')+'</span><span class="ms-auto text-muted small">'+d.sd_used_mb+' / '+d.sd_total_mb+' MB</span>';
+    var sdPct=d.sd_total_mb?Math.round(d.sd_used_mb*100/d.sd_total_mb):0;
+    var sdBarCls=sdPct>90?'bg-danger':sdPct>70?'bg-warning':'bg-success';
+    sdRow.innerHTML='<span class="fb-dot fb-dot-ok"></span><span class="fw-semibold">'+T('sd.present')+'</span>'
+      +'<span class="ms-auto text-muted small">'+d.sd_used_mb+' / '+d.sd_total_mb+' MB ('+sdPct+'%)</span>';
+    var pb=document.getElementById('sd-progress');
+    if(pb){pb.style.display='';pb.querySelector('.progress-bar').style.width=sdPct+'%';pb.querySelector('.progress-bar').className='progress-bar '+sdBarCls;pb.querySelector('.progress-bar').setAttribute('aria-valuenow',sdPct);}
   } else {
     sdRow.innerHTML='<span class="fb-dot fb-dot-warn"></span><span class="fw-semibold">'+T('sd.absent')+'</span><span class="ms-auto text-muted small">'+T('sd.absent_sub')+'</span>';
+    var pb=document.getElementById('sd-progress');if(pb)pb.style.display='none';
   }
   sdBtn.innerHTML='<div class="d-grid d-sm-flex gap-2 justify-content-sm-start">'
     +(d.sd_present

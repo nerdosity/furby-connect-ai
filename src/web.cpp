@@ -851,8 +851,8 @@ static void handleSysInfo() {
     d["el_voice_id"]  = elevenlabs_voice_id;
     d["el_fmt"]       = el_audio_fmt;
     if (sdAvailable) {
-        d["sd_used"]  = kb(SD_MMC.usedBytes());
-        d["sd_total"] = kb(SD_MMC.totalBytes());
+        d["sd_used_mb"]  = (int)(SD_MMC.usedBytes()  / (1024*1024));
+        d["sd_total_mb"] = (int)(SD_MMC.totalBytes() / (1024*1024));
     }
     String j; serializeJson(d, j);
     server.send(200, "application/json", j);

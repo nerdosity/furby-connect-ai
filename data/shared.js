@@ -364,7 +364,8 @@ function _renderSysBar(bar, plainText, tempC, fwLatest){
 }
 
 function _updateSysBar(d){
-  var sd=d.sd_total?' | SD '+fmtKB(d.sd_used)+'/'+fmtKB(d.sd_total):'';
+  var sdPct=d.sd_total_mb?Math.round(d.sd_used_mb*100/d.sd_total_mb):0;
+  var sd=d.sd_total_mb?' | SD '+d.sd_used_mb+'/'+d.sd_total_mb+' MB ('+sdPct+'%)':'';
   var flashUsed=d.flash_used_kb!=null?fmtKB(d.flash_used_kb):'?';
   var flashFree=d.flash_free_kb!=null?fmtKB(d.flash_free_kb):'?';
   var bat=d.bat_mv>0?' | BAT '+(d.bat_mv/1000).toFixed(2)+'V':'';
