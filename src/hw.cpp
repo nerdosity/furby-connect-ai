@@ -4,14 +4,17 @@ const byte DNS_PORT = 53;
 
 // ── WiFi persistence ──────────────────────────────────────────────────────────
 void saveWifiNets() {
-    preferences.putInt("wifi_count", wifiNetCount);
+    Preferences p; p.begin("furby", false);
+    p.putInt("wifi_count", wifiNetCount);
     for (int i = 0; i < wifiNetCount; i++) {
-        preferences.putString(("ws" + String(i)).c_str(), wifiNets[i].ssid);
-        preferences.putString(("wp" + String(i)).c_str(), wifiNets[i].pass);
+        p.putString(("ws" + String(i)).c_str(), wifiNets[i].ssid);
+        p.putString(("wp" + String(i)).c_str(), wifiNets[i].pass);
     }
+    p.end();
 }
 
 void loadWifiNets() {
+    // chiamata durante boot con preferences globale già aperto
     wifiNetCount = preferences.getInt("wifi_count", 0);
     if (wifiNetCount > MAX_WIFI_NETS) wifiNetCount = MAX_WIFI_NETS;
     for (int i = 0; i < wifiNetCount; i++) {
@@ -112,10 +115,12 @@ void setAmplifier(bool enable) {
 }
 
 int readBatteryMv() {
+    static bool batFailed = false;
+    if (batFailed) return -1;
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(0x06);
-    if (Wire.endTransmission(false) != 0) return -1;
-    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) return -1;
+    if (Wire.endTransmission(false) != 0) { batFailed = true; return -1; }
+    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) { batFailed = true; return -1; }
     uint8_t lo = Wire.read(), hi = Wire.read();
     uint16_t raw = (uint16_t)(hi << 8 | lo);
     return (int)((uint32_t)raw * 3300 * 2 / 4095);

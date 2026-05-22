@@ -101,7 +101,7 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
 String transcribeAudio() {
     if (!gSttBuf || gSttLen <= 0) return "";
     String key = openai_api_key;
-    if (key.length() == 0) key = preferences.getString("openai", "");
+    if (key.length() == 0) { Preferences p; p.begin("furby",true); key = p.getString("openai",""); p.end(); }
     if (key.length() == 0) { Serial.println("[STT] nessuna chiave OpenAI"); return ""; }
 
     size_t pcmBytes = (size_t)gSttLen * 2;

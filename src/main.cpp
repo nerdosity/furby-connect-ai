@@ -63,6 +63,7 @@ void setup() {
     sttEnabled      = preferences.getBool("stt_en",  false);
     gCamDescPrompt  = preferences.getString("cam_desc_prompt",
         "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
+    preferences.end(); // chiude handle globale — da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),
         openai_api_key.length()  ? "OK" : "MANCANTE",

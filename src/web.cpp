@@ -206,8 +206,8 @@ static void handleApiModels() {
     String provider = server.arg("provider");
     if (provider.length() == 0) provider = llm_provider;
 
-    if (openai_api_key.length() == 0) openai_api_key = preferences.getString("openai", "");
-    if (claude_api_key.length() == 0) claude_api_key  = preferences.getString("claude", "");
+    if (openai_api_key.length() == 0) { Preferences p; p.begin("furby",true); openai_api_key = p.getString("openai",""); p.end(); }
+    if (claude_api_key.length() == 0) { Preferences p; p.begin("furby",true); claude_api_key  = p.getString("claude",""); p.end(); }
 
     const String& key = (provider == "claude") ? claude_api_key : openai_api_key;
     if (key.length() == 0) {
@@ -1366,6 +1366,7 @@ void startWebServer() {
     server.on("/shared.js",  HTTP_GET, []() { serveSpiffs("/shared.js",  "application/javascript; charset=utf-8", "public, max-age=3600"); });
 
     server.onNotFound([]() {
+        if (server.method() == HTTP_OPTIONS) { server.send(204); return; }
         String uri = server.uri();
         if (uri.startsWith("/fs/get/") || uri == "/fs/get") { handleFsGet(); return; }
         // file statici da SPIFFS (.css .js .png .ico ecc.)

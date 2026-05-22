@@ -260,10 +260,11 @@ void saveBehaviorConfigs() {
         }
     }
     String out; serializeJson(doc, out);
-    preferences.putString("behaviors", out);
+    Preferences p; p.begin("furby", false); p.putString("behaviors", out); p.end();
 }
 
 void loadBehaviorConfigs() {
+    // chiamata durante boot con preferences globale già aperto
     String raw = preferences.getString("behaviors", "");
     if (raw.length() == 0) {
         behaviorConfigCount = 1; activeBehaviorConfig = 0;
