@@ -912,7 +912,7 @@ static void handleApiHome() {
     doc["static_mask"] = WiFi.subnetMask().toString();
     doc["static_dns"]  = WiFi.dnsIP().toString();
     {   Preferences p; p.begin("furby", true);
-        doc["static_enabled"] = p.getString("static_ip", "").length() > 0;
+        doc["static_enabled"] = p.isKey("static_ip") && p.getString("static_ip", "").length() > 0;
         p.end();
     }
     String out; serializeJson(doc, out);
