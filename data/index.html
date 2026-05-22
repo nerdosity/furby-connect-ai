@@ -350,14 +350,22 @@ function bleApply(d){
     } else {lst.innerHTML='';}
   }
 }
-function blePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(bleApply).catch(function(){});}
-function bleScan(){document.getElementById('ble-list').innerHTML='';bleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
-function bleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){bleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});bleConnPoll();}).catch(function(){});}
-function bleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){bleApply(d);if(d.connecting)setTimeout(bleConnPoll,800);}).catch(function(){setTimeout(bleConnPoll,1000);});}
+var _bleIdleIv=null;
+function _bleStartIdle(){if(_bleIdleIv)return;_bleIdleIv=setInterval(blePoll,30000);}
+function _bleStopIdle(){if(_bleIdleIv){clearInterval(_bleIdleIv);_bleIdleIv=null;}}
+function bleApplyAndSchedule(d){
+  bleApply(d);
+  if(d.connected){_bleStopIdle();}
+  else if(d.scanning||d.connecting){_bleStopIdle();}
+  else{_bleStartIdle();}
+}
+function blePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(bleApplyAndSchedule).catch(function(){});}
+function bleScan(){_bleStopIdle();document.getElementById('ble-list').innerHTML='';bleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
+function bleConn(addr){_bleStopIdle();var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){bleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});bleConnPoll();}).catch(function(){});}
+function bleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){bleApplyAndSchedule(d);if(d.connecting)setTimeout(bleConnPoll,800);}).catch(function(){setTimeout(bleConnPoll,1000);});}
 function bleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(blePoll).catch(function(){});}
 function bleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(blePoll).catch(function(){});}
 blePoll();
-setInterval(blePoll,5000);
 
 // LLM
 var FALLBACK={openai:['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1','o3-mini'],claude:['claude-opus-4-7','claude-sonnet-4-6','claude-haiku-4-5-20251001']};

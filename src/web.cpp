@@ -1094,6 +1094,22 @@ static void handleDebugMicRms() {
         ",\"threshold\":" + String(vad_threshold) + "}");
 }
 
+// long-poll: risponde solo quando i valori cambiano o dopo 2s di timeout
+static void handleDebugMicPoll() {
+    int prev1 = micRmsLive, prev2 = micRmsLive2;
+    bool prevVad = micVadActive;
+    unsigned long t0 = millis();
+    while (millis() - t0 < 2000) {
+        if (micRmsLive != prev1 || micRmsLive2 != prev2 || micVadActive != prevVad) break;
+        delay(20);
+    }
+    server.send(200, "application/json",
+        "{\"rms1\":" + String(micRmsLive) +
+        ",\"rms2\":" + String(micRmsLive2) +
+        ",\"vad\":" + String(micVadActive ? "true" : "false") +
+        ",\"threshold\":" + String(vad_threshold) + "}");
+}
+
 static void handleDebugAmp() {
     HTTP_LOG();
     if (server.method() == HTTP_POST) setAmplifier(server.arg("on") == "1");
@@ -1336,6 +1352,7 @@ void startWebServer() {
     server.on("/debug/sensors",    HTTP_GET,  handleDebugSensors);
     server.on("/debug/cmd",        HTTP_POST, handleDebugCmd);
     server.on("/debug/mic/rms",    HTTP_GET,  handleDebugMicRms);
+    server.on("/debug/mic/poll",   HTTP_GET,  handleDebugMicPoll);
     server.on("/debug/amp",        HTTP_GET,  handleDebugAmp);
     server.on("/debug/amp",        HTTP_POST, handleDebugAmp);
     server.on("/debug/vol",        HTTP_POST, handleDebugVol);
