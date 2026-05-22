@@ -527,7 +527,7 @@ function loadModels(cur){
 function onProvChange(){
   var p=document.getElementById('prov').value;
   document.getElementById('tok').placeholder=PH[p]||'Token API';
-  document.getElementById('tok').value='';
+  // non azzerare il campo: l'utente potrebbe stare solo guardando
   llmKeyChange();
 }
 function testLlm(){
@@ -536,11 +536,7 @@ function testLlm(){
   var el=document.getElementById('llm-test-result');
   el.className='small mt-1 text-warning';el.textContent=T('llm.test_running');
   _llmSetLoading(true);
-  // salva prima se la chiave nell'input è diversa da quella in memoria
-  var fd=new FormData(document.getElementById('llm-form'));
-  fetch('/llm/save',{method:'POST',body:fd}).then(function(){
-    return fetch('/api/test?type=llm').then(function(r){return r.json();});
-  }).then(function(d){
+  fetch('/api/test?type=llm').then(function(r){return r.json();}).then(function(d){
     el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
     el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
     _llmSetLoading(false);
@@ -585,12 +581,8 @@ function testEl(){
   if(!k||_elLoading)return;
   var el=document.getElementById('el-test-result');
   el.className='small mt-1 text-warning';el.textContent=T('llm.test_running');
-  var fd=new FormData(document.getElementById('el-form'));
-  fd.set('el_vid',document.getElementById('el-voice-sel').value);
   _elSetLoading(true);
-  fetch('/el/save',{method:'POST',body:fd}).then(function(){
-    return fetch('/api/test?type=el').then(function(r){return r.json();});
-  }).then(function(d){
+  fetch('/api/test?type=el').then(function(r){return r.json();}).then(function(d){
     el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
     el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
     _elSetLoading(false);

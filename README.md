@@ -1,8 +1,8 @@
 # Furby Connect AI
 
 <p align="center">
-  <img src="graphic/writing_512_154_dark.png#gh-dark-mode-only" alt="Furby LLM" width="420">
-  <img src="graphic/writing_512_154_light.png#gh-light-mode-only" alt="Furby LLM" width="420">
+  <img src="graphic/writing_512_154_dark.png#gh-light-mode-only" alt="Furby LLM" width="420">
+  <img src="graphic/writing_512_154_light.png#gh-dark-mode-only" alt="Furby LLM" width="420">
 </p>
 
 <p align="center">

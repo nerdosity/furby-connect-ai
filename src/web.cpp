@@ -21,6 +21,8 @@ static framesize_t strToFramesize(const String& s) {
     if (s == "VGA")   return FRAMESIZE_VGA;
     if (s == "SVGA")  return FRAMESIZE_SVGA;
     if (s == "XGA")   return FRAMESIZE_XGA;
+    if (s == "SXGA")  return FRAMESIZE_SXGA;
+    if (s == "UXGA")  return FRAMESIZE_UXGA;
     return FRAMESIZE_QVGA;
 }
 static const char* framesizeToStr(framesize_t fs) {
@@ -30,6 +32,8 @@ static const char* framesizeToStr(framesize_t fs) {
         case FRAMESIZE_VGA:   return "VGA";
         case FRAMESIZE_SVGA:  return "SVGA";
         case FRAMESIZE_XGA:   return "XGA";
+        case FRAMESIZE_SXGA:  return "SXGA";
+        case FRAMESIZE_UXGA:  return "UXGA";
         default:              return "QVGA";
     }
 }
@@ -432,17 +436,24 @@ static void handleLlmSave() {
     String newProv  = server.arg("provider");
     String newModel = server.arg("model");
     String newKey   = server.arg("api_key");
-    if (newProv == "openai" || newProv == "claude") {
-        llm_provider = newProv;
-        nvsPut("llm_prov", llm_provider);
-    }
-    if (newKey.length() > 0 && !newKey.startsWith("****")) {
-        if (llm_provider == "claude") {
+    bool keyPresent = newKey.length() > 0 && !newKey.startsWith("****");
+    // salva la chiave per il provider indicato
+    if (keyPresent) {
+        String prov = (newProv == "openai" || newProv == "claude") ? newProv : llm_provider;
+        if (prov == "claude") {
             claude_api_key = newKey;
             nvsPut("claude", claude_api_key);
         } else {
             openai_api_key = newKey;
             nvsPut("openai", openai_api_key);
+        }
+    }
+    // cambia provider solo se c'è già una chiave valida per quello nuovo
+    if (newProv == "openai" || newProv == "claude") {
+        const String& targetKey = (newProv == "claude") ? claude_api_key : openai_api_key;
+        if (targetKey.length() > 0) {
+            llm_provider = newProv;
+            nvsPut("llm_prov", llm_provider);
         }
     }
     // salva il modello solo se c'è una chiave valida in RAM per il provider attivo
