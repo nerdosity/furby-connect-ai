@@ -750,17 +750,30 @@ function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 function sMsg(id,txt,cls){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='small mt-1 text-'+(cls||'muted');if(txt)setTimeout(function(){el.textContent='';el.className='small mt-1 text-muted';},3000);}
 
 // ── Voci ElevenLabs ───────────────────────────────────────────────────────────
-function voiceLoad(){
+var gVoicesLoading=false;
+// onDone(voiceId): callback opzionale chiamato dopo popolamento; se null mantiene selezione corrente
+function voiceLoad(onDone){
+  if(gVoicesLoading)return;
+  gVoicesLoading=true;
   var btn=document.getElementById('btn-voice-load'),msg=document.getElementById('voice-load-msg'),sel=document.getElementById('pers-voice');
-  btn.disabled=true;msg.textContent='...';
+  var saveBtn=document.querySelector('[onclick="persSave()"]');
+  sel.disabled=true;btn.disabled=true;if(saveBtn)saveBtn.disabled=true;
+  msg.textContent='...';
   fetch('/test/voices').then(function(r){return r.json();}).then(function(d){
-    btn.disabled=false;
+    gVoicesLoading=false;
+    sel.disabled=false;btn.disabled=false;if(saveBtn)saveBtn.disabled=false;
     if(!d.ok||!d.voices||!d.voices.length){sMsg('voice-load-msg','Nessuna voce','warning');return;}
-    var prev=sel.value;sel.innerHTML='';
+    var prev=onDone?null:sel.value;
+    sel.innerHTML='';
     d.voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name;sel.appendChild(o);});
-    if(prev)sel.value=prev;
+    if(onDone)onDone(sel);
+    else if(prev)sel.value=prev;
     sMsg('voice-load-msg',d.voices.length+' voci','success');
-  }).catch(function(){btn.disabled=false;sMsg('voice-load-msg','Errore connessione','danger');});
+  }).catch(function(){
+    gVoicesLoading=false;
+    sel.disabled=false;btn.disabled=false;if(saveBtn)saveBtn.disabled=false;
+    sMsg('voice-load-msg','Errore connessione','danger');
+  });
 }
 
 // ── Personalità multi-profilo ─────────────────────────────────────────────────
@@ -795,10 +808,14 @@ function persRenderEditPanel(){
   badge.style.display=(gEditPerIdx===gActivePerIdx)?'':'none';
   gBehaviors=p.behaviors||[];
   behRender();
-  // imposta voce nel select
+  // imposta voce nel select — se non ancora caricate, carica prima poi imposta
   var sel=document.getElementById('pers-voice');
-  if(sel.options.length<=1)voiceLoad();
-  else if(p.voice_id)sel.value=p.voice_id;
+  var vid=p.voice_id||'';
+  if(sel.options.length<=1){
+    voiceLoad(function(s){if(vid)s.value=vid;});
+  } else {
+    if(vid)sel.value=vid;
+  }
 }
 function persNew(){
   var nm=prompt('Nome nuova personalità:');if(!nm||!nm.trim())return;
@@ -808,7 +825,7 @@ function persNew(){
   });
 }
 function persSave(){
-  if(gPersonalities.length===0)return;
+  if(gPersonalities.length===0||gVoicesLoading)return;
   csqCollect();
   var p=gPersonalities[gEditPerIdx];
   p.name=document.getElementById('pers-name').value.trim()||p.name;
