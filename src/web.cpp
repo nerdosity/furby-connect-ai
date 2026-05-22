@@ -102,6 +102,8 @@ static void handleCaptiveWindows() {
 
 static void handleCaptiveAndroid() {
     if (!isConfigMode) { server.send(204, "text/plain", ""); return; }
+    // 302 verso l'IP del portal — Samsung apre il browser se riceve un non-204
+    server.sendHeader("Cache-Control", "no-store");
     handleCaptiveRedirect();
 }
 
@@ -1506,6 +1508,7 @@ void startWebServer() {
     server.on("/canonical.html",                HTTP_GET,  handleCaptiveIos);
     server.on("/generate_204",                  HTTP_GET,  handleCaptiveAndroid);
     server.on("/gen_204",                       HTTP_GET,  handleCaptiveAndroid);
+    server.on("/mobile/status.php",             HTTP_GET,  handleCaptiveAndroid); // Samsung fallback
     server.on("/connecttest.txt",               HTTP_GET,  handleCaptiveWindows);
     server.on("/ncsi.txt",                      HTTP_GET,  handleCaptiveWindows);
     server.on("/redirect",                      HTTP_GET,  handleCaptiveRedirect);
