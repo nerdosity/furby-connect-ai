@@ -10,7 +10,6 @@
 #include <SD_MMC.h>
 #include <esp_camera.h>
 #include <driver/i2s.h>
-#include <driver/uart.h>
 #include <ArduinoJson.h>
 #include "mbedtls/base64.h"
 #include "mbedtls/platform.h"

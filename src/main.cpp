@@ -100,12 +100,6 @@ void setup() {
 
     ch32Init(); // IO6=HIGH (amplifier); IO4 va alzato DOPO SD init (vedi sketch Waveshare 05)
 
-    // GPIO43/44 condivisi tra UART0 e SD_MMC — libera i pin prima dell'init SD
-    Serial.end();
-    uart_driver_delete(UART_NUM_0);
-    pinMode(43, INPUT); pinMode(44, INPUT);
-    delay(20);
-
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
     if (!sdAvailable) {
@@ -118,8 +112,6 @@ void setup() {
     }
     ch32SetBit(4, true); // IO4 alzato dopo SD init
 
-    // ripristina Serial
-    Serial.begin(115200);
     if (sdAvailable) {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
