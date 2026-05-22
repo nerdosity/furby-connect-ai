@@ -124,6 +124,10 @@ body { background: var(--fb-bg); }
 .fb-log { background:var(--fb-navy); border-radius:8px; padding:10px 12px; font-family:monospace; font-size:.75rem; color:#8fb3e8; height:130px; overflow-y:auto; }
 @media(min-width:900px){ .fb-log{height:200px;font-size:.85rem;} }
 
+/* dimensione minima bottoni — circa 15 caratteri a .95rem */
+.btn:not(.btn-sm) { min-width: 9rem; }
+.btn-group .btn:not(.btn-sm) { min-width: 0; }
+
 /* misc */
 .fb-raw { font-size:.72rem; color:var(--fb-muted); margin-top:8px; font-family:monospace; }
 
