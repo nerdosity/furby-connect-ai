@@ -52,17 +52,19 @@
       </div>
     </form>
     <hr class="my-3">
-    <div class="mb-2">
-      <label class="form-label" data-i18n="wifi.label_hostname">Hostname</label>
-      <div class="input-group input-group-sm">
-        <input type="text" class="form-control" id="wifi-hostname-inp" maxlength="32" placeholder="furby">
-        <button class="btn btn-primary px-3" type="button" onclick="wifiHostnameSave()" data-i18n="sys.save"><i class="bi bi-floppy"></i> Salva</button>
+    <div class="mb-3">
+      <label class="form-label" data-i18n="wifi.label_hostname"><i class="bi bi-tag text-muted me-1"></i>Hostname</label>
+      <div class="input-group">
+        <span class="input-group-text text-muted"><i class="bi bi-router"></i></span>
+        <input type="text" class="form-control form-control-sm" id="wifi-hostname-inp" maxlength="32" placeholder="furby">
+        <button class="btn btn-primary px-3" type="button" onclick="wifiHostnameSave()" data-i18n="wifi.btn_hostname"><i class="bi bi-floppy"></i> Salva hostname</button>
       </div>
+      <div class="form-text" data-i18n="wifi.hostname_hint">Raggiungibile su <code>furby.local</code> via mDNS</div>
     </div>
     <hr class="my-3">
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" id="static-en" onchange="staticToggle()">
-      <label class="form-check-label" for="static-en" data-i18n="wifi.static_enable">IP statico</label>
+      <label class="form-check-label" for="static-en" data-i18n="wifi.static_enable"><i class="bi bi-hdd-network text-muted me-1"></i>IP statico</label>
     </div>
     <div id="static-fields" style="display:none">
       <div class="row g-2 mb-2">
