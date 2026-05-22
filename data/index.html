@@ -542,7 +542,7 @@ function loadModels(cur, keyOverride){
     else{
       var list=Array.isArray(d)?d:(d.models||[]);
       if(!list.length){st.textContent=T('llm.models_none');}
-      else{list.sort();fillSelect(list,cur||list[0]);st.textContent=list.length+T('llm.models_count');}
+      else{list.sort();fillSelect(list,cur);st.textContent=list.length+T('llm.models_count');}
     }
   }).catch(function(){st.textContent=T('llm.models_offline');}).finally(function(){_llmSetLoading(false);});
 }
