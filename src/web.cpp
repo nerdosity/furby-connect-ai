@@ -8,7 +8,11 @@
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 static void nvsPut(const char* key, const String& val) {
-    Preferences p; p.begin("furby", false); p.putString(key, val); p.end();
+    Preferences p;
+    if (!p.begin("furby", false)) { Serial.printf("[NVS] begin fallito per key=%s\n", key); return; }
+    size_t written = p.putString(key, val);
+    if (written == 0) Serial.printf("[NVS] putString fallito key=%s len=%u\n", key, val.length());
+    p.end();
 }
 
 static void httpLog() {
@@ -391,10 +395,6 @@ static void handleLlmSave() {
         llm_provider = newProv;
         nvsPut("llm_prov", llm_provider);
     }
-    if (newModel.length() > 0) {
-        llm_model = newModel;
-        nvsPut("llm_model", llm_model);
-    }
     if (newKey.length() > 0 && !newKey.startsWith("****")) {
         if (llm_provider == "claude") {
             claude_api_key = newKey;
@@ -403,6 +403,12 @@ static void handleLlmSave() {
             openai_api_key = newKey;
             nvsPut("openai", openai_api_key);
         }
+    }
+    // salva il modello solo se c'è una chiave valida in RAM per il provider attivo
+    const String& activeKey = (llm_provider == "claude") ? claude_api_key : openai_api_key;
+    if (newModel.length() > 0 && activeKey.length() > 0) {
+        llm_model = newModel;
+        nvsPut("llm_model", llm_model);
     }
     server.sendHeader("Location", "/"); server.send(303);
 }
@@ -416,7 +422,8 @@ static void handleElSave() {
         elevenlabs_api_key = newKey;
         nvsPut("11labs", elevenlabs_api_key);
     }
-    if (newVid.length() > 0) {
+    // salva la voce solo se c'è una chiave valida in RAM
+    if (newVid.length() > 0 && elevenlabs_api_key.length() > 0) {
         elevenlabs_voice_id = newVid;
         nvsPut("11labs_vid", elevenlabs_voice_id);
     }
@@ -751,8 +758,8 @@ static void handleSdReinit() {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
         String msg = String("{\"ok\":true,\"type\":\"") + ts
-            + "\",\"total_mb\":" + String((int)(SD_MMC.totalBytes()/(1024*1024)))
-            + ",\"used_mb\":"    + String((int)(SD_MMC.usedBytes()/(1024*1024))) + "}";
+            + "\",\"total_mb\":" + String((int)(SD_MMC.cardSize()  /(1024*1024)))
+            + ",\"used_mb\":"    + String((int)(SD_MMC.usedBytes() /(1024*1024))) + "}";
         server.send(200, "application/json", msg);
     } else {
         server.send(200, "application/json", "{\"ok\":false,\"error\":\"card non riconosciuta\"}");
@@ -837,7 +844,7 @@ static void handleSysInfo() {
     d["el_fmt"]       = el_audio_fmt;
     if (sdAvailable) {
         d["sd_used"]  = kb(SD_MMC.usedBytes());
-        d["sd_total"] = kb(SD_MMC.totalBytes());
+        d["sd_total"] = kb(SD_MMC.cardSize());
     }
     String j; serializeJson(d, j);
     server.send(200, "application/json", j);
@@ -862,8 +869,8 @@ static void handleApiHome() {
     doc["el_vid"]         = elevenlabs_voice_id;
     doc["el_fmt"]         = el_audio_fmt;
     doc["sd_present"]     = sdAvailable;
-    doc["sd_used_mb"]     = sdAvailable ? (int)(SD_MMC.usedBytes()  / (1024*1024)) : 0;
-    doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.totalBytes() / (1024*1024)) : 0;
+    doc["sd_used_mb"]     = sdAvailable ? (int)(SD_MMC.usedBytes() / (1024*1024)) : 0;
+    doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.cardSize()  / (1024*1024)) : 0;
     doc["vad_enabled"]    = vadEnabled;
     doc["vad_threshold"]  = vad_threshold;
     doc["stt_enabled"]    = sttEnabled;
@@ -1380,7 +1387,7 @@ static void handleCameraPage() {
     HTTP_LOG();
     if (!camActive) camInit();
     File f = SPIFFS.open("/camera.html", "r");
-    if (f) { server.sendHeader("Cache-Control", "public, max-age=3600"); server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
+    if (f) { server.sendHeader("Cache-Control", "no-cache, must-revalidate"); server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
     server.send(200, "text/html", F("<!DOCTYPE html><html><body>"
         "<p>camera.html non trovato in SPIFFS. Esegui: pio run -t uploadfs</p>"
         "<p><a href='/'>Home</a></p></body></html>"));
@@ -1532,14 +1539,25 @@ void startWebServer() {
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);
-    server.on("/favicon.ico",                     HTTP_GET, []() { server.send(204); });
-    server.on("/apple-touch-icon.png",            HTTP_GET, []() { server.send(204); });
-    server.on("/apple-touch-icon-precomposed.png",HTTP_GET, []() { server.send(204); });
+    server.on("/favicon.ico",                     HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
+    server.on("/apple-touch-icon.png",            HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
+    server.on("/apple-touch-icon-precomposed.png",HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
     server.on("/manifest.json",                   HTTP_GET, []() { server.send(204); });
     server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                            "public, max-age=86400"); });
     server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                            "public, max-age=86400"); });
-    server.on("/shared.css", HTTP_GET, []() { serveSpiffs("/shared.css", "text/css; charset=utf-8",               "public, max-age=3600"); });
-    server.on("/shared.js",  HTTP_GET, []() { serveSpiffs("/shared.js",  "application/javascript; charset=utf-8", "public, max-age=3600"); });
+    server.on("/shared.css", HTTP_GET, []() {
+        server.sendHeader("ETag", "\"" FW_VERSION "\"");
+        if (server.header("If-None-Match") == "\"" FW_VERSION "\"") { server.send(304); return; }
+        serveSpiffs("/shared.css", "text/css; charset=utf-8", "public, max-age=3600");
+    });
+    server.on("/shared.js",  HTTP_GET, []() {
+        server.sendHeader("ETag", "\"" FW_VERSION "\"");
+        if (server.header("If-None-Match") == "\"" FW_VERSION "\"") { server.send(304); return; }
+        serveSpiffs("/shared.js", "application/javascript; charset=utf-8", "public, max-age=3600");
+    });
+
+    static const char* hdrs[] = {"If-None-Match"};
+    server.collectHeaders(hdrs, 1);
 
     server.onNotFound([]() {
         if (server.method() == HTTP_OPTIONS) { server.send(204); return; }
@@ -1561,7 +1579,9 @@ void startWebServer() {
             }
         }
         if (uri.endsWith(".map")) { server.send(204); return; }
-        Serial.println("HTTP 404: " + uri + " [" + String(server.method()) + "]");
+        Serial.printf("[HTTP] 404 %s %s\n",
+            server.method()==HTTP_POST?"POST":server.method()==HTTP_GET?"GET":"OTHER",
+            uri.c_str());
         if (isConfigMode) handleCaptiveRedirect();
         else server.send(404, "text/plain", "Not found");
     });

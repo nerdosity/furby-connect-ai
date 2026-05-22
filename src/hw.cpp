@@ -244,8 +244,8 @@ bool sdMount() {
     if (ok) {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNK";
-        Serial.printf("SD: montata  tipo=%s  %lluMB tot  %lluMB usati\n",
-            ts, SD_MMC.totalBytes()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
+        Serial.printf("SD: montata  tipo=%s  %lluMB card  %lluMB usati\n",
+            ts, SD_MMC.cardSize()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
     } else {
         Serial.println("SD: mount fallito");
     }

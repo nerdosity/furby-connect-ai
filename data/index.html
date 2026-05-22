@@ -102,7 +102,8 @@
       </div>
       <div class="mb-2">
         <label class="form-label" data-i18n="el.label_voice">Voce</label>
-        <select class="form-select form-select-sm" name="el_vid" id="el-voice-sel"></select>
+        <select class="form-select form-select-sm" name="el_vid" id="el-voice-sel" disabled></select>
+        <div id="el-voice-hint" class="form-text text-warning"></div>
       </div>
       <div class="mb-2">
         <label class="form-label" data-i18n="el.label_fmt">Formato audio</label>
@@ -250,12 +251,13 @@ function applyHome(d){
   loadModels(d.llm_model);
 
   // ElevenLabs
-  document.getElementById('el-key').value=d.el_key||'';
+  var elKey=d.el_key||'';
+  document.getElementById('el-key').value=elKey;
   var fmt=d.el_fmt||'mp3';
   document.getElementById('fmt-pcm').checked=(fmt==='pcm');
   document.getElementById('fmt-mp3').checked=(fmt==='mp3');
   document.getElementById('fmt-hint').textContent=fmt==='mp3'?T('el.hint_mp3'):T('el.hint_pcm');
-  loadVoices(d.el_vid||'');
+  elUpdateVoiceState(elKey, d.el_vid||'');
 
   // SD
   var sdRow=document.getElementById('sd-status-row');
@@ -450,15 +452,48 @@ function wifiScan(){
 }
 
 // ElevenLabs voices
-function loadVoices(curVid){
+function elUpdateVoiceState(key, curVid){
+  var sel=document.getElementById('el-voice-sel');
+  var hint=document.getElementById('el-voice-hint');
+  if(!key||!key.trim()){
+    sel.disabled=true;
+    sel.innerHTML='<option value="">'+T('el.voice_no_key')+'</option>';
+    if(hint)hint.textContent=T('el.voice_no_key');
+    return;
+  }
+  sel.disabled=true;
+  if(hint)hint.textContent=T('el.voice_loading');
   fetch('/api/voices').then(function(r){return r.json();}).then(function(voices){
-    var sel=document.getElementById('el-voice-sel');
-    if(!voices||!voices.length){sel.innerHTML='<option value="'+curVid+'">'+curVid+'</option>';return;}
+    if(!voices||!voices.length){
+      // nessuna voce — mantieni l'id corrente senza sovrascrivere
+      sel.innerHTML='<option value="'+(curVid||'')+'">'+((curVid&&curVid.length>8?curVid.substring(0,8)+'…':curVid)||'—')+'</option>';
+      sel.disabled=false;
+      if(hint)hint.textContent=T('el.voice_empty');
+      return;
+    }
     sel.innerHTML='';
-    voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name+' ('+v.id+')';if(v.id===curVid)o.selected=true;sel.appendChild(o);});
-    if(!sel.value&&curVid){var o=document.createElement('option');o.value=curVid;o.textContent=curVid;o.selected=true;sel.insertBefore(o,sel.firstChild);}
-  }).catch(function(){document.getElementById('el-voice-sel').innerHTML='<option value="">—</option>';});
+    var found=false;
+    voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name;if(v.id===curVid){o.selected=true;found=true;}sel.appendChild(o);});
+    if(!found&&curVid){var o=document.createElement('option');o.value=curVid;o.textContent=curVid;o.selected=true;sel.insertBefore(o,sel.firstChild);}
+    sel.disabled=false;
+    if(hint)hint.textContent='';
+  }).catch(function(){
+    sel.innerHTML='<option value="'+(curVid||'')+'">'+(curVid||'—')+'</option>';
+    sel.disabled=false;
+    if(hint)hint.textContent=T('el.voice_err');
+  });
 }
+
+// ricarica voci quando la chiave ElevenLabs cambia (dopo debounce)
+var _elKeyTimer=null;
+document.getElementById('el-key').addEventListener('input',function(){
+  clearTimeout(_elKeyTimer);
+  var k=this.value.trim();
+  _elKeyTimer=setTimeout(function(){
+    var cur=document.getElementById('el-voice-sel').value;
+    elUpdateVoiceState(k,cur);
+  },800);
+});
 
 (function(){var sel=document.getElementById('lang-sel-shared');if(sel)sel.value=localStorage.getItem('furby_lang')||'it';})();
 </script>
