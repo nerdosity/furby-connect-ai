@@ -242,10 +242,16 @@ bool sdMount() {
     }
     sdAvailable = ok;
     if (ok) {
+        // cardSize() può essere instabile subito dopo begin() — aspetta che si stabilizzi
+        uint64_t sz = 0;
+        for (int i = 0; i < 5 && sz == 0; i++) {
+            vTaskDelay(20 / portTICK_PERIOD_MS);
+            sz = SD_MMC.cardSize();
+        }
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNK";
         Serial.printf("SD: montata  tipo=%s  %lluMB card  %lluMB usati\n",
-            ts, SD_MMC.cardSize()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
+            ts, sz/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
     } else {
         Serial.println("SD: mount fallito");
     }

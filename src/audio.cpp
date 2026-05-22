@@ -5,7 +5,7 @@
 // ── Cache SD ──────────────────────────────────────────────────────────────────
 
 String getCacheJSON() {
-    if (!sdAvailable) return "{}";
+    if (!sdCheck()) return "{}";
     File f = SD_MMC.open("/index.json");
     if (!f) return "{}";
     String data = f.readString();
@@ -31,7 +31,7 @@ static void saveCacheIndex(JsonDocument& doc) {
 }
 
 void updateCacheJSON(String newFilename, String text) {
-    if (!sdAvailable) return;
+    if (!sdCheck()) return;
     JsonDocument doc;
     deserializeJson(doc, getCacheJSON());
     JsonObject entry = doc[newFilename].to<JsonObject>();
@@ -52,7 +52,7 @@ String getCachedPrefix(const String& audioFile) {
 }
 
 void setCachedPrefix(const String& audioFile, const String& prefixFile) {
-    if (!sdAvailable) return;
+    if (!sdCheck()) return;
     JsonDocument doc;
     deserializeJson(doc, getCacheJSON());
     JsonVariant v = doc[audioFile];
@@ -143,7 +143,7 @@ static void playMp3FromStream(WiFiClient* stream, HTTPClient& http) {
 // ── SD playback ───────────────────────────────────────────────────────────────
 
 void playAudioSD(String filename) {
-    if (!sdAvailable) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
+    if (!sdCheck()) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
     File file = SD_MMC.open("/" + filename);
     if (!file) { Serial.printf("[AUDIO-SD] ERRORE: file /%s non trovato\n", filename.c_str()); return; }
     size_t sz = file.size();
@@ -203,6 +203,7 @@ void playAudioSDWithPrefix(const String& filename) {
 // ── TTS generation ────────────────────────────────────────────────────────────
 
 String generateAndSaveTTS_SD(const String& text) {
+    if (!sdCheck()) return "";
     bool mp3mode = (el_audio_fmt == "mp3");
     String ext = mp3mode ? ".mp3" : ".pcm";
     String filename = getNextFilename();

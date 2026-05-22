@@ -2,7 +2,7 @@
 
 
 function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';}
-function fmtKB(kb){return kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
+function fmtKB(kb){return kb>=1048576?(kb/1048576).toFixed(1)+' GB':kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
 
 
 // ── navbar component ──────────────────────────────────────────────────────────
@@ -144,7 +144,14 @@ var _SHARED_TR={
     'cam.reset_confirm':'Riavviare l\'ESP32?',
     // wifi_connect.html
     'wc.connecting':'Connessione in corso…','wc.connected':'Connesso!','wc.failed':'Connessione fallita',
-    'wc.back':'<i class="bi bi-house"></i> Torna alla home'
+    'wc.back':'<i class="bi bi-house"></i> Torna alla home',
+    'fw.update_avail':'Aggiornamento disponibile: ','fw.current':'corrente: ',
+    'fw.up_to_date':'Firmware aggiornato ','fw.local_newer':'Versione locale (','fw.vs_online':') più recente di quella online (',
+    'sys.flash_used':'usati','sys.flash_free':'liberi',
+    'wifi.placeholder_ssid':'Nome rete','wifi.placeholder_pass':'Password (lascia vuoto se aperta)',
+    'llm.placeholder_key':'Token API...','el.placeholder_key':'API key...',
+    'sd.cache_cleared':'Cache eliminata.','sd.formatting':'Formattazione in corso...','sd.format_done':'Formattazione completata.',
+    'error_generic':'Errore: '
   },
   en:{
     'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
@@ -219,7 +226,14 @@ var _SHARED_TR={
     'cam.reset_confirm':'Restart the ESP32?',
     // wifi_connect.html
     'wc.connecting':'Connecting…','wc.connected':'Connected!','wc.failed':'Connection failed',
-    'wc.back':'<i class="bi bi-house"></i> Back to home'
+    'wc.back':'<i class="bi bi-house"></i> Back to home',
+    'fw.update_avail':'Update available: ','fw.current':'current: ',
+    'fw.up_to_date':'Firmware up to date ','fw.local_newer':'Local version (','fw.vs_online':') newer than online (',
+    'sys.flash_used':'used','sys.flash_free':'free',
+    'wifi.placeholder_ssid':'Network name','wifi.placeholder_pass':'Password (leave blank if open)',
+    'llm.placeholder_key':'API token...','el.placeholder_key':'API key...',
+    'sd.cache_cleared':'Cache cleared.','sd.formatting':'Formatting...','sd.format_done':'Format complete.',
+    'error_generic':'Error: '
   }
 };
 
@@ -315,17 +329,17 @@ function _renderSysBar(bar, plainText, tempC, fwLatest){
       if(cmp<0){
         badge.className='badge ms-1';
         badge.style.cssText='background:#dc2626;color:#fff;';
-        badge.title='Aggiornamento disponibile: '+fwLatest+' (corrente: '+_fwCurrent+')';
+        badge.title=T('fw.update_avail')+fwLatest+' ('+T('fw.current')+_fwCurrent+')';
         badge.innerHTML='<i class="bi bi-exclamation-circle-fill"></i> '+_fwCurrent;
       } else if(cmp===0){
         badge.className='badge ms-1';
         badge.style.cssText='background:#16a34a;color:#fff;';
-        badge.title='Firmware aggiornato ('+_fwCurrent+')';
+        badge.title=T('fw.up_to_date')+'('+_fwCurrent+')';
         badge.innerHTML='<i class="bi bi-check-circle-fill"></i> '+_fwCurrent;
       } else {
         badge.className='badge ms-1';
         badge.style.cssText='background:#d97706;color:#fff;';
-        badge.title='Versione locale ('+_fwCurrent+') più recente di quella online ('+fwLatest+')';
+        badge.title=T('fw.local_newer')+_fwCurrent+T('fw.vs_online')+fwLatest+')';
         badge.innerHTML='<i class="bi bi-question-circle-fill"></i> '+_fwCurrent;
       }
       wrap.appendChild(badge);
@@ -350,7 +364,7 @@ function _updateSysBar(d){
     +' | PSRAM '+fmtKB(psramUsed)+'/'+fmtKB(d.psram_total)+' ('+psramPct+'%)'
     +' | Sketch '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
     +' | SPIFFS '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
-    +' | Flash '+flashUsed+' usati, '+flashFree+' liberi ('+d.flash_mb+'MB)'+bat+sd;
+    +' | Flash '+flashUsed+' '+T('sys.flash_used')+', '+flashFree+' '+T('sys.flash_free')+' ('+d.flash_mb+'MB)'+bat+sd;
   _lastTempC=(d.chip_temp_c!=null)?d.chip_temp_c:null;
   if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC, _fwLatestVersion);
   if(d.uptime_s!=null&&!_bootRef){
