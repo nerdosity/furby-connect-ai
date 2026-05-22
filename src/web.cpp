@@ -1498,7 +1498,10 @@ static void handleCameraFrame() {
     esp_camera_fb_return(fb);
 }
 
+static volatile bool mjpegRunning = false;
+
 static void mjpegTask(void* arg) {
+    mjpegRunning = true;
     WiFiClient client = *((WiFiClient*)arg);
     delete (WiFiClient*)arg;
     client.println("HTTP/1.1 200 OK");
@@ -1506,7 +1509,7 @@ static void mjpegTask(void* arg) {
     client.println("Cache-Control: no-store");
     client.println("Connection: close");
     client.println();
-    while (client.connected()) {
+    while (client.connected() && camActive) {
         camera_fb_t* fb = esp_camera_fb_get();
         if (!fb) { vTaskDelay(30 / portTICK_PERIOD_MS); continue; }
         client.printf("--fb\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n", fb->len);
@@ -1516,6 +1519,7 @@ static void mjpegTask(void* arg) {
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
     client.stop();
+    mjpegRunning = false;
     vTaskDelete(NULL);
 }
 
@@ -1523,7 +1527,15 @@ static void handleCameraStream() {
     HTTP_LOG();
     if (!camActive && !camInit()) { server.send(503, "text/plain", "camera non disponibile"); return; }
     WiFiClient* client = new WiFiClient(server.client());
-    xTaskCreate(mjpegTask, "mjpeg", 4096, client, 1, NULL);
+    xTaskCreatePinnedToCore(mjpegTask, "mjpeg", 8192, client, 1, NULL, 1);
+}
+
+static void camSafeReinit() {
+    // aspetta che il task mjpeg si accorga che camActive=false e termini
+    camDeinit();
+    for (int i = 0; i < 50 && mjpegRunning; i++) vTaskDelay(20 / portTICK_PERIOD_MS);
+    camInit();
+    camApplySettings(camStreamSize, camStreamQuality);
 }
 
 static void handleCameraOff() {
@@ -1620,9 +1632,7 @@ void startWebServer() {
         if (server.hasArg("stream_size")) {
             camStreamSize = strToFramesize(server.arg("stream_size"));
             Preferences p; p.begin("furby", false); p.putInt("cam_sts", (int)camStreamSize); p.end();
-            camDeinit();
-            camInit();
-            camApplySettings(camStreamSize, camStreamQuality);
+            camSafeReinit();
             changed = true;
         }
         if (server.hasArg("snap_quality")) {
