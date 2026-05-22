@@ -105,10 +105,9 @@ String        gCamDescPrompt;
 EventBehavior gEventBehaviors[MAX_EVENT_BEHAVIORS];
 int           gEventBehaviorCount = 0;
 
-Personality   gPersonalities[MAX_PERSONALITIES];
-int           gPersonalityCount   = 0;
-int           gActivePersonality  = 0;
-int           gDebugPersonality   = -1; // -1 = usa quella attiva
+Personality*  gpActivePers       = nullptr;
+int           gActivePersonality = 0;
+int           gDebugPersonality  = -1;
 
 volatile TriggerType pendingTrigger   = TRG_VAD;
 volatile uint8_t     pendingSensorId  = 0;

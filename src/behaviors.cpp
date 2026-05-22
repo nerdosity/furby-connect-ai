@@ -45,27 +45,31 @@ static void deserializeBehavior(EventBehavior& b, JsonObject bo) {
     }
 }
 
-// ── Persistenza multi-personality ─────────────────────────────────────────────
-void savePersonalities() {
-    JsonDocument doc;
-    doc["active"] = gActivePersonality;
-    JsonArray arr = doc["personalities"].to<JsonArray>();
-    for (int i = 0; i < gPersonalityCount; i++) {
-        Personality& p = gPersonalities[i];
-        JsonObject po = arr.add<JsonObject>();
-        po["id"]       = p.id;
-        po["name"]     = p.name;
-        po["prompt"]   = p.prompt;
-        po["voice_id"] = p.voice_id;
-        JsonArray ba = po["behaviors"].to<JsonArray>();
-        for (int b = 0; b < p.behavior_count; b++) {
-            JsonObject bo = ba.add<JsonObject>();
-            serializeBehavior(bo, p.behaviors[b]);
-        }
+static void deserializePersonality(Personality& p, JsonObject po) {
+    memset(&p, 0, sizeof(p));
+    strlcpy(p.id,       po["id"]       | "", sizeof(p.id));
+    strlcpy(p.name,     po["name"]     | "", sizeof(p.name));
+    strlcpy(p.prompt,   po["prompt"]   | "", sizeof(p.prompt));
+    strlcpy(p.voice_id, po["voice_id"] | "", sizeof(p.voice_id));
+    p.behavior_count = 0;
+    for (JsonObject bo : po["behaviors"].as<JsonArray>()) {
+        if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
+        deserializeBehavior(p.behaviors[p.behavior_count++], bo);
     }
-    String out; serializeJson(doc, out);
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (f) { f.print(out); f.close(); }
+}
+
+// ── Alloca/libera gpActivePers in PSRAM ───────────────────────────────────────
+static Personality* allocPersonalityPSRAM() {
+    void* mem = heap_caps_malloc(sizeof(Personality), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!mem) {
+        Serial.printf("[PERS] PSRAM esaurita (%u), fallback DRAM\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        mem = malloc(sizeof(Personality));
+    }
+    return static_cast<Personality*>(mem);
+}
+
+static void freeActivePers() {
+    if (gpActivePers) { free(gpActivePers); gpActivePers = nullptr; }
 }
 
 static void buildDefaultPersonality(Personality& p) {
@@ -85,19 +89,61 @@ static void buildDefaultPersonality(Personality& p) {
     p.behavior_count = 1;
 }
 
+// ── applyActivePersonality: copia prompt/voice/behaviors dai globals ──────────
+void applyActivePersonality() {
+    if (!gpActivePers) return;
+    gPersonalityPrompt  = String(gpActivePers->prompt);
+    gPersonalityVoiceId = String(gpActivePers->voice_id);
+    gEventBehaviorCount = gpActivePers->behavior_count;
+    for (int i = 0; i < gpActivePers->behavior_count; i++)
+        gEventBehaviors[i] = gpActivePers->behaviors[i];
+}
+
+// ── savePersonalities: legge tutto il JSON, aggiorna entry attiva, riscrive ───
+void savePersonalities() {
+    if (!gpActivePers) return;
+
+    JsonDocument doc;
+    if (SPIFFS.exists("/personalities.json")) {
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) { deserializeJson(doc, f); f.close(); }
+    }
+
+    doc["active"] = gActivePersonality;
+    JsonArray arr = doc["personalities"].is<JsonArray>()
+        ? doc["personalities"].as<JsonArray>()
+        : doc["personalities"].to<JsonArray>();
+
+    // aggiorna o aggiunge l'entry all'indice gActivePersonality
+    while ((int)arr.size() <= gActivePersonality) arr.add(JsonObject{});
+    JsonObject po = arr[gActivePersonality].as<JsonObject>();
+    po["id"]       = gpActivePers->id;
+    po["name"]     = gpActivePers->name;
+    po["prompt"]   = gpActivePers->prompt;
+    po["voice_id"] = gpActivePers->voice_id;
+    JsonArray ba = po["behaviors"].to<JsonArray>();
+    for (int b = 0; b < gpActivePers->behavior_count; b++) {
+        JsonObject bo = ba.add<JsonObject>();
+        serializeBehavior(bo, gpActivePers->behaviors[b]);
+    }
+
+    String out; serializeJson(doc, out);
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (f) { f.print(out); f.close(); }
+}
+
+// ── loadPersonalities: alloca in PSRAM solo quella attiva ─────────────────────
 void loadPersonalities() {
-    gPersonalityCount  = 0;
     gActivePersonality = 0;
 
     // migrazione da /behaviors.json (formato vecchio)
-    bool migrateFromOld = false;
-    if (!SPIFFS.exists("/personalities.json") && SPIFFS.exists("/behaviors.json")) {
-        migrateFromOld = true;
-    }
+    bool migrateFromOld = !SPIFFS.exists("/personalities.json") && SPIFFS.exists("/behaviors.json");
 
     if (!SPIFFS.exists("/personalities.json") && !migrateFromOld) {
-        buildDefaultPersonality(gPersonalities[0]);
-        gPersonalityCount = 1;
+        freeActivePers();
+        gpActivePers = allocPersonalityPSRAM();
+        if (!gpActivePers) return;
+        buildDefaultPersonality(*gpActivePers);
         savePersonalities();
         applyActivePersonality();
         return;
@@ -106,81 +152,97 @@ void loadPersonalities() {
     const char* src = migrateFromOld ? "/behaviors.json" : "/personalities.json";
     File f = SPIFFS.open(src, "r");
     if (!f) {
-        buildDefaultPersonality(gPersonalities[0]);
-        gPersonalityCount = 1;
-        applyActivePersonality();
-        return;
-    }
-    String raw = f.readString(); f.close();
-    JsonDocument doc;
-    if (deserializeJson(doc, raw) != DeserializationError::Ok) {
-        buildDefaultPersonality(gPersonalities[0]);
-        gPersonalityCount = 1;
+        freeActivePers();
+        gpActivePers = allocPersonalityPSRAM();
+        if (!gpActivePers) return;
+        buildDefaultPersonality(*gpActivePers);
         applyActivePersonality();
         return;
     }
 
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, f);
+    f.close();
+
+    if (err != DeserializationError::Ok) {
+        freeActivePers();
+        gpActivePers = allocPersonalityPSRAM();
+        if (!gpActivePers) return;
+        buildDefaultPersonality(*gpActivePers);
+        applyActivePersonality();
+        return;
+    }
+
+    freeActivePers();
+    gpActivePers = allocPersonalityPSRAM();
+    if (!gpActivePers) return;
+
     if (migrateFromOld) {
-        // vecchio formato: {"personality":{...}, "behaviors":[...]}
-        Personality& p = gPersonalities[0];
-        buildDefaultPersonality(p);
+        buildDefaultPersonality(*gpActivePers);
         if (doc["personality"].is<JsonObject>()) {
-            strlcpy(p.prompt,   doc["personality"]["prompt"]   | p.prompt,   sizeof(p.prompt));
-            strlcpy(p.voice_id, doc["personality"]["voice_id"] | p.voice_id, sizeof(p.voice_id));
+            strlcpy(gpActivePers->prompt,   doc["personality"]["prompt"]   | gpActivePers->prompt,   sizeof(gpActivePers->prompt));
+            strlcpy(gpActivePers->voice_id, doc["personality"]["voice_id"] | gpActivePers->voice_id, sizeof(gpActivePers->voice_id));
         }
-        p.behavior_count = 0;
+        gpActivePers->behavior_count = 0;
         for (JsonObject bo : doc["behaviors"].as<JsonArray>()) {
-            if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
-            deserializeBehavior(p.behaviors[p.behavior_count++], bo);
+            if (gpActivePers->behavior_count >= MAX_EVENT_BEHAVIORS) break;
+            deserializeBehavior(gpActivePers->behaviors[gpActivePers->behavior_count++], bo);
         }
-        gPersonalityCount  = 1;
         gActivePersonality = 0;
         savePersonalities();
     } else {
         gActivePersonality = doc["active"] | 0;
-        for (JsonObject po : doc["personalities"].as<JsonArray>()) {
-            if (gPersonalityCount >= MAX_PERSONALITIES) break;
-            Personality& p = gPersonalities[gPersonalityCount++];
-            memset(&p, 0, sizeof(p));
-            strlcpy(p.id,       po["id"]       | "", sizeof(p.id));
-            strlcpy(p.name,     po["name"]      | "", sizeof(p.name));
-            strlcpy(p.prompt,   po["prompt"]    | "", sizeof(p.prompt));
-            strlcpy(p.voice_id, po["voice_id"]  | "", sizeof(p.voice_id));
-            p.behavior_count = 0;
-            for (JsonObject bo : po["behaviors"].as<JsonArray>()) {
-                if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
-                deserializeBehavior(p.behaviors[p.behavior_count++], bo);
-            }
+        JsonArray arr = doc["personalities"].as<JsonArray>();
+        if ((int)arr.size() == 0) {
+            buildDefaultPersonality(*gpActivePers);
+        } else {
+            if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
+            deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
         }
     }
 
-    if (gPersonalityCount == 0) {
-        buildDefaultPersonality(gPersonalities[0]);
-        gPersonalityCount = 1;
-    }
-    if (gActivePersonality >= gPersonalityCount) gActivePersonality = 0;
     applyActivePersonality();
+    Serial.printf("[PERS] caricata: \"%s\" (idx=%d, PSRAM=%u liberi)\n",
+        gpActivePers->name, gActivePersonality, heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
-void applyActivePersonality() {
-    if (gPersonalityCount == 0) return;
-    Personality& p = gPersonalities[gActivePersonality];
-    gPersonalityPrompt  = String(p.prompt);
-    gPersonalityVoiceId = String(p.voice_id);
-    gEventBehaviorCount = p.behavior_count;
-    for (int i = 0; i < p.behavior_count; i++)
-        gEventBehaviors[i] = p.behaviors[i];
+// ── activatePersonality: switcha personalità senza ricaricare tutto ───────────
+void activatePersonality(int idx) {
+    File f = SPIFFS.open("/personalities.json", "r");
+    if (!f) return;
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, f);
+    f.close();
+    if (err != DeserializationError::Ok) return;
+
+    JsonArray arr = doc["personalities"].as<JsonArray>();
+    if (idx < 0 || idx >= (int)arr.size()) return;
+
+    freeActivePers();
+    gpActivePers = allocPersonalityPSRAM();
+    if (!gpActivePers) return;
+
+    deserializePersonality(*gpActivePers, arr[idx].as<JsonObject>());
+    gActivePersonality = idx;
+
+    // persiste l'indice attivo
+    doc["active"] = idx;
+    String out; serializeJson(doc, out);
+    File fw = SPIFFS.open("/personalities.json", "w");
+    if (fw) { fw.print(out); fw.close(); }
+
+    applyActivePersonality();
+    Serial.printf("[PERS] attivata: \"%s\" (idx=%d)\n", gpActivePers->name, idx);
 }
 
 // ── Legacy compat ─────────────────────────────────────────────────────────────
 void saveEventBehaviors() {
-    if (gPersonalityCount == 0) return;
-    Personality& p = gPersonalities[gActivePersonality];
-    strlcpy(p.prompt,   gPersonalityPrompt.c_str(),  sizeof(p.prompt));
-    strlcpy(p.voice_id, gPersonalityVoiceId.c_str(), sizeof(p.voice_id));
-    p.behavior_count = gEventBehaviorCount;
+    if (!gpActivePers) return;
+    strlcpy(gpActivePers->prompt,   gPersonalityPrompt.c_str(),  sizeof(gpActivePers->prompt));
+    strlcpy(gpActivePers->voice_id, gPersonalityVoiceId.c_str(), sizeof(gpActivePers->voice_id));
+    gpActivePers->behavior_count = gEventBehaviorCount;
     for (int i = 0; i < gEventBehaviorCount; i++)
-        p.behaviors[i] = gEventBehaviors[i];
+        gpActivePers->behaviors[i] = gEventBehaviors[i];
     savePersonalities();
 }
 
@@ -270,7 +332,6 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             break;
         }
         case CSQ_PROMPT_AUTO: {
-            // LLM sceglie UNA azione dalla lista completa FURBY_ACTIONS
             String img = csq.snapshot ? base64Img : "";
             String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
             if (userMsg.length() == 0) userMsg = "Reagisci allo stimolo ricevuto.";
@@ -297,7 +358,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
     }
 }
 
-// ── Simulazione (debug, dry-run opzionale, skip LLM opzionale) ───────────────
+// ── Simulazione (debug, dry-run, personalità non attiva via idx) ──────────────
 String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText, bool skipLlm, int personalityIdx) {
     String log;
     auto L = [&](const String& s){ log += s + "\n"; Serial.println(s); };
@@ -305,26 +366,45 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     bool prevDry = gDryRun;
     gDryRun = true;
 
-    // personalità da debuggare (può differire da quella attiva)
-    String savedPrompt  = gPersonalityPrompt;
-    String savedVoiceId = gPersonalityVoiceId;
+    String savedPrompt   = gPersonalityPrompt;
+    String savedVoiceId  = gPersonalityVoiceId;
     int    savedBehCount = gEventBehaviorCount;
     EventBehavior savedBehaviors[MAX_EVENT_BEHAVIORS];
     for (int i = 0; i < gEventBehaviorCount; i++) savedBehaviors[i] = gEventBehaviors[i];
 
-    if (personalityIdx >= 0 && personalityIdx < gPersonalityCount && personalityIdx != gActivePersonality) {
-        Personality& dp = gPersonalities[personalityIdx];
-        gPersonalityPrompt  = String(dp.prompt);
-        gPersonalityVoiceId = String(dp.voice_id);
-        gEventBehaviorCount = dp.behavior_count;
-        for (int i = 0; i < dp.behavior_count; i++) gEventBehaviors[i] = dp.behaviors[i];
-        L("[SIM] personalità debug: \"" + String(dp.name) + "\"");
-    } else {
-        L("[SIM] personalità: \"" + String(gPersonalities[gActivePersonality].name) + "\" (attiva)");
+    Personality* debugPers = nullptr;
+    bool ownDebugPers = false;
+
+    if (personalityIdx >= 0 && personalityIdx != gActivePersonality) {
+        // carica temporaneamente la personalità debug in PSRAM
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) {
+            JsonDocument doc;
+            if (deserializeJson(doc, f) == DeserializationError::Ok) {
+                JsonArray arr = doc["personalities"].as<JsonArray>();
+                if (personalityIdx < (int)arr.size()) {
+                    debugPers = allocPersonalityPSRAM();
+                    if (debugPers) {
+                        deserializePersonality(*debugPers, arr[personalityIdx].as<JsonObject>());
+                        ownDebugPers = true;
+                        gPersonalityPrompt  = String(debugPers->prompt);
+                        gPersonalityVoiceId = String(debugPers->voice_id);
+                        gEventBehaviorCount = debugPers->behavior_count;
+                        for (int i = 0; i < debugPers->behavior_count; i++) gEventBehaviors[i] = debugPers->behaviors[i];
+                        L("[SIM] personalità debug: \"" + String(debugPers->name) + "\"");
+                    }
+                }
+            }
+            f.close();
+        }
+        if (!debugPers) L("[SIM] WARN: personalità idx=" + String(personalityIdx) + " non trovata, uso attiva");
+    }
+
+    if (!debugPers) {
+        L("[SIM] personalità: \"" + String(gpActivePers ? gpActivePers->name : "?") + "\" (attiva)");
     }
 
     if (skipLlm) L("[SIM] modalità skip-LLM attiva — chiamate LLM simulate");
-
     L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
       + " behaviors=" + String(gEventBehaviorCount));
 
@@ -368,16 +448,16 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
               + " tipo=" + String(csq.type)
               + (csq.action_id[0] ? String(" action=") + csq.action_id : "")
               + (csq.text[0]      ? String(" testo=\"") + csq.text + "\"" : "")
-              + (csq.snapshot     ? " [📷snapshot]" : ""));
-            if (isLlm && skipLlm) {
+              + (csq.snapshot     ? " [snapshot]" : ""));
+            if (isLlm && skipLlm)
                 L("[SIM] → LLM SKIPPATO — prompt sarebbe: \"" + String(csq.text) + "\"");
-            } else {
+            else
                 executeConsequence(csq, base64Img, sttText);
-            }
         }
     }
 
-    // ripristina stato
+    if (ownDebugPers) { free(debugPers); debugPers = nullptr; }
+
     gPersonalityPrompt  = savedPrompt;
     gPersonalityVoiceId = savedVoiceId;
     gEventBehaviorCount = savedBehCount;

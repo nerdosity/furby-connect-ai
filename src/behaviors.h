@@ -3,9 +3,10 @@
 
 void savePersonalities();
 void loadPersonalities();
+void activatePersonality(int idx);
 void applyActivePersonality();
 
-// legacy compat — usano gPersonalities[gActivePersonality]
+// legacy compat
 void saveEventBehaviors();
 void loadEventBehaviors();
 

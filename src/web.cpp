@@ -455,35 +455,18 @@ static void handleVadSave() {
 // ── /personalities/* ─────────────────────────────────────────────────────────
 
 static void handlePersonalitiesList() {
-    JsonDocument doc;
-    doc["active"] = gActivePersonality;
-    JsonArray arr = doc["personalities"].to<JsonArray>();
-    for (int i = 0; i < gPersonalityCount; i++) {
-        Personality& p = gPersonalities[i];
-        JsonObject po = arr.add<JsonObject>();
-        po["idx"]      = i;
-        po["id"]       = p.id;
-        po["name"]     = p.name;
-        po["prompt"]   = p.prompt;
-        po["voice_id"] = p.voice_id;
-        JsonArray ba = po["behaviors"].to<JsonArray>();
-        for (int b = 0; b < p.behavior_count; b++) {
-            JsonObject bo = ba.add<JsonObject>();
-            bo["id"]        = p.behaviors[b].id;
-            bo["trigger"]   = (int)p.behaviors[b].trigger;
-            bo["sensor_id"] = (int)p.behaviors[b].sensor_id;
-            bo["name"]      = p.behaviors[b].name;
-            JsonArray cs = bo["consequences"].to<JsonArray>();
-            for (int c = 0; c < p.behaviors[b].consequence_count; c++) {
-                const Consequence& q = p.behaviors[b].consequences[c];
-                JsonObject co = cs.add<JsonObject>();
-                co["type"]      = (int)q.type;
-                co["action_id"] = q.action_id;
-                co["text"]      = q.text;
-                co["snapshot"]  = q.snapshot;
-            }
-        }
+    // legge direttamente dal JSON su SPIFFS — non carica tutto in RAM
+    if (!SPIFFS.exists("/personalities.json")) {
+        savePersonalities();
     }
+    File f = SPIFFS.open("/personalities.json", "r");
+    if (!f) { server.send(500, "application/json", "{\"error\":\"file non trovato\"}"); return; }
+    JsonDocument doc;
+    if (deserializeJson(doc, f) != DeserializationError::Ok) {
+        f.close(); server.send(500, "application/json", "{\"error\":\"JSON corrotto\"}"); return;
+    }
+    f.close();
+    doc["active"] = gActivePersonality;
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }
@@ -491,39 +474,66 @@ static void handlePersonalitiesList() {
 static void handlePersonalitiesActivate() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    gActivePersonality = idx;
-    applyActivePersonality();
-    savePersonalities();
+    activatePersonality(idx);
+    if (gActivePersonality != idx) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalitiesNew() {
     HTTP_LOG();
-    if (gPersonalityCount >= MAX_PERSONALITIES) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"max personalities\"}"); return; }
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Nuova";
-    Personality& p = gPersonalities[gPersonalityCount];
-    memset(&p, 0, sizeof(p));
+
+    // legge JSON, aggiunge entry, riscrive
+    JsonDocument doc;
+    if (SPIFFS.exists("/personalities.json")) {
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) { deserializeJson(doc, f); f.close(); }
+    }
+    JsonArray arr = doc["personalities"].is<JsonArray>()
+        ? doc["personalities"].as<JsonArray>()
+        : doc["personalities"].to<JsonArray>();
+
+    JsonObject po = arr.add<JsonObject>();
     String id = "p" + String(millis());
-    strlcpy(p.id,   id.c_str(),  sizeof(p.id));
-    strlcpy(p.name, nm.c_str(),  sizeof(p.name));
-    strlcpy(p.prompt, gPersonalityPrompt.c_str(), sizeof(p.prompt));
-    strlcpy(p.voice_id, gPersonalityVoiceId.c_str(), sizeof(p.voice_id));
-    p.behavior_count = 0;
-    gPersonalityCount++;
-    savePersonalities();
-    server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(gPersonalityCount-1) + "}");
+    po["id"]       = id;
+    po["name"]     = nm;
+    po["prompt"]   = gpActivePers ? String(gpActivePers->prompt) : gPersonalityPrompt;
+    po["voice_id"] = gpActivePers ? String(gpActivePers->voice_id) : gPersonalityVoiceId;
+    po["behaviors"] = JsonArray{};
+    int newIdx = (int)arr.size() - 1;
+
+    String out; serializeJson(doc, out);
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(out); f.close();
+
+    server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(newIdx) + "}");
 }
 
 static void handlePersonalitiesDel() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= gPersonalityCount || gPersonalityCount <= 1) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    for (int i = idx; i < gPersonalityCount - 1; i++) gPersonalities[i] = gPersonalities[i+1];
-    gPersonalityCount--;
-    if (gActivePersonality >= gPersonalityCount) gActivePersonality = gPersonalityCount - 1;
-    applyActivePersonality();
-    savePersonalities();
+
+    JsonDocument doc;
+    if (SPIFFS.exists("/personalities.json")) {
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) { deserializeJson(doc, f); f.close(); }
+    }
+    JsonArray arr = doc["personalities"].as<JsonArray>();
+    if (idx < 0 || idx >= (int)arr.size() || (int)arr.size() <= 1) {
+        server.send(400, "application/json", "{\"ok\":false}"); return;
+    }
+    arr.remove(idx);
+    int newActive = gActivePersonality;
+    if (newActive >= (int)arr.size()) newActive = (int)arr.size() - 1;
+    doc["active"] = newActive;
+
+    String out; serializeJson(doc, out);
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(out); f.close();
+
+    activatePersonality(newActive);
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
@@ -592,10 +602,23 @@ static void handleCfgActivate() {
 static void handleCfgRename() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Config";
-    strlcpy(gPersonalities[idx].name, nm.c_str(), sizeof(gPersonalities[idx].name));
-    savePersonalities();
+
+    JsonDocument doc;
+    if (SPIFFS.exists("/personalities.json")) {
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) { deserializeJson(doc, f); f.close(); }
+    }
+    JsonArray arr = doc["personalities"].as<JsonArray>();
+    if (idx < 0 || idx >= (int)arr.size()) { server.send(400, "application/json", "{\"ok\":false}"); return; }
+    arr[idx]["name"] = nm;
+    if (idx == gActivePersonality && gpActivePers)
+        strlcpy(gpActivePers->name, nm.c_str(), sizeof(gpActivePers->name));
+
+    String out; serializeJson(doc, out);
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(out); f.close();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
@@ -820,7 +843,18 @@ static void handlePersonalityGet() {
     doc["prompt"]   = gPersonalityPrompt;
     doc["voice_id"] = gPersonalityVoiceId;
     doc["active"]   = gActivePersonality;
-    doc["count"]    = gPersonalityCount;
+    // conta le personality dal JSON senza caricarle in RAM
+    int count = 0;
+    if (SPIFFS.exists("/personalities.json")) {
+        File f = SPIFFS.open("/personalities.json", "r");
+        if (f) {
+            JsonDocument pd;
+            if (deserializeJson(pd, f) == DeserializationError::Ok && pd["personalities"].is<JsonArray>())
+                count = (int)pd["personalities"].as<JsonArray>().size();
+            f.close();
+        }
+    }
+    doc["count"] = count;
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }

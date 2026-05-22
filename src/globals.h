@@ -183,7 +183,6 @@ enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
 #define MAX_EVENT_BEHAVIORS  16
 #define MAX_FURBY_SCAN       8
 #define STT_BUF_MAX_SAMPLES  128000
-#define MAX_PERSONALITIES    8
 
 struct Consequence {
     ConsequenceType type         = CSQ_NONE;
@@ -203,6 +202,7 @@ struct EventBehavior {
     uint8_t     consequence_count = 0;
 };
 
+// Allocata in PSRAM — una sola istanza attiva alla volta
 struct Personality {
     char         id[32]                        = {};
     char         name[48]                      = {};
@@ -280,10 +280,10 @@ extern String        gCamDescPrompt;
 extern EventBehavior gEventBehaviors[MAX_EVENT_BEHAVIORS];
 extern int           gEventBehaviorCount;
 
-extern Personality   gPersonalities[MAX_PERSONALITIES];
-extern int           gPersonalityCount;
-extern int           gActivePersonality;
-extern int           gDebugPersonality;
+// Unica personalità attiva — allocata in PSRAM
+extern Personality*  gpActivePers;
+extern int           gActivePersonality;  // indice nel JSON
+extern int           gDebugPersonality;   // -1 = usa quella attiva
 
 extern volatile TriggerType pendingTrigger;
 extern volatile uint8_t     pendingSensorId;
