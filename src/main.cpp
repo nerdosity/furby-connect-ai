@@ -73,29 +73,6 @@ void setup() {
     loadBehaviorConfigs();
     loadEventBehaviors();
 
-    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
-    // primo tentativo: 20MHz, no format
-    sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
-    if (!sdAvailable) {
-        // secondo tentativo: 4MHz (compatibile con card lente/economiche)
-        SD_MMC.end(); delay(50);
-        sdAvailable = SD_MMC.begin("/sdcard", true, false, 4000);
-    }
-    if (!sdAvailable) {
-        // terzo tentativo: 4MHz + format (SD non formattata o filesystem corrotto)
-        SD_MMC.end(); delay(50);
-        sdAvailable = SD_MMC.begin("/sdcard", true, true, 4000);
-        if (sdAvailable) Serial.println("SD: formattata e montata (FAT32)");
-    }
-    if (sdAvailable) {
-        uint8_t t = SD_MMC.cardType();
-        const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
-        Serial.printf("SD: OK  tipo=%s  %lluMB totali  %lluMB usati\n",
-            ts, SD_MMC.totalBytes()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
-    } else {
-        Serial.println("SD: assente o non riconosciuta — modalita RAM");
-    }
-
     camInit();
 
     // I2C — after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
@@ -121,7 +98,29 @@ void setup() {
     if (i2cFound == 0) Serial.println("  I2C: nessun device trovato!");
     else Serial.printf("  I2C scan: %d device(s)\n", i2cFound);
 
-    ch32Init();
+    ch32Init(); // IO4=HIGH (SD CS), IO6=HIGH (amplifier enable) — deve precedere SD init
+
+    // SD va inizializzata DOPO ch32Init perché IO4 è il CS della card
+    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
+    sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
+    if (!sdAvailable) {
+        SD_MMC.end(); delay(50);
+        sdAvailable = SD_MMC.begin("/sdcard", true, false, 4000);
+    }
+    if (!sdAvailable) {
+        SD_MMC.end(); delay(50);
+        sdAvailable = SD_MMC.begin("/sdcard", true, true, 4000);
+        if (sdAvailable) Serial.println("SD: formattata e montata (FAT32)");
+    }
+    if (sdAvailable) {
+        uint8_t t = SD_MMC.cardType();
+        const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
+        Serial.printf("SD: OK  tipo=%s  %lluMB totali  %lluMB usati\n",
+            ts, SD_MMC.totalBytes()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
+    } else {
+        Serial.println("SD: assente o non riconosciuta — modalita RAM");
+    }
+
     initI2S();
     initES8311();
     initES7210();
