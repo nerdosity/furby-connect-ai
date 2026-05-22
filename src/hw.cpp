@@ -316,8 +316,8 @@ bool camInit() {
     cam.pin_reset     = RESET_GPIO_NUM;
     cam.xclk_freq_hz  = 20000000;
     cam.pixel_format  = PIXFORMAT_JPEG;
-    if (psramFound()) { cam.frame_size = FRAMESIZE_QVGA;  cam.jpeg_quality = 12; cam.fb_count = 2; cam.fb_location = CAMERA_FB_IN_PSRAM; }
-    else              { cam.frame_size = FRAMESIZE_QQVGA; cam.jpeg_quality = 12; cam.fb_count = 1; cam.fb_location = CAMERA_FB_IN_DRAM; }
+    if (psramFound()) { cam.frame_size = camStreamSize;   cam.jpeg_quality = camStreamQuality; cam.fb_count = 2; cam.fb_location = CAMERA_FB_IN_PSRAM; }
+    else              { cam.frame_size = FRAMESIZE_QQVGA; cam.jpeg_quality = 12;                cam.fb_count = 1; cam.fb_location = CAMERA_FB_IN_DRAM; }
     camActive = (esp_camera_init(&cam) == ESP_OK);
     Serial.println(camActive ? "CAM: init OK" : "CAM: init FALLITA");
     return camActive;
