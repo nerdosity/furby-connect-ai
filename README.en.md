@@ -1,8 +1,6 @@
-# Furby Connect AI
-
 <p align="center">
-  <img src="graphic/writing_512_154_dark.png#gh-light-mode-only" alt="Furby LLM" width="420">
-  <img src="graphic/writing_512_154_light.png#gh-dark-mode-only" alt="Furby LLM" width="420">
+  <img src="graphic/writing_512_154_dark.png#gh-light-mode-only" alt="Furby LLM" width="380">
+  <img src="graphic/writing_512_154_light.png#gh-dark-mode-only" alt="Furby LLM" width="380">
 </p>
 
 <p align="center">
@@ -11,12 +9,27 @@
 </p>
 
 <p align="center">
-  <a href="README.md">🇮🇹 Italiano</a> &nbsp;·&nbsp;
-  <a href="#build--flash">Installation</a> &nbsp;·&nbsp;
-  <a href="#project-status">Status</a>
+  <a href="README.md">🇮🇹 Italiano</a>
 </p>
 
----
+<br>
+
+[![GitHub last commit](https://img.shields.io/github/last-commit/nerdosity/furby-llm)](https://github.com/nerdosity/furby-llm/commits/main)
+[![Platform](https://img.shields.io/badge/platform-ESP32--S3-blue)](https://www.espressif.com/en/products/socs/esp32-s3)
+[![Framework](https://img.shields.io/badge/framework-Arduino%20%2F%20PlatformIO-orange)](https://platformio.org/)
+
+<details>
+<summary>Contents</summary>
+
+- [How it works](#how-it-works)
+- [Hardware](#hardware)
+- [Features](#features)
+- [Source architecture](#source-architecture)
+- [Project status](#project-status)
+- [Build & flash](#build--flash)
+- [Configuration](#configuration)
+
+</details>
 
 ## How it works
 
@@ -32,8 +45,6 @@ Button press / VAD / BLE sensor
 
 The Furby has a deliberately rude and cynical personality, fully configurable via the web UI.
 
----
-
 ## Hardware
 
 | Component | Details |
@@ -46,23 +57,20 @@ The Furby has a deliberately rude and cynical personality, fully configurable vi
 | **Furby** | Furby Connect (2016) - BLE connection |
 | **Button** | GPIO 0 (falling-edge ISR) |
 
----
-
 ## Features
 
-- **Contextual vision** - captures JPEG, sends it to the LLM with a personality prompt
-- **Multi-provider LLM** - OpenAI (GPT-4o-mini by default) or Anthropic Claude; model configurable from the UI
+- **Contextual vision** - captures JPEG, sent to the LLM with a personality prompt
+- **Multi-provider LLM** - OpenAI (GPT-4o-mini default) or Anthropic Claude; model configurable from the UI
 - **Multilingual TTS** - ElevenLabs `multilingual_v2`; MP3 on free accounts, PCM 16 kHz on pro
 - **BLE lipsync** - PCM amplitude → open/close bytes sent in real-time to the Furby via BLE
 - **VAD** - voice activity detection with 250 Hz high-pass filter to ignore the Furby's own mechanical noise
 - **STT** (optional) - PSRAM buffer, disabled by default
-- **SD card audio cache** - previously heard responses are reused; on second request a cynical prefix is generated with 1 LLM+TTS call and saved - from the third request onward, zero tokens, fully served from SD
-- **Multi-WiFi** - up to 5 saved networks with configurable priority; mesh-compatible
-- **Web UI** - dashboard at `http://furby.local` (or IP) with Bootstrap 5 + Bootstrap Icons
+- **SD card audio cache** - previously heard responses are reused; on second request a cynical prefix is generated with 1 LLM+TTS call and saved to SD - from the third request onward, zero tokens
+- **Multi-WiFi** - up to 5 networks in flash with configurable priority; mesh-compatible
+- **Web UI** - dashboard at `http://furby.local` with Bootstrap 5
 - **Captive portal** - AP `Furby_Config` on first boot to configure WiFi and API keys
-- **Behaviors / personalities** - trigger system (VAD, button, BLE sensors) with configurable consequences (Furby action, fixed TTS, LLM prompt)
-
----
+- **Behaviors** - trigger system (VAD, button, BLE sensors) with configurable consequences (Furby action, fixed TTS, LLM prompt)
+- **Flicker filter** - 50/60 Hz anti-flicker filter for the OV2640 camera
 
 ## Source architecture
 
@@ -78,20 +86,16 @@ src/
 └── web.h/cpp         - WebServer, MJPEG stream, REST API, web UI HTML
 ```
 
-### BLE protocol
+BLE protocol:
 
 | | UUID |
 |---|---|
 | Service | `dab91435-b5a1-e29c-b041-bcd562613bde` |
 | TX characteristic | `dab91383-b5a1-e29c-b041-bcd562613bde` |
 
-The `lipSyncTask` FreeRTOS task runs on Core 0 and writes bytes derived from real-time PCM amplitude.
-
----
-
 ## Project status
 
-> Updated May 2026. Progress bars reflect actual state, not aspirational state.
+> Updated May 2026.
 
 | Component | Progress | Notes |
 |---|---|---|
@@ -101,15 +105,13 @@ The `lipSyncTask` FreeRTOS task runs on Core 0 and writes bytes derived from rea
 | ES7210 ADC / VAD | `████████░░` 80% | VAD works; false negatives with soft speech |
 | Multi-WiFi | `█████████░` 90% | Stable, mesh-compatible |
 | Multi-LLM provider | `████████░░` 80% | OpenAI solid; Claude in testing |
-| BLE scan + connect | `████████░░` 80% | Stable but initial connection can be slow |
+| BLE scan + connect | `████████░░` 80% | Stable, initial connection occasionally slow |
 | BLE lipsync | `████░░░░░░` 40% | Coarse mouth movement, tuning in progress |
 | SD card audio cache | `████████░░` 80% | Cache hit with cynical prefix - 1 LLM call then fully from SD |
 | Behaviors / triggers | `███████░░░` 70% | Working; config UI needs polish |
 | Web UI | `████████░░` 80% | Functional; mobile/desktop UX still rough |
 | MP3 decoding | `██████░░░░` 60% | Integrated, not stress-tested long-term |
 | Captive portal | `█████████░` 90% | Stable on first boot |
-
----
 
 ## Build & flash
 
@@ -123,10 +125,8 @@ pio run -t upload
 pio run -t uploadfs
 ```
 
-On first boot (or with no saved WiFi networks), the device creates the **`Furby_Config`** AP.  
+On first boot (or with no saved WiFi networks), the device creates the **`Furby_Config`** AP.
 Connect to it and go to `http://192.168.4.1` to enter WiFi credentials, OpenAI key, ElevenLabs key and Voice ID.
-
----
 
 ## Configuration
 
@@ -134,20 +134,15 @@ All parameters are stored in flash via `Preferences` (namespace `furby`).
 
 | Parameter | Where |
 |---|---|
-| WiFi SSID / password (up to 5) | captive portal or web UI → Networks |
-| OpenAI API key | web UI → Settings |
-| Anthropic API key | web UI → Settings |
-| ElevenLabs API key + Voice ID | web UI → Settings |
-| TTS format (`mp3` / `pcm`) | web UI → Settings |
-| LLM provider (`openai` / `claude`) | web UI → Settings |
-| LLM model | web UI → Settings |
-| VAD threshold | web UI → Audio |
-| Camera quality / resolution | web UI → Camera |
-| Personality prompt | web UI → Personality |
-| Behaviors and triggers | web UI → Behaviors |
-
----
-
-## License
-
-No formal license - hobby project. Use the code as you wish, but no warranties are provided.
+| WiFi SSID / password (up to 5) | captive portal or web UI - Networks |
+| OpenAI API key | web UI - Settings |
+| Anthropic API key | web UI - Settings |
+| ElevenLabs API key + Voice ID | web UI - Settings |
+| TTS format (`mp3` / `pcm`) | web UI - Settings |
+| LLM provider (`openai` / `claude`) | web UI - Settings |
+| LLM model | web UI - Settings |
+| VAD threshold | web UI - Audio |
+| Camera quality / resolution | web UI - Camera |
+| Camera flicker filter | web UI - Camera |
+| Personality prompt | web UI - Personality |
+| Behaviors and triggers | web UI - Behaviors |

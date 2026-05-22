@@ -1,22 +1,35 @@
-# Furby Connect AI
-
 <p align="center">
-  <img src="graphic/writing_512_154_dark.png#gh-light-mode-only" alt="Furby LLM" width="420">
-  <img src="graphic/writing_512_154_light.png#gh-dark-mode-only" alt="Furby LLM" width="420">
+  <img src="graphic/writing_512_154_dark.png#gh-light-mode-only" alt="Furby LLM" width="380">
+  <img src="graphic/writing_512_154_light.png#gh-dark-mode-only" alt="Furby LLM" width="380">
 </p>
 
 <p align="center">
-  Firmware ESP32-S3 che trasforma un Furby Connect (2016) in un robot AI autonomo,<br>
+  Firmware ESP32-S3 che trasforma un Furby Connect (2016) in un robot AI autonomo<br>
   con visione camera, sintesi vocale e lipsync via Bluetooth LE.
 </p>
 
 <p align="center">
-  <a href="README.en.md">🇬🇧 English</a> &nbsp;·&nbsp;
-  <a href="#build--flash">Installazione</a> &nbsp;·&nbsp;
-  <a href="#stato-del-progetto">Stato</a>
+  <a href="README.en.md">🇬🇧 English</a>
 </p>
 
----
+<br>
+
+[![GitHub last commit](https://img.shields.io/github/last-commit/nerdosity/furby-llm)](https://github.com/nerdosity/furby-llm/commits/main)
+[![Platform](https://img.shields.io/badge/platform-ESP32--S3-blue)](https://www.espressif.com/en/products/socs/esp32-s3)
+[![Framework](https://img.shields.io/badge/framework-Arduino%20%2F%20PlatformIO-orange)](https://platformio.org/)
+
+<details>
+<summary>Contenuti</summary>
+
+- [Come funziona](#come-funziona)
+- [Hardware](#hardware)
+- [Funzionalità](#funzionalità)
+- [Architettura sorgente](#architettura-sorgente)
+- [Stato del progetto](#stato-del-progetto)
+- [Build & flash](#build--flash)
+- [Configurazione](#configurazione)
+
+</details>
 
 ## Come funziona
 
@@ -32,8 +45,6 @@ Pressione tasto / VAD / sensore BLE
 
 Il Furby ha una personalità deliberatamente maleducata e cinica, configurabile dalla web UI.
 
----
-
 ## Hardware
 
 | Componente | Dettaglio |
@@ -46,23 +57,20 @@ Il Furby ha una personalità deliberatamente maleducata e cinica, configurabile 
 | **Furby** | Furby Connect (2016) - connessione BLE |
 | **Tasto** | GPIO 0 (ISR su fronte di discesa) |
 
----
-
 ## Funzionalità
 
-- **Visione contestuale** - cattura JPEG, lo manda al LLM con prompt di personalità
-- **Multi-provider LLM** - OpenAI (GPT-4o-mini di default) o Anthropic Claude; modello configurabile dalla UI
+- **Visione contestuale** - cattura JPEG, inviato al LLM con prompt di personalità
+- **Multi-provider LLM** - OpenAI (GPT-4o-mini default) o Anthropic Claude; modello configurabile dalla UI
 - **TTS multilingua** - ElevenLabs `multilingual_v2`; MP3 su account free, PCM 16 kHz su pro
 - **Lipsync BLE** - ampiezza PCM → byte open/close inviati in real-time al Furby via BLE
-- **VAD** - rilevamento parlato con filtro passa-alto 250 Hz per ignorare rumori meccanici del Furby stesso
+- **VAD** - rilevamento parlato con filtro passa-alto 250 Hz per ignorare i rumori meccanici del Furby
 - **STT** (opzionale) - buffer PSRAM, disattivato di default
-- **Cache audio SD card** - le risposte già sentite vengono riutilizzate; alla seconda richiesta viene generato un prefisso cinico con 1 sola call LLM+TTS, poi salvato su SD - dalla terza in poi zero token
-- **Multi-WiFi** - fino a 5 reti salvate in flash con priorità configurabile; compatibile con mesh
-- **Web UI** - dashboard su `http://furby.local` (o IP) con Bootstrap 5 + Bootstrap Icons
+- **Cache audio SD card** - le risposte già sentite vengono riutilizzate; alla seconda richiesta un prefisso cinico viene generato con 1 sola call LLM+TTS e salvato su SD - dalla terza in poi zero token
+- **Multi-WiFi** - fino a 5 reti in flash con priorità configurabile; mesh-compatible
+- **Web UI** - dashboard su `http://furby.local` con Bootstrap 5
 - **Captive portal** - AP `Furby_Config` al primo avvio per configurare WiFi e API key
-- **Behaviors / personalità** - sistema di trigger (VAD, tasto, sensori BLE) con conseguenze configurabili (azione Furby, TTS fisso, prompt LLM)
-
----
+- **Behaviors** - sistema di trigger (VAD, tasto, sensori BLE) con conseguenze configurabili (azione Furby, TTS fisso, prompt LLM)
+- **Flicker filter** - filtro anti-flicker 50/60 Hz per la camera OV2640
 
 ## Architettura sorgente
 
@@ -78,20 +86,16 @@ src/
 └── web.h/cpp         - WebServer, MJPEG stream, API REST, web UI HTML
 ```
 
-### Protocollo BLE
+Protocollo BLE:
 
 | | UUID |
 |---|---|
 | Service | `dab91435-b5a1-e29c-b041-bcd562613bde` |
 | TX characteristic | `dab91383-b5a1-e29c-b041-bcd562613bde` |
 
-Il task `lipSyncTask` gira su Core 0 e scrive byte derivati dall'ampiezza PCM in real-time.
-
----
-
 ## Stato del progetto
 
-> Aggiornato maggio 2026. Le barre indicano il completamento reale.
+> Aggiornato maggio 2026.
 
 | Componente | Progresso | Note |
 |---|---|---|
@@ -101,15 +105,13 @@ Il task `lipSyncTask` gira su Core 0 e scrive byte derivati dall'ampiezza PCM in
 | ES7210 ADC / VAD | `████████░░` 80% | VAD ok; falsi negativi con parlato sottovocce |
 | Multi-WiFi | `█████████░` 90% | Stabile, mesh-compatible |
 | Multi-provider LLM | `████████░░` 80% | OpenAI ok; Claude in test |
-| BLE scan + connect | `████████░░` 80% | Stabile ma a volte lenta la connessione iniziale |
-| Lipsync BLE | `████░░░░░░` 40% | Movimenti bocca grossolani, tuning in corso |
-| Cache audio SD card | `████████░░` 80% | Cache hit con prefisso cinico - 1 call LLM poi tutto da SD |
+| BLE scan + connect | `████████░░` 80% | Stabile, connessione iniziale a volte lenta |
+| Lipsync BLE | `████░░░░░░` 40% | Movimenti grossolani, tuning in corso |
+| Cache audio SD card | `████████░░` 80% | Cache hit con prefisso cinico - 1 call poi tutto da SD |
 | Behaviors / triggers | `███████░░░` 70% | Funziona; UI di configurazione da rifinire |
 | Web UI | `████████░░` 80% | Funzionale; UX mobile/desktop ancora ruvida |
 | MP3 decoding | `██████░░░░` 60% | Integrato, poco testato su lungo periodo |
 | Captive portal | `█████████░` 90% | Stabile al primo avvio |
-
----
 
 ## Build & flash
 
@@ -123,10 +125,8 @@ pio run -t upload
 pio run -t uploadfs
 ```
 
-Al primo avvio (o senza reti WiFi salvate) il dispositivo crea l'AP **`Furby_Config`**.  
+Al primo avvio (o senza reti WiFi salvate) il dispositivo crea l'AP **`Furby_Config`**.
 Collegati e vai su `http://192.168.4.1` per inserire WiFi, OpenAI key, ElevenLabs key e Voice ID.
-
----
 
 ## Configurazione
 
@@ -134,20 +134,15 @@ Tutti i parametri vengono salvati in flash via `Preferences` (namespace `furby`)
 
 | Parametro | Dove |
 |---|---|
-| WiFi SSID / password (fino a 5) | captive portal o web UI → Reti |
-| OpenAI API key | web UI → Impostazioni |
-| Anthropic API key | web UI → Impostazioni |
-| ElevenLabs API key + Voice ID | web UI → Impostazioni |
-| Formato TTS (`mp3` / `pcm`) | web UI → Impostazioni |
-| Provider LLM (`openai` / `claude`) | web UI → Impostazioni |
-| Modello LLM | web UI → Impostazioni |
-| Soglia VAD | web UI → Audio |
-| Qualità / risoluzione camera | web UI → Camera |
-| Prompt personalità | web UI → Personalità |
-| Behaviors e trigger | web UI → Behaviors |
-
----
-
-## Licenza
-
-Nessuna licenza formale - progetto hobbistico. Usa il codice come vuoi, ma non ci sono garanzie di funzionamento.
+| WiFi SSID / password (fino a 5) | captive portal o web UI - Reti |
+| OpenAI API key | web UI - Impostazioni |
+| Anthropic API key | web UI - Impostazioni |
+| ElevenLabs API key + Voice ID | web UI - Impostazioni |
+| Formato TTS (`mp3` / `pcm`) | web UI - Impostazioni |
+| Provider LLM (`openai` / `claude`) | web UI - Impostazioni |
+| Modello LLM | web UI - Impostazioni |
+| Soglia VAD | web UI - Audio |
+| Qualità / risoluzione camera | web UI - Camera |
+| Filtro flicker camera | web UI - Camera |
+| Prompt personalità | web UI - Personalità |
+| Behaviors e trigger | web UI - Behaviors |

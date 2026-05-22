@@ -313,13 +313,14 @@ function setLang(l){
 
 <!-- volume bar -->
 <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border-bottom">
-  <span class="text-muted small"><i class="bi bi-volume-up"></i> VOL</span>
+  <i class="bi bi-volume-down text-muted flex-shrink-0"></i>
   <input type="range" class="form-range flex-fill" id="vol-bar" min="0" max="100" value="75" oninput="volBarChange(this.value)" onchange="volSend(this.value)">
-  <span id="vol-bar-val" class="text-muted small" style="min-width:34px;text-align:right">75%</span>
+  <i class="bi bi-volume-up text-muted flex-shrink-0"></i>
+  <span id="vol-bar-val" class="text-muted small flex-shrink-0" style="min-width:34px;text-align:right">75%</span>
 </div>
 
 <!-- tabs -->
-<ul class="nav nav-tabs flex-nowrap overflow-auto" id="debugTabs">
+<ul class="nav nav-tabs flex-nowrap overflow-x-auto" id="debugTabs">
   <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
@@ -458,15 +459,6 @@ function setLang(l){
 
 <!-- TAB: Audio -->
 <div class="tab-pane fade" id="t-audio">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.vol_lbl">Volume</h6>
-    <div class="d-flex align-items-center gap-3">
-      <i class="bi bi-volume-down text-muted"></i>
-      <input type="range" class="form-range flex-fill" id="vol-slider" min="0" max="100" value="75" oninput="volChange(this.value)" onchange="volSend(this.value)">
-      <i class="bi bi-volume-up text-muted"></i>
-      <span id="vol-val" class="text-muted small" style="min-width:34px;text-align:right">75%</span>
-    </div>
-  </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.tone">Test casse (sine wave)</h6>
     <div class="mb-3">
@@ -1300,8 +1292,7 @@ function dbgVadSave(){
     setTimeout(function(){msg.textContent='';msg.className='small mt-1 text-muted';},2000);
   }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
 }
-function volChange(v){document.getElementById('vol-val').textContent=v+'%';var b=document.getElementById('vol-bar');if(b){b.value=v;document.getElementById('vol-bar-val').textContent=v+'%';}}
-function volBarChange(v){document.getElementById('vol-bar-val').textContent=v+'%';var s=document.getElementById('vol-slider');if(s){s.value=v;document.getElementById('vol-val').textContent=v+'%';}}
+function volBarChange(v){document.getElementById('vol-bar-val').textContent=v+'%';}
 function volSend(v){var fd=new FormData();fd.append('vol',v);fetch('/debug/vol',{method:'POST',body:fd});}
 function tonePlay(freq){
   var fd=new FormData();fd.append('freq',freq!=null?freq:document.getElementById('tone-freq').value);fd.append('ms',document.getElementById('tone-ms').value);
