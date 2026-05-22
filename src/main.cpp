@@ -43,15 +43,12 @@ void setup() {
     loadWifiNets();
     llm_provider        = preferences.getString("llm_prov",  "openai");
     llm_model           = preferences.getString("llm_model", "gpt-4o-mini");
-    if (llm_provider == "claude") {
-        claude_api_key  = preferences.getString("claude",     "");
-        if (claude_api_key.length() == 0)
-            claude_api_key = preferences.getString("claude_key", "");
-    } else {
-        openai_api_key  = preferences.getString("openai",    "");
-        if (openai_api_key.length() == 0)
-            openai_api_key = preferences.getString("openai_key", "");
-    }
+    openai_api_key = preferences.getString("openai", "");
+    if (openai_api_key.length() == 0)
+        openai_api_key = preferences.getString("openai_key", "");
+    claude_api_key = preferences.getString("claude", "");
+    if (claude_api_key.length() == 0)
+        claude_api_key = preferences.getString("claude_key", "");
     elevenlabs_api_key  = preferences.getString("11labs",    "");
     if (elevenlabs_api_key.length() == 0)
         elevenlabs_api_key = preferences.getString("11labs_key", "");

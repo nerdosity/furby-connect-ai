@@ -1643,6 +1643,9 @@ void startWebServer() {
     server.on("/shared.js",  HTTP_GET, []() {
         serveSpiffsETag("/shared.js", "application/javascript; charset=utf-8", "no-cache");
     });
+    server.on("/version.txt", HTTP_GET, []() {
+        serveSpiffs("/version.txt", "text/plain; charset=utf-8", "no-cache, no-store, must-revalidate");
+    });
 
     static const char* hdrs[] = {"If-None-Match"};
     server.collectHeaders(hdrs, 1);
