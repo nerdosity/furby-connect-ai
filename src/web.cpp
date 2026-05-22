@@ -1541,6 +1541,7 @@ static void camSafeReinit() {
 static void handleCameraOff() {
     HTTP_LOG();
     camDeinit();
+    for (int i = 0; i < 50 && mjpegRunning; i++) vTaskDelay(20 / portTICK_PERIOD_MS);
     server.send(200, "text/plain", "ok");
 }
 
