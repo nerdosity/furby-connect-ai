@@ -102,8 +102,8 @@ const int FURBY_ACTIONS_COUNT = (int)(sizeof(FURBY_ACTIONS)/sizeof(FURBY_ACTIONS
 String        gPersonalityPrompt;
 String        gPersonalityVoiceId;
 String        gCamDescPrompt;
-EventBehavior gEventBehaviors[MAX_EVENT_BEHAVIORS];
-int           gEventBehaviorCount = 0;
+EventBehavior* gEventBehaviors     = nullptr;  // allocato in PSRAM da setup()
+int            gEventBehaviorCount = 0;
 
 Personality*  gpActivePers       = nullptr;
 int           gActivePersonality = 0;

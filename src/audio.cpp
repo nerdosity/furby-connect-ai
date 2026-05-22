@@ -14,9 +14,9 @@ String getCacheJSON() {
 }
 
 String getCacheSummaryJSON() {
-    JsonDocument full;
+    auto full = JsonDocPsram();
     deserializeJson(full, getCacheJSON());
-    JsonDocument summary;
+    auto summary = JsonDocPsram();
     for (JsonPair kv : full.as<JsonObject>()) {
         JsonVariant v = kv.value();
         if (v.is<JsonObject>()) summary[kv.key()] = v["text"].as<String>();
@@ -32,7 +32,7 @@ static void saveCacheIndex(JsonDocument& doc) {
 
 void updateCacheJSON(String newFilename, String text) {
     if (!sdCheck()) return;
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     deserializeJson(doc, getCacheJSON());
     JsonObject entry = doc[newFilename].to<JsonObject>();
     entry["text"]   = text;
@@ -41,7 +41,7 @@ void updateCacheJSON(String newFilename, String text) {
 }
 
 String getCachedPrefix(const String& audioFile) {
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     deserializeJson(doc, getCacheJSON());
     JsonVariant v = doc[audioFile];
     if (v.is<JsonObject>()) {
@@ -53,7 +53,7 @@ String getCachedPrefix(const String& audioFile) {
 
 void setCachedPrefix(const String& audioFile, const String& prefixFile) {
     if (!sdCheck()) return;
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     deserializeJson(doc, getCacheJSON());
     JsonVariant v = doc[audioFile];
     if (v.is<JsonObject>()) {

@@ -214,6 +214,25 @@ struct Personality {
 
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
 
+// ── ArduinoJson PSRAM allocator ───────────────────────────────────────────────
+// Allocatore singleton — ArduinoJson v7 vuole Allocator* (lifetime >= JsonDocument)
+class SpiRamAllocator : public ArduinoJson::Allocator {
+public:
+    void* allocate(size_t size) override {
+        return heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    }
+    void deallocate(void* ptr) override { free(ptr); }
+    void* reallocate(void* ptr, size_t new_size) override {
+        return heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    }
+    static ArduinoJson::Allocator* instance() {
+        static SpiRamAllocator alloc;
+        return &alloc;
+    }
+};
+// Crea un JsonDocument che alloca in PSRAM (ArduinoJson v7)
+#define JsonDocPsram() ArduinoJson::JsonDocument(SpiRamAllocator::instance())
+
 // ── Globals extern ────────────────────────────────────────────────────────────
 extern Preferences  preferences;
 extern WebServer    server;
@@ -277,8 +296,9 @@ extern const int   FURBY_ACTIONS_COUNT;
 extern String        gPersonalityPrompt;
 extern String        gPersonalityVoiceId;
 extern String        gCamDescPrompt;
-extern EventBehavior gEventBehaviors[MAX_EVENT_BEHAVIORS];
-extern int           gEventBehaviorCount;
+// Array in PSRAM — allocato in setup() via gEventBehaviorsInit()
+extern EventBehavior* gEventBehaviors;
+extern int            gEventBehaviorCount;
 
 // Unica personalità attiva — allocata in PSRAM
 extern Personality*  gpActivePers;

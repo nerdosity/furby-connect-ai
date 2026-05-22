@@ -51,6 +51,42 @@
         <button type="submit" class="btn btn-primary px-3" data-i18n="wifi.btn_add"><i class="bi bi-plus-lg"></i> Aggiungi / Aggiorna rete</button>
       </div>
     </form>
+    <hr class="my-3">
+    <div class="mb-2">
+      <label class="form-label" data-i18n="wifi.label_hostname">Hostname</label>
+      <div class="input-group input-group-sm">
+        <input type="text" class="form-control" id="wifi-hostname-inp" maxlength="32" placeholder="furby">
+        <button class="btn btn-primary px-3" type="button" onclick="wifiHostnameSave()" data-i18n="sys.save"><i class="bi bi-floppy"></i> Salva</button>
+      </div>
+    </div>
+    <hr class="my-3">
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" id="static-en" onchange="staticToggle()">
+      <label class="form-check-label" for="static-en" data-i18n="wifi.static_enable">IP statico</label>
+    </div>
+    <div id="static-fields" style="display:none">
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="form-label form-label-sm" data-i18n="wifi.static_ip">IP</label>
+          <input type="text" class="form-control form-control-sm" id="static-ip" placeholder="192.168.1.100">
+        </div>
+        <div class="col-6">
+          <label class="form-label form-label-sm" data-i18n="wifi.static_gw">Gateway</label>
+          <input type="text" class="form-control form-control-sm" id="static-gw" placeholder="192.168.1.1">
+        </div>
+        <div class="col-6">
+          <label class="form-label form-label-sm" data-i18n="wifi.static_mask">Mask</label>
+          <input type="text" class="form-control form-control-sm" id="static-mask" placeholder="255.255.255.0">
+        </div>
+        <div class="col-6">
+          <label class="form-label form-label-sm" data-i18n="wifi.static_dns">DNS</label>
+          <input type="text" class="form-control form-control-sm" id="static-dns" placeholder="8.8.8.8">
+        </div>
+      </div>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="button" class="btn btn-primary px-3" onclick="staticSave()" data-i18n="sys.save"><i class="bi bi-floppy"></i> Salva (richiede reboot)</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -245,6 +281,18 @@ function applyHome(d){
   }
   document.getElementById('wifi-rows').innerHTML=rows;
 
+  // hostname & IP statico
+  if(d.hostname) document.getElementById('wifi-hostname-inp').value=d.hostname;
+  var en=d.static_enabled||false;
+  document.getElementById('static-en').checked=en;
+  document.getElementById('static-fields').style.display=en?'':'none';
+  if(d.static_ip && d.static_ip!=='0.0.0.0'){
+    document.getElementById('static-ip').value=d.static_ip;
+    document.getElementById('static-gw').value=d.static_gw||'';
+    document.getElementById('static-mask').value=d.static_mask||'';
+    document.getElementById('static-dns').value=d.static_dns||'';
+  }
+
   // LLM
   var prov=d.llm_provider||'openai';
   document.getElementById('prov').value=prov;
@@ -276,8 +324,11 @@ function applyHome(d){
     sdRow.innerHTML='<span class="fb-dot fb-dot-warn"></span><span class="fw-semibold">'+T('sd.absent')+'</span><span class="ms-auto text-muted small">'+T('sd.absent_sub')+'</span>';
   }
   sdBtn.innerHTML='<div class="d-grid d-sm-flex gap-2 justify-content-sm-start">'
-    +'<button class="btn btn-outline-primary px-3" onclick="sdReinit()"><i class="bi bi-arrow-clockwise"></i> '+T('sd.btn_reinit')+'</button>'
-    +(d.sd_present ? '<button class="btn btn-outline-warning px-3" onclick="sdClearCache()"><i class="bi bi-trash3"></i> '+T('sd.btn_format')+'</button>' : '')
+    +(d.sd_present
+      ? '<button class="btn btn-outline-warning px-3" onclick="sdUnmount()">'+T('sd.btn_unmount')+'</button>'
+        +'<button class="btn btn-outline-warning px-3" onclick="sdClearCache()"><i class="bi bi-trash3"></i> '+T('sd.btn_format')+'</button>'
+      : '<button class="btn btn-outline-primary px-3" onclick="sdReinit()">'+T('sd.btn_mount')+'</button>'
+    )
     +'<button class="btn btn-danger px-3" onclick="sdFormatFAT()"><i class="bi bi-exclamation-triangle"></i> '+T('sd.btn_formatfat')+'</button>'
     +'</div>';
 
@@ -298,6 +349,13 @@ function sdReinit(){
   fetch('/sd/reinit',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){sdMsg(T('sd.present')+' — '+d.type+' '+d.total_mb+'MB','success');fetch('/api/home').then(function(r){return r.json();}).then(applyHome);}
     else sdMsg(d.error||T('sd.absent'),'danger');
+  }).catch(function(){sdMsg(T('error_conn'),'danger');});
+}
+function sdUnmount(){
+  sdMsg('...','muted');
+  fetch('/sd/unmount',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    sdMsg(d.ok?T('sd.absent_sub'):(d.error||T('error_generic')),d.ok?'muted':'danger');
+    fetch('/api/home').then(function(r){return r.json();}).then(applyHome);
   }).catch(function(){sdMsg(T('error_conn'),'danger');});
 }
 function sdClearCache(){
@@ -530,8 +588,40 @@ function testEl(){
   }).catch(function(){el.className='small mt-1 text-danger';el.textContent=T('llm.test_timeout');_elSetLoading(false);});
 }
 
+// WiFi hostname & IP statico
+function wifiHostnameSave(){
+  var n=document.getElementById('wifi-hostname-inp').value.trim();
+  if(!n)return;
+  fetch('/wifi/hostname',{method:'POST',body:new URLSearchParams({hostname:n})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(!d.ok)alert(d.error||T('error_generic'));})
+    .catch(function(){alert(T('error_generic'));});
+}
+function staticToggle(){
+  var en=document.getElementById('static-en').checked;
+  document.getElementById('static-fields').style.display=en?'':'none';
+  if(!en){
+    fetch('/wifi/static',{method:'POST',body:new URLSearchParams({disable:'1'})})
+      .catch(function(){alert(T('error_generic'));});
+  }
+}
+function staticSave(){
+  var ip=document.getElementById('static-ip').value.trim();
+  var gw=document.getElementById('static-gw').value.trim();
+  var mask=document.getElementById('static-mask').value.trim();
+  var dns=document.getElementById('static-dns').value.trim();
+  if(!ip||!gw||!mask){alert(T('wifi.static_required'));return;}
+  fetch('/wifi/static',{method:'POST',body:new URLSearchParams({ip:ip,gw:gw,mask:mask,dns1:dns})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok) alert(T('wifi.static_saved'));
+      else alert(d.error||T('error_generic'));
+    }).catch(function(){alert(T('error_generic'));});
+}
+
 // WiFi
 function wifiConnect(){
+  if(!confirm(T('wifi.connect_reboot')))return;
   fetch('/wifi/connect',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok)location.href='/wifi/connecting';
     else alert(d.error||T('wifi.connect_err'));
@@ -587,23 +677,6 @@ function elUpdateVoiceState(key, curVid){
     sel.disabled=false;
     if(hint)hint.textContent=T('el.voice_err');
   });
-}
-
-var _elKeyTimer=null;
-function elKeyChange(){
-  var k=document.getElementById('el-key').value.trim();
-  document.getElementById('el-save-btn').disabled=!k;
-  clearTimeout(_elKeyTimer);
-  _elKeyTimer=setTimeout(function(){
-    elUpdateVoiceState(k,document.getElementById('el-voice-sel').value);
-  },800);
-}
-function elSubmit(e){
-  e.preventDefault();
-  if(!document.getElementById('el-key').value.trim())return false;
-  var fd=new FormData(document.getElementById('el-form'));
-  fetch('/el/save',{method:'POST',body:fd}).then(function(){fetch('/api/home').then(function(r){return r.json();}).then(applyHome);}).catch(function(){});
-  return false;
 }
 
 (function(){var sel=document.getElementById('lang-sel-shared');if(sel)sel.value=localStorage.getItem('furby_lang')||'it';})();

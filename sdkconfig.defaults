@@ -1,2 +1,9 @@
 CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=4096
 CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=4096
+
+# Riduce la soglia oltre la quale malloc() usa PSRAM: allocazioni >4KB vanno in PSRAM.
+# Gli stack dei task FreeRTOS (8-16KB) vengono così allocati in PSRAM invece che in SRAM.
+# Nota: le allocazioni DMA usano heap_caps_malloc(MALLOC_CAP_DMA) e non sono influenzate.
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY=y

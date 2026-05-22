@@ -72,10 +72,11 @@ static String wifiConnectIP;
 
 static void wifiConnectTask(void*) {
     if (tryConnectWifi(true)) {
-        isConfigMode     = false;
         wifiConnectSSID  = WiFi.SSID();
         wifiConnectIP    = WiFi.localIP().toString();
         wifiConnectState = 2;
+        vTaskDelay(2000 / portTICK_PERIOD_MS); // dai tempo al browser di ricevere la risposta
+        esp_restart();
     } else {
         wifiConnectState = 3;
     }
@@ -91,8 +92,7 @@ static void handleCaptiveRedirect() {
 
 static void handleCaptiveIos() {
     if (!isConfigMode) { server.send(200, "text/plain", ""); return; }
-    server.send(200, "text/html",
-        "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
+    handleCaptiveRedirect();
 }
 
 static void handleCaptiveWindows() {
@@ -766,6 +766,12 @@ static void handleSdReinit() {
     }
 }
 
+static void handleSdUnmount() {
+    HTTP_LOG();
+    sdUnmount();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
 // formatta la SD in FAT32 (distrugge tutti i dati) — bloccante per design
 static void handleSdFormatFAT() {
     HTTP_LOG();
@@ -876,8 +882,62 @@ static void handleApiHome() {
     doc["stt_enabled"]    = sttEnabled;
     doc["ble_svc_uuid"]   = ble_service_uuid;
     doc["ble_char_uuid"]  = ble_char_uuid_tx;
+    doc["hostname"]    = WiFi.getHostname();
+    doc["static_ip"]   = WiFi.localIP().toString();
+    doc["static_gw"]   = WiFi.gatewayIP().toString();
+    doc["static_mask"] = WiFi.subnetMask().toString();
+    doc["static_dns"]  = WiFi.dnsIP().toString();
+    {   Preferences p; p.begin("furby", true);
+        doc["static_enabled"] = p.getString("static_ip", "").length() > 0;
+        p.end();
+    }
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
+}
+
+static void handleSysReboot() {
+    HTTP_LOG();
+    server.send(200, "application/json", "{\"ok\":true}");
+    delay(300);
+    esp_restart();
+}
+
+static void handleWifiHostname() {
+    HTTP_LOG();
+    String name = server.arg("hostname");
+    name.trim();
+    if (name.length() == 0 || name.length() > 32) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"hostname non valido\"}"); return;
+    }
+    nvsPut("hostname", name);
+    WiFi.setHostname(name.c_str());
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+static void handleWifiStatic() {
+    HTTP_LOG();
+    String ip      = server.arg("ip");
+    String gw      = server.arg("gw");
+    String mask    = server.arg("mask");
+    String dns1    = server.arg("dns1");
+    bool   disable = server.arg("disable") == "1";
+    if (disable) {
+        nvsPut("static_ip", "");
+        server.send(200, "application/json", "{\"ok\":true}");
+        return;
+    }
+    IPAddress a, g, m, d;
+    if (!a.fromString(ip) || !g.fromString(gw) || !m.fromString(mask)) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"IP non valido\"}"); return;
+    }
+    if (dns1.length() && !d.fromString(dns1)) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"DNS non valido\"}"); return;
+    }
+    nvsPut("static_ip",   ip);
+    nvsPut("static_gw",   gw);
+    nvsPut("static_mask", mask);
+    nvsPut("static_dns",  dns1.length() ? dns1 : gw);
+    server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalityGet() {
@@ -1465,6 +1525,7 @@ void startWebServer() {
     server.on("/el/save",        HTTP_POST, handleElSave);
     server.on("/sd/format",      HTTP_POST, handleSdFormat);
     server.on("/sd/reinit",      HTTP_POST, handleSdReinit);
+    server.on("/sd/unmount",     HTTP_POST, handleSdUnmount);
     server.on("/sd/formatfat",   HTTP_POST, handleSdFormatFAT);
     server.on("/vad/save",       HTTP_POST, handleVadSave);
     server.on("/cfg/list",       HTTP_GET,  handleCfgList);
@@ -1482,8 +1543,11 @@ void startWebServer() {
     server.on("/ble/abort",      HTTP_POST, handleBleAbort);
     server.on("/ble/reset",      HTTP_POST, handleBleReset);
     server.on("/ble/save",       HTTP_POST, handleBleSave);
-    server.on("/sys/info",       HTTP_GET,  handleSysInfo);
-    server.on("/api/home",       HTTP_GET,  handleApiHome);
+    server.on("/sys/info",        HTTP_GET,  handleSysInfo);
+    server.on("/api/home",        HTTP_GET,  handleApiHome);
+    server.on("/sys/reboot",      HTTP_POST, handleSysReboot);
+    server.on("/wifi/hostname",   HTTP_POST, handleWifiHostname);
+    server.on("/wifi/static",     HTTP_POST, handleWifiStatic);
     server.on("/reset", HTTP_POST, []() {
         server.send(200, "text/plain", "ok");
         if (bleScanning) { BLEDevice::getScan()->stop(); delay(200); }

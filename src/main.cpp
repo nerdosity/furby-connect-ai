@@ -73,6 +73,12 @@ void setup() {
         claude_api_key.length()  ? "OK" : "MANCANTE",
         elevenlabs_api_key.length()? "OK" : "MANCANTE",
         elevenlabs_voice_id.c_str(), el_audio_fmt.c_str());
+    gEventBehaviors = (EventBehavior*)heap_caps_calloc(
+        MAX_EVENT_BEHAVIORS, sizeof(EventBehavior), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!gEventBehaviors) {
+        Serial.println("[MEM] WARN: PSRAM non disponibile per gEventBehaviors, fallback SRAM");
+        gEventBehaviors = new EventBehavior[MAX_EVENT_BEHAVIORS];
+    }
     loadBehaviorConfigs();
     loadEventBehaviors();
 
@@ -124,6 +130,22 @@ void setup() {
     initES8311();
     initES7210();
 
+    {
+        Preferences p; p.begin("furby", true);
+        String hn = p.getString("hostname", "furby");
+        WiFi.setHostname(hn.c_str());
+        String sip = p.getString("static_ip", "");
+        if (sip.length()) {
+            IPAddress ip, gw, mask, dns;
+            if (ip.fromString(sip) &&
+                gw.fromString(p.getString("static_gw", "")) &&
+                mask.fromString(p.getString("static_mask", ""))) {
+                dns.fromString(p.getString("static_dns", p.getString("static_gw", "")));
+                WiFi.config(ip, gw, mask, dns);
+            }
+        }
+        p.end();
+    }
     if (!tryConnectWifi(false)) startCaptivePortal();
     startWebServer();
 

@@ -103,7 +103,7 @@ void applyActivePersonality() {
 void savePersonalities() {
     if (!gpActivePers) return;
 
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (SPIFFS.exists("/personalities.json")) {
         File f = SPIFFS.open("/personalities.json", "r");
         if (f) { deserializeJson(doc, f); f.close(); }
@@ -160,7 +160,7 @@ void loadPersonalities() {
         return;
     }
 
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     DeserializationError err = deserializeJson(doc, f);
     f.close();
 
@@ -210,7 +210,7 @@ void loadPersonalities() {
 void activatePersonality(int idx) {
     File f = SPIFFS.open("/personalities.json", "r");
     if (!f) return;
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     DeserializationError err = deserializeJson(doc, f);
     f.close();
     if (err != DeserializationError::Ok) return;
@@ -312,7 +312,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                     " Frasi max 6 parole o null. Azioni disponibili:\n" + reactList;
                 String answer = callLLM(img, sys, userMsg);
                 String speechBefore, speechAfter, actionId;
-                JsonDocument rdoc;
+                auto rdoc = JsonDocPsram();
                 if (deserializeJson(rdoc, answer) == DeserializationError::Ok) {
                     speechBefore = rdoc["speech_before"] | "";
                     speechAfter  = rdoc["speech_after"]  | "";
@@ -370,7 +370,9 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     String savedPrompt   = gPersonalityPrompt;
     String savedVoiceId  = gPersonalityVoiceId;
     int    savedBehCount = gEventBehaviorCount;
-    EventBehavior savedBehaviors[MAX_EVENT_BEHAVIORS];
+    EventBehavior* savedBehaviors = (EventBehavior*)heap_caps_malloc(
+        MAX_EVENT_BEHAVIORS * sizeof(EventBehavior), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!savedBehaviors) savedBehaviors = new EventBehavior[MAX_EVENT_BEHAVIORS];
     for (int i = 0; i < gEventBehaviorCount; i++) savedBehaviors[i] = gEventBehaviors[i];
 
     Personality* debugPers = nullptr;
@@ -380,7 +382,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         // carica temporaneamente la personalità debug in PSRAM
         File f = SPIFFS.open("/personalities.json", "r");
         if (f) {
-            JsonDocument doc;
+            auto doc = JsonDocPsram();
             if (deserializeJson(doc, f) == DeserializationError::Ok) {
                 JsonArray arr = doc["personalities"].as<JsonArray>();
                 if (personalityIdx < (int)arr.size()) {
@@ -463,6 +465,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     gPersonalityVoiceId = savedVoiceId;
     gEventBehaviorCount = savedBehCount;
     for (int i = 0; i < savedBehCount; i++) gEventBehaviors[i] = savedBehaviors[i];
+    free(savedBehaviors);
     gDryRun = prevDry;
     return log;
 }
