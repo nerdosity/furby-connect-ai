@@ -143,17 +143,13 @@
       </div>
       <div class="mb-2">
         <label class="form-label" data-i18n="el.label_fmt">Formato audio</label>
-        <div class="d-flex gap-3">
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="el_fmt" value="pcm" id="fmt-pcm" onchange="fmtChange()">
-            <label class="form-check-label fw-semibold" for="fmt-pcm">PCM</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="el_fmt" value="mp3" id="fmt-mp3" onchange="fmtChange()">
-            <label class="form-check-label fw-semibold" for="fmt-mp3">MP3</label>
-          </div>
+        <div class="btn-group" role="group">
+          <input type="radio" class="btn-check" name="el_fmt" value="pcm" id="fmt-pcm" onchange="fmtChange()">
+          <label class="btn btn-outline-primary px-3" for="fmt-pcm">PCM</label>
+          <input type="radio" class="btn-check" name="el_fmt" value="mp3" id="fmt-mp3" onchange="fmtChange()">
+          <label class="btn btn-outline-primary px-3" for="fmt-mp3">MP3</label>
         </div>
-        <div id="fmt-hint" class="form-text"></div>
+        <div id="fmt-hint" class="form-text mt-1"></div>
       </div>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
         <button type="submit" class="btn btn-primary px-3" id="el-save-btn" disabled data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
@@ -308,6 +304,7 @@ function applyHome(d){
   document.getElementById('wifi-pass-inp').placeholder=T('wifi.placeholder_pass');
   var elKey=d.el_key||'';
   document.getElementById('el-key').value=elKey;
+  _elUpdateBtns();
   var fmt=d.el_fmt||'mp3';
   document.getElementById('fmt-pcm').checked=(fmt==='pcm');
   document.getElementById('fmt-mp3').checked=(fmt==='mp3');
