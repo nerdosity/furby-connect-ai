@@ -519,6 +519,8 @@ function llmSubmit(e){
   showAlert('llm-test-result','','');
   _llmSetLoading(true);
   var fd=new FormData(document.getElementById('llm-form'));
+  var mdlEl=document.getElementById('mdl');
+  if(mdlEl.value) fd.set('model',mdlEl.value);
   fetch('/llm/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){showAlert('llm-test-result','success',T('sys.saved'));applyLlm(d);}
     else{showAlert('llm-test-result','danger',d.error||T('error_generic'));}
@@ -573,10 +575,10 @@ function _elUpdateBtns(){
   var k=document.getElementById('el-key').value.trim();
   var hasKey=k.length>0;
   var sel=document.getElementById('el-voice-sel');
+  sel.disabled=!hasKey||_elLoading;
   var hasVoice=hasKey&&sel.value.length>0&&!sel.disabled;
   document.getElementById('el-save-btn').disabled=!hasVoice||_elLoading;
   document.getElementById('el-test-btn').disabled=!hasKey||_elLoading;
-  sel.disabled=!hasKey||_elLoading;
 }
 function elKeyChange(){
   _elUpdateBtns();
