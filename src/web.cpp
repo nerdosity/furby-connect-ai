@@ -760,8 +760,8 @@ static void handleSdReinit() {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
         String msg = String("{\"ok\":true,\"type\":\"") + ts
-            + "\",\"total_mb\":" + String((int)(SD_MMC.cardSize()  /(1024*1024)))
-            + ",\"used_mb\":"    + String((int)(SD_MMC.usedBytes() /(1024*1024))) + "}";
+            + "\",\"total_mb\":" + String((int)(SD_MMC.totalBytes() /(1024*1024)))
+            + ",\"used_mb\":"    + String((int)(SD_MMC.usedBytes()  /(1024*1024))) + "}";
         server.send(200, "application/json", msg);
     } else {
         server.send(200, "application/json", "{\"ok\":false,\"error\":\"card non riconosciuta\"}");
@@ -852,7 +852,7 @@ static void handleSysInfo() {
     d["el_fmt"]       = el_audio_fmt;
     if (sdAvailable) {
         d["sd_used"]  = kb(SD_MMC.usedBytes());
-        d["sd_total"] = kb(SD_MMC.cardSize());
+        d["sd_total"] = kb(SD_MMC.totalBytes());
     }
     String j; serializeJson(d, j);
     server.send(200, "application/json", j);
@@ -878,7 +878,7 @@ static void handleApiHome() {
     doc["el_fmt"]         = el_audio_fmt;
     doc["sd_present"]     = sdAvailable;
     doc["sd_used_mb"]     = sdAvailable ? (int)(SD_MMC.usedBytes() / (1024*1024)) : 0;
-    doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.cardSize()  / (1024*1024)) : 0;
+    doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.totalBytes() / (1024*1024)) : 0;
     doc["vad_enabled"]    = vadEnabled;
     doc["vad_threshold"]  = vad_threshold;
     doc["stt_enabled"]    = sttEnabled;
