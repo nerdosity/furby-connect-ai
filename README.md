@@ -14,7 +14,7 @@
 
 <br>
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/nerdosity/furby-llm)](https://github.com/nerdosity/furby-llm/commits/main)
+[![GitHub last commit](https://img.shields.io/github/last-commit/nerdosity/furby-connect-ai)](https://github.com/nerdosity/furby-connect-ai/commits/main)
 [![Platform](https://img.shields.io/badge/platform-ESP32--S3-blue)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![Framework](https://img.shields.io/badge/framework-Arduino%20%2F%20PlatformIO-orange)](https://platformio.org/)
 
