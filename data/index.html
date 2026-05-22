@@ -119,7 +119,7 @@
         <button type="submit" class="btn btn-primary px-3" id="llm-save-btn" disabled data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
         <button type="button" class="btn btn-outline-secondary px-3" id="llm-test-btn" disabled onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-lightning"></i> Test</button>
       </div>
-      <div id="llm-test-result" class="small mt-1"></div>
+      <div id="llm-test-result" class="mt-2"></div>
     </form>
   </div>
 </div>
@@ -155,7 +155,7 @@
         <button type="submit" class="btn btn-primary px-3" id="el-save-btn" disabled data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
         <button type="button" class="btn btn-outline-secondary px-3" id="el-test-btn" disabled onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-lightning"></i> Test</button>
       </div>
-      <div id="el-test-result" class="small mt-1"></div>
+      <div id="el-test-result" class="mt-2"></div>
     </form>
   </div>
 </div>
@@ -193,8 +193,9 @@
     <div class="d-flex gap-2 align-items-end mb-2">
       <div class="flex-fill">
         <label class="form-label" data-i18n="vad.label_thresh">Soglia sensibilità (RMS 0–32767, default 800)</label>
-        <input type="number" class="form-control form-control-sm" id="vad-thresh" min="0" max="32767" onchange="vadSaveThresh()" onblur="vadSaveThresh()">
+        <input type="number" class="form-control form-control-sm" id="vad-thresh" min="0" max="32767" disabled>
       </div>
+      <button class="btn btn-primary px-3" onclick="vadSaveThresh()" id="btn-vad-save" disabled><i class="bi bi-floppy"></i> <span data-i18n="vad.btn_save">Salva soglia</span></button>
       <button class="btn btn-outline-secondary px-3" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic-mute"></i> VAD</button>
     </div>
   </div>
@@ -256,7 +257,7 @@
 
 <script src="/bootstrap.bundle.min.js"></script>
 <script>
-// Aggiorna solo la sezione SD — chiamata dopo operazioni SD per non toccare gli altri campi
+// Aggiorna solo la sezione SD - chiamata dopo operazioni SD per non toccare gli altri campi
 function applyHomeSd(d){
   var sdRow=document.getElementById('sd-status-row');
   var sdBtn=document.getElementById('sd-btn');
@@ -345,8 +346,9 @@ function applyHome(d){
   // SD
   applyHomeSd(d);
   // VAD / STT
-  _vadThresh=d.vad_threshold||800;
-  document.getElementById('vad-thresh').value=_vadThresh;
+  _vadThresh=d.vad_threshold!=null?d.vad_threshold:800;
+  var vtEl=document.getElementById('vad-thresh');vtEl.value=_vadThresh;vtEl.disabled=false;
+  document.getElementById('btn-vad-save').disabled=false;
   vadApplyUI(!!d.vad_enabled, !!d.stt_enabled);
   // BLE UUID
   document.getElementById('ble-svc-uuid').value=d.ble_svc_uuid||'';
@@ -360,7 +362,7 @@ function sdMsg(txt,cls){var el=document.getElementById('sd-msg');if(!el)return;e
 function sdReinit(){
   sdMsg('...','muted');
   fetch('/sd/reinit',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){sdMsg(T('sd.present')+' — '+d.type+' '+d.total_mb+'MB','success');fetch('/api/home').then(function(r){return r.json();}).then(applyHomeSd);}
+    if(d.ok){sdMsg(T('sd.present')+' - '+d.type+' '+d.total_mb+'MB','success');fetch('/api/home').then(function(r){return r.json();}).then(applyHomeSd);}
     else sdMsg(d.error||T('sd.absent'),'danger');
   }).catch(function(){sdMsg(T('error_conn'),'danger');});
 }
@@ -387,15 +389,18 @@ function sdFormatFAT(){
     if(d.ok)fetch('/api/home').then(function(r){return r.json();}).then(applyHomeSd);
   }).catch(function(){sdMsg(T('error_conn'),'danger');});
 }
-var _vadEnabled=false,_vadThresh=3000,_sttEnabled=false;
+var _vadEnabled=false,_vadThresh=800,_sttEnabled=false;
 function vadSaveThresh(){
   var thr=parseInt(document.getElementById('vad-thresh').value);
   if(isNaN(thr)||thr<0||thr>32767)return;
   _vadThresh=thr;
+  var btn=document.getElementById('btn-vad-save');
+  btn.disabled=true;
   var fd=new FormData();fd.append('threshold',thr);fd.append('enabled',_vadEnabled?'1':'0');
   fetch('/vad/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;
     if(!d.ok)console.error('VAD save failed');
-  }).catch(function(e){console.error('VAD save error',e);});
+  }).catch(function(){btn.disabled=false;});
 }
 function vadApplyUI(vad_en, stt_en){
   _vadEnabled=vad_en; _sttEnabled=stt_en;
@@ -494,25 +499,32 @@ function _llmUpdateBtns(){
   document.getElementById('llm-test-btn').disabled=!hasKey||_llmLoading;
   document.getElementById('mdl').disabled=!hasKey||_llmLoading;
 }
+function showAlert(id,type,msg){
+  var el=document.getElementById(id);
+  if(!msg){el.innerHTML='';return;}
+  el.innerHTML='<div class="alert alert-'+type+' alert-dismissible py-2 px-3 mb-0 small" role="alert">'
+    +msg+'<button type="button" class="btn-close btn-sm py-2" data-bs-dismiss="alert"></button></div>';
+}
+var _llmKeyTimer=null;
 function llmKeyChange(){
   _llmUpdateBtns();
+  clearTimeout(_llmKeyTimer);
+  var k=document.getElementById('tok').value.trim();
+  if(k.length>20){
+    _llmKeyTimer=setTimeout(function(){loadModels(document.getElementById('mdl').value||null);},600);
+  }
 }
 function llmSubmit(e){
   e.preventDefault();
   var k=document.getElementById('tok').value.trim();
   if(!k||_llmLoading)return false;
-  var res=document.getElementById('llm-test-result');
-  res.className='';res.textContent='';
+  showAlert('llm-test-result','','');
   _llmSetLoading(true);
   var fd=new FormData(document.getElementById('llm-form'));
   fetch('/llm/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      res.className='small mt-1 text-success';res.textContent=T('sys.saved');
-      applyLlm(d);
-    } else {
-      res.className='small mt-1 text-danger';res.textContent=d.error||T('error_generic');
-    }
-  }).catch(function(){res.className='small mt-1 text-danger';res.textContent=T('error_conn');
+    if(d.ok){showAlert('llm-test-result','success',T('sys.saved'));applyLlm(d);}
+    else{showAlert('llm-test-result','danger',d.error||T('error_generic'));}
+  }).catch(function(){showAlert('llm-test-result','danger',T('error_conn'));
   }).finally(function(){_llmSetLoading(false);});
   return false;
 }
@@ -545,14 +557,12 @@ function onProvChange(){
 function testLlm(){
   var k=document.getElementById('tok').value.trim();
   if(!k||_llmLoading)return;
-  var el=document.getElementById('llm-test-result');
-  el.className='small mt-1 text-warning';el.textContent=T('llm.test_running');
+  showAlert('llm-test-result','warning',T('llm.test_running'));
   _llmSetLoading(true);
   fetch('/api/test?type=llm').then(function(r){return r.json();}).then(function(d){
-    el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
-    el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
+    showAlert('llm-test-result',d.ok?'success':'danger',d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error);
     _llmSetLoading(false);
-  }).catch(function(){el.className='small mt-1 text-danger';el.textContent=T('llm.test_timeout');_llmSetLoading(false);});
+  }).catch(function(){showAlert('llm-test-result','danger',T('llm.test_timeout'));_llmSetLoading(false);});
 }
 
 // ElevenLabs
@@ -564,9 +574,11 @@ function _elSetLoading(on){
 function _elUpdateBtns(){
   var k=document.getElementById('el-key').value.trim();
   var hasKey=k.length>0;
-  document.getElementById('el-save-btn').disabled=!hasKey||_elLoading;
+  var sel=document.getElementById('el-voice-sel');
+  var hasVoice=hasKey&&sel.value.length>0&&!sel.disabled;
+  document.getElementById('el-save-btn').disabled=!hasVoice||_elLoading;
   document.getElementById('el-test-btn').disabled=!hasKey||_elLoading;
-  document.getElementById('el-voice-sel').disabled=!hasKey||_elLoading;
+  sel.disabled=!hasKey||_elLoading;
 }
 function elKeyChange(){
   _elUpdateBtns();
@@ -580,33 +592,28 @@ function elSubmit(e){
   e.preventDefault();
   var k=document.getElementById('el-key').value.trim();
   if(!k||_elLoading)return false;
-  var res=document.getElementById('el-test-result');
-  res.className='';res.textContent='';
+  var vid=document.getElementById('el-voice-sel').value;
+  if(!vid){showAlert('el-test-result','danger',T('el.voice_required'));return false;}
+  showAlert('el-test-result','','');
   var fd=new FormData(document.getElementById('el-form'));
-  fd.set('el_vid',document.getElementById('el-voice-sel').value);
+  fd.set('el_vid',vid);
   _elSetLoading(true);
   fetch('/el/save',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){
-      res.className='small mt-1 text-success';res.textContent=T('sys.saved');
-      applyEl(d);
-    } else {
-      res.className='small mt-1 text-danger';res.textContent=d.error||T('error_generic');
-    }
-  }).catch(function(){res.className='small mt-1 text-danger';res.textContent=T('error_conn');
+    if(d.ok){showAlert('el-test-result','success',T('sys.saved'));applyEl(d);}
+    else{showAlert('el-test-result','danger',d.error||T('error_generic'));}
+  }).catch(function(){showAlert('el-test-result','danger',T('error_conn'));
   }).finally(function(){_elSetLoading(false);});
   return false;
 }
 function testEl(){
   var k=document.getElementById('el-key').value.trim();
   if(!k||_elLoading)return;
-  var el=document.getElementById('el-test-result');
-  el.className='small mt-1 text-warning';el.textContent=T('llm.test_running');
+  showAlert('el-test-result','warning',T('llm.test_running'));
   _elSetLoading(true);
   fetch('/api/test?type=el').then(function(r){return r.json();}).then(function(d){
-    el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
-    el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
+    showAlert('el-test-result',d.ok?'success':'danger',d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error);
     _elSetLoading(false);
-  }).catch(function(){el.className='small mt-1 text-danger';el.textContent=T('llm.test_timeout');_elSetLoading(false);});
+  }).catch(function(){showAlert('el-test-result','danger',T('llm.test_timeout'));_elSetLoading(false);});
 }
 
 // WiFi hostname & IP statico
@@ -688,7 +695,7 @@ function elUpdateVoiceState(key, curVid){
   if(hint)hint.textContent=T('el.voice_loading');
   fetch('/api/voices').then(function(r){return r.json();}).then(function(voices){
     if(!voices||!voices.length){
-      sel.innerHTML='<option value="'+(curVid||'')+'">'+((curVid&&curVid.length>8?curVid.substring(0,8)+'…':curVid)||'—')+'</option>';
+      sel.innerHTML='<option value="'+(curVid||'')+'">'+((curVid&&curVid.length>8?curVid.substring(0,8)+'…':curVid)||'-')+'</option>';
       if(hint)hint.textContent=T('el.voice_empty');
       _elSetLoading(false);
       return;
@@ -700,7 +707,7 @@ function elUpdateVoiceState(key, curVid){
     if(hint)hint.textContent='';
     _elSetLoading(false);
   }).catch(function(){
-    sel.innerHTML='<option value="'+(curVid||'')+'">'+(curVid||'—')+'</option>';
+    sel.innerHTML='<option value="'+(curVid||'')+'">'+(curVid||'-')+'</option>';
     if(hint)hint.textContent=T('el.voice_err');
     _elSetLoading(false);
   });

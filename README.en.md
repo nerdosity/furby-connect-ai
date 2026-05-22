@@ -38,29 +38,29 @@ The Furby has a deliberately rude and cynical personality, fully configurable vi
 
 | Component | Details |
 |---|---|
-| **MCU** | [Waveshare ESP32-S3-CAM](https://amzn.to/4fyMf8R) — 240 MHz, 8 MB PSRAM, 16 MB flash |
+| **MCU** | [Waveshare ESP32-S3-CAM](https://amzn.to/4fyMf8R) - 240 MHz, 8 MB PSRAM, 16 MB flash |
 | **Camera** | OV2640 on DVP connector |
 | **DAC / speaker** | ES8311 via I2S (MCLK 10, BCLK 11, LRCK 12, DOUT 14) |
-| **ADC / microphones** | ES7210 — 4-mic array via I2S |
+| **ADC / microphones** | ES7210 - 4-mic array via I2S |
 | **SD card** | microSD in 1-bit MMC mode (CLK 16, CMD 43, D0 44) |
-| **Furby** | Furby Connect (2016) — BLE connection |
+| **Furby** | Furby Connect (2016) - BLE connection |
 | **Button** | GPIO 0 (falling-edge ISR) |
 
 ---
 
 ## Features
 
-- **Contextual vision** — captures JPEG, sends it to the LLM with a personality prompt
-- **Multi-provider LLM** — OpenAI (GPT-4o-mini by default) or Anthropic Claude; model configurable from the UI
-- **Multilingual TTS** — ElevenLabs `multilingual_v2`; MP3 on free accounts, PCM 16 kHz on pro
-- **BLE lipsync** — PCM amplitude → open/close bytes sent in real-time to the Furby via BLE
-- **VAD** — voice activity detection with 250 Hz high-pass filter to ignore the Furby's own mechanical noise
-- **STT** (optional) — PSRAM buffer, disabled by default
-- **SD card audio cache** — previously heard responses are reused; on second request a cynical prefix is generated with 1 LLM+TTS call and saved — from the third request onward, zero tokens, fully served from SD
-- **Multi-WiFi** — up to 5 saved networks with configurable priority; mesh-compatible
-- **Web UI** — dashboard at `http://furby.local` (or IP) with Bootstrap 5 + Bootstrap Icons
-- **Captive portal** — AP `Furby_Config` on first boot to configure WiFi and API keys
-- **Behaviors / personalities** — trigger system (VAD, button, BLE sensors) with configurable consequences (Furby action, fixed TTS, LLM prompt)
+- **Contextual vision** - captures JPEG, sends it to the LLM with a personality prompt
+- **Multi-provider LLM** - OpenAI (GPT-4o-mini by default) or Anthropic Claude; model configurable from the UI
+- **Multilingual TTS** - ElevenLabs `multilingual_v2`; MP3 on free accounts, PCM 16 kHz on pro
+- **BLE lipsync** - PCM amplitude → open/close bytes sent in real-time to the Furby via BLE
+- **VAD** - voice activity detection with 250 Hz high-pass filter to ignore the Furby's own mechanical noise
+- **STT** (optional) - PSRAM buffer, disabled by default
+- **SD card audio cache** - previously heard responses are reused; on second request a cynical prefix is generated with 1 LLM+TTS call and saved - from the third request onward, zero tokens, fully served from SD
+- **Multi-WiFi** - up to 5 saved networks with configurable priority; mesh-compatible
+- **Web UI** - dashboard at `http://furby.local` (or IP) with Bootstrap 5 + Bootstrap Icons
+- **Captive portal** - AP `Furby_Config` on first boot to configure WiFi and API keys
+- **Behaviors / personalities** - trigger system (VAD, button, BLE sensors) with configurable consequences (Furby action, fixed TTS, LLM prompt)
 
 ---
 
@@ -68,14 +68,14 @@ The Furby has a deliberately rude and cynical personality, fully configurable vi
 
 ```
 src/
-├── main.cpp          — setup(), loop(), ISR
-├── globals.h/cpp     — shared variables, structs, pin constants
-├── hw.h/cpp          — camera, ES8311 DAC, ES7210 ADC, SD card, I/O expander
-├── audio.h/cpp       — audio pipeline: I2S, MP3, PCM, lipsync
-├── llm.h/cpp         — OpenAI / Claude calls, ElevenLabs TTS
-├── ble_furby.h/cpp   — BLE scan, connect, lipsync task (Core 0)
-├── behaviors.h/cpp   — trigger/consequence system, personalities
-└── web.h/cpp         — WebServer, MJPEG stream, REST API, web UI HTML
+├── main.cpp          - setup(), loop(), ISR
+├── globals.h/cpp     - shared variables, structs, pin constants
+├── hw.h/cpp          - camera, ES8311 DAC, ES7210 ADC, SD card, I/O expander
+├── audio.h/cpp       - audio pipeline: I2S, MP3, PCM, lipsync
+├── llm.h/cpp         - OpenAI / Claude calls, ElevenLabs TTS
+├── ble_furby.h/cpp   - BLE scan, connect, lipsync task (Core 0)
+├── behaviors.h/cpp   - trigger/consequence system, personalities
+└── web.h/cpp         - WebServer, MJPEG stream, REST API, web UI HTML
 ```
 
 ### BLE protocol
@@ -103,7 +103,7 @@ The `lipSyncTask` FreeRTOS task runs on Core 0 and writes bytes derived from rea
 | Multi-LLM provider | `████████░░` 80% | OpenAI solid; Claude in testing |
 | BLE scan + connect | `████████░░` 80% | Stable but initial connection can be slow |
 | BLE lipsync | `████░░░░░░` 40% | Coarse mouth movement, tuning in progress |
-| SD card audio cache | `████████░░` 80% | Cache hit with cynical prefix — 1 LLM call then fully from SD |
+| SD card audio cache | `████████░░` 80% | Cache hit with cynical prefix - 1 LLM call then fully from SD |
 | Behaviors / triggers | `███████░░░` 70% | Working; config UI needs polish |
 | Web UI | `████████░░` 80% | Functional; mobile/desktop UX still rough |
 | MP3 decoding | `██████░░░░` 60% | Integrated, not stress-tested long-term |
@@ -150,4 +150,4 @@ All parameters are stored in flash via `Preferences` (namespace `furby`).
 
 ## License
 
-No formal license — hobby project. Use the code as you wish, but no warranties are provided.
+No formal license - hobby project. Use the code as you wish, but no warranties are provided.

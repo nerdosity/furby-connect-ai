@@ -272,7 +272,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             const FurbyActionDef* act = findFurbyAction(csq.action_id);
             if (act) {
                 if (gDryRun) {
-                    Serial.printf("[CSQ] DRY RUN — azione Furby SKIPPATA: %s\n", act->label);
+                    Serial.printf("[CSQ] DRY RUN - azione Furby SKIPPATA: %s\n", act->label);
                 } else {
                     furbyWrite(act->cmd, act->len); delay(1500);
                 }
@@ -324,7 +324,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
                     if (act) {
-                        if (gDryRun) Serial.printf("[CSQ] DRY RUN — azione Furby: %s\n", act->label);
+                        if (gDryRun) Serial.printf("[CSQ] DRY RUN - azione Furby: %s\n", act->label);
                         else { furbyWrite(act->cmd, act->len); delay(1500); }
                     }
                 }
@@ -346,10 +346,10 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             const FurbyActionDef* act = findFurbyAction(answer.c_str());
             if (act) {
                 Serial.printf("[CSQ] PROMPT_AUTO → azione scelta: %s (%s)\n", act->id, act->label);
-                if (gDryRun) Serial.printf("[CSQ] DRY RUN — azione Furby SKIPPATA: %s\n", act->label);
+                if (gDryRun) Serial.printf("[CSQ] DRY RUN - azione Furby SKIPPATA: %s\n", act->label);
                 else { furbyWrite(act->cmd, act->len); delay(1500); }
             } else {
-                Serial.printf("[CSQ] PROMPT_AUTO — azione LLM non valida: \"%s\"\n", answer.c_str());
+                Serial.printf("[CSQ] PROMPT_AUTO - azione LLM non valida: \"%s\"\n", answer.c_str());
             }
             break;
         }
@@ -407,7 +407,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         L("[SIM] personalità: \"" + String(gpActivePers ? gpActivePers->name : "?") + "\" (attiva)");
     }
 
-    if (skipLlm) L("[SIM] modalità skip-LLM attiva — chiamate LLM simulate");
+    if (skipLlm) L("[SIM] modalità skip-LLM attiva - chiamate LLM simulate");
     L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
       + " behaviors=" + String(gEventBehaviorCount));
 
@@ -442,7 +442,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     }
 
     if (!beh) {
-        L("[SIM] nessun comportamento specifico — uso processStimulusDefault");
+        L("[SIM] nessun comportamento specifico - uso processStimulusDefault");
         if (!skipLlm) processStimulusDefault(base64Img);
         else L("[SIM] processStimulusDefault SKIPPATO (skip-LLM)");
     } else {
@@ -455,7 +455,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
               + (csq.text[0]      ? String(" testo=\"") + csq.text + "\"" : "")
               + (csq.snapshot     ? " [snapshot]" : ""));
             if (isLlm && skipLlm)
-                L("[SIM] → LLM SKIPPATO — prompt sarebbe: \"" + String(csq.text) + "\"");
+                L("[SIM] → LLM SKIPPATO - prompt sarebbe: \"" + String(csq.text) + "\"");
             else
                 executeConsequence(csq, base64Img, sttText);
         }
@@ -497,7 +497,7 @@ void processStimulusDefault(const String& base64Img) {
 
 void processStimulus(TriggerType trg, uint8_t sensorId) {
     if (!connected && !gDryRun) {
-        Serial.println("[STIMULUS] skip — Furby non connesso e dry run disattivo");
+        Serial.println("[STIMULUS] skip - Furby non connesso e dry run disattivo");
         return;
     }
     Serial.printf("[STIMULUS] trigger=%d sensorId=%d behaviors=%d heap=%u PSRAM=%u\n",

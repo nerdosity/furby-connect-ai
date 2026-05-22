@@ -205,7 +205,7 @@ struct EventBehavior {
     uint8_t     consequence_count = 0;
 };
 
-// Allocata in PSRAM — una sola istanza attiva alla volta
+// Allocata in PSRAM - una sola istanza attiva alla volta
 struct Personality {
     char         id[32]                        = {};
     char         name[48]                      = {};
@@ -218,7 +218,7 @@ struct Personality {
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
 
 // ── ArduinoJson PSRAM allocator ───────────────────────────────────────────────
-// Allocatore singleton — ArduinoJson v7 vuole Allocator* (lifetime >= JsonDocument)
+// Allocatore singleton - ArduinoJson v7 vuole Allocator* (lifetime >= JsonDocument)
 class SpiRamAllocator : public ArduinoJson::Allocator {
 public:
     void* allocate(size_t size) override {
@@ -304,11 +304,11 @@ extern int           camStreamQuality;   // JPEG quality stream (4-63)
 extern framesize_t   camStreamSize;      // risoluzione stream
 extern int           camSnapQuality;     // JPEG quality snapshot LLM (4-63)
 extern framesize_t   camSnapSize;        // risoluzione snapshot LLM
-// Array in PSRAM — allocato in setup() via gEventBehaviorsInit()
+// Array in PSRAM - allocato in setup() via gEventBehaviorsInit()
 extern EventBehavior* gEventBehaviors;
 extern int            gEventBehaviorCount;
 
-// Unica personalità attiva — allocata in PSRAM
+// Unica personalità attiva - allocata in PSRAM
 extern Personality*  gpActivePers;
 extern int           gActivePersonality;  // indice nel JSON
 extern int           gDebugPersonality;   // -1 = usa quella attiva

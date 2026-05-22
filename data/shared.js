@@ -1,4 +1,4 @@
-// shared.js — funzioni comuni a tutte le pagine FurbyMind
+// shared.js - funzioni comuni a tutte le pagine FurbyMind
 
 
 function fmtSec(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return(h?h+'h ':'')+m+'m '+(ss<10?'0':'')+ss+'s';}
@@ -57,7 +57,7 @@ function renderNav(active){
       '<div class="fb-logo"><img src="/img/logo.png" alt="FurbyMind" onerror="this.style.display=\'none\'"></div>'+
       '<div class="fb-header-text">'+
         '<img src="/img/title.png" alt="FurbyMind" onerror="this.outerHTML=\'<h1>FurbyMind</h1>\'">'+
-        '<p>IP: <span id="esp-ip">—</span> &nbsp;•&nbsp; Uptime: <span id="esp-uptime">—</span></p>'+
+        '<p>IP: <span id="esp-ip">-</span> &nbsp;•&nbsp; Uptime: <span id="esp-uptime">-</span></p>'+
       '</div>'+
       '<nav class="fb-nav">'+desktopItems+'<a href="#" class="text-danger" onclick="if(confirm('+confirmFn+')){fetch(\'/reset\',{method:\'POST\'});}"><span data-i18n="nav.reset">Reset ESP32</span></a></nav>'+
       langSel+
@@ -97,17 +97,17 @@ var _SHARED_TR={
     'llm.label_prov':'Fornitore','llm.label_model':'Modello ',
     'llm.label_key':'Token API',
     'llm.btn_save':'<i class="bi bi-floppy"></i> Salva configurazione AI','llm.btn_test':'<i class="bi bi-lightning"></i> Test',
-    'llm.test_running':'Test in corso...','llm.test_ok':'✓ OK — ','llm.test_err':'✗ Errore: ','llm.test_timeout':'✗ Timeout/errore',
-    'llm.models_loading':'carico...','llm.models_no_key':'token non salvato — lista predefinita',
-    'llm.models_none':'nessun modello — lista predefinita','llm.models_offline':'offline — lista predefinita',
+    'llm.test_running':'Test in corso...','llm.test_ok':'✓ OK - ','llm.test_err':'✗ Errore: ','llm.test_timeout':'✗ Timeout/errore',
+    'llm.models_loading':'carico...','llm.models_no_key':'token non salvato - lista predefinita',
+    'llm.models_none':'nessun modello - lista predefinita','llm.models_offline':'offline - lista predefinita',
     'llm.models_count':' disponibili',
     'el.title':'ElevenLabs TTS',
     'el.label_key':'Token API ElevenLabs','el.label_voice':'Voce',
     'el.label_fmt':'Formato audio',
     'el.btn_save':'<i class="bi bi-floppy"></i> Salva ElevenLabs','el.btn_test':'<i class="bi bi-lightning"></i> Test',
-    'el.hint_mp3':'MP3 22kHz 32kbps — funziona con account free, ~4x più leggero in cache',
-    'el.hint_pcm':'PCM 16kHz mono — qualità alta, solo account Pro',
-    'el.voice_no_key':'Inserisci prima il token API','el.voice_loading':'Carico voci...','el.voice_empty':'Nessuna voce disponibile','el.voice_err':'Errore caricamento voci',
+    'el.hint_mp3':'MP3 22kHz 32kbps - funziona con account free, ~4x più leggero in cache',
+    'el.hint_pcm':'PCM 16kHz mono - qualità alta, solo account Pro',
+    'el.voice_no_key':'Inserisci prima il token API','el.voice_loading':'Carico voci...','el.voice_empty':'Nessuna voce disponibile','el.voice_err':'Errore caricamento voci','el.voice_required':'Seleziona una voce prima di salvare',
     'sd.title':'Scheda SD','sd.present':'SD presente','sd.absent':'SD assente',
     'sd.absent_sub':'Modalità RAM streaming',
     'sd.btn_reinit':'Rimonta SD',
@@ -118,6 +118,7 @@ var _SHARED_TR={
     'sd.formatfat_confirm2':'Sei sicuro? Questa operazione è irreversibile.',
     'vad.title':'Microfoni / Rilevamento voce',
     'vad.label_thresh':'Soglia sensibilità (RMS 0–32767, default 800)',
+    'vad.btn_save':'Salva soglia',
     'vad.btn_en':'<i class="bi bi-mic"></i> Abilita','vad.btn_dis':'<i class="bi bi-mic-mute"></i> Disabilita',
     'vad.active':'VAD attivo','vad.disabled':'VAD disabilitato',
     'stt.desc':'Trascrive il parlato con Whisper prima di passarlo all\'LLM. Richiede chiave OpenAI. +~1-2s di latenza.',
@@ -146,7 +147,7 @@ var _SHARED_TR={
     'cam.save_prompt':'<i class="bi bi-floppy"></i> Salva prompt','cam.describe_now':'<i class="bi bi-eye"></i> Descrivi ora',
     'cam.tts_voice':'Output vocale',
     'cam.tts_browser':'Browser','cam.tts_board':'Board',
-    'cam.tts_hint':'Browser: Web Speech API — Board: ElevenLabs via ESP32',
+    'cam.tts_hint':'Browser: Web Speech API - Board: ElevenLabs via ESP32',
     'cam.saved':'Salvato.','cam.error':'Errore.',
     'cam.sending':'Analisi in corso...','cam.error_conn':'Errore connessione.',
     'cam.tts_sending':'Invio a ElevenLabs...','cam.tts_playing':'In riproduzione sulla board.',
@@ -190,17 +191,17 @@ var _SHARED_TR={
     'llm.label_prov':'Provider','llm.label_model':'Model ',
     'llm.label_key':'API Token',
     'llm.btn_save':'<i class="bi bi-floppy"></i> Save AI configuration','llm.btn_test':'<i class="bi bi-lightning"></i> Test',
-    'llm.test_running':'Testing...','llm.test_ok':'✓ OK — ','llm.test_err':'✗ Error: ','llm.test_timeout':'✗ Timeout/error',
-    'llm.models_loading':'loading...','llm.models_no_key':'token not saved — default list',
-    'llm.models_none':'no models — default list','llm.models_offline':'offline — default list',
+    'llm.test_running':'Testing...','llm.test_ok':'✓ OK - ','llm.test_err':'✗ Error: ','llm.test_timeout':'✗ Timeout/error',
+    'llm.models_loading':'loading...','llm.models_no_key':'token not saved - default list',
+    'llm.models_none':'no models - default list','llm.models_offline':'offline - default list',
     'llm.models_count':' available',
     'el.title':'ElevenLabs TTS',
     'el.label_key':'ElevenLabs API Token','el.label_voice':'Voice',
     'el.label_fmt':'Audio format',
     'el.btn_save':'<i class="bi bi-floppy"></i> Save ElevenLabs','el.btn_test':'<i class="bi bi-lightning"></i> Test',
-    'el.hint_mp3':'MP3 22kHz 32kbps — works with free account, ~4x lighter in cache',
-    'el.hint_pcm':'PCM 16kHz mono — high quality, Pro account only',
-    'el.voice_no_key':'Enter API token first','el.voice_loading':'Loading voices...','el.voice_empty':'No voices available','el.voice_err':'Error loading voices',
+    'el.hint_mp3':'MP3 22kHz 32kbps - works with free account, ~4x lighter in cache',
+    'el.hint_pcm':'PCM 16kHz mono - high quality, Pro account only',
+    'el.voice_no_key':'Enter API token first','el.voice_loading':'Loading voices...','el.voice_empty':'No voices available','el.voice_err':'Error loading voices','el.voice_required':'Select a voice before saving',
     'sd.title':'SD Card','sd.present':'SD present','sd.absent':'SD absent',
     'sd.absent_sub':'RAM streaming mode',
     'sd.btn_reinit':'Remount SD',
@@ -211,6 +212,7 @@ var _SHARED_TR={
     'sd.formatfat_confirm2':'Are you sure? This operation is irreversible.',
     'vad.title':'Microphones / Voice detection',
     'vad.label_thresh':'Sensitivity threshold (RMS 0–32767, default 800)',
+    'vad.btn_save':'Save threshold',
     'vad.btn_en':'<i class="bi bi-mic"></i> Enable','vad.btn_dis':'<i class="bi bi-mic-mute"></i> Disable',
     'vad.active':'VAD active','vad.disabled':'VAD disabled',
     'stt.desc':'Transcribes speech with Whisper before passing it to the LLM. Requires OpenAI key. +~1-2s latency.',
@@ -239,7 +241,7 @@ var _SHARED_TR={
     'cam.save_prompt':'<i class="bi bi-floppy"></i> Save prompt','cam.describe_now':'<i class="bi bi-eye"></i> Describe now',
     'cam.tts_voice':'Voice output',
     'cam.tts_browser':'Browser','cam.tts_board':'Board',
-    'cam.tts_hint':'Browser: Web Speech API — Board: ElevenLabs via ESP32',
+    'cam.tts_hint':'Browser: Web Speech API - Board: ElevenLabs via ESP32',
     'cam.saved':'Saved.','cam.error':'Error.',
     'cam.sending':'Analysing...','cam.error_conn':'Connection error.',
     'cam.tts_sending':'Sending to ElevenLabs...','cam.tts_playing':'Playing on board.',
@@ -285,7 +287,7 @@ function setSharedLang(l){
 
 // ── system bar ────────────────────────────────────────────────────────────────
 
-// _bootRef = { t: timestamp_ms, s: uptime_s } — persiste in sessionStorage tra pagine
+// _bootRef = { t: timestamp_ms, s: uptime_s } - persiste in sessionStorage tra pagine
 var _uptimeTimer = null;
 var _fwUpdateAvailable = false;
 var _fwCurrent = null;

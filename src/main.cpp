@@ -67,7 +67,7 @@ void setup() {
     camStreamSize    = (framesize_t)preferences.getInt("cam_sts", (int)FRAMESIZE_QVGA);
     camSnapQuality   = preferences.getInt("cam_snq", 8);
     camSnapSize      = (framesize_t)preferences.getInt("cam_sns", (int)FRAMESIZE_VGA);
-    preferences.end(); // chiude handle globale — da qui in poi solo handle locali
+    preferences.end(); // chiude handle globale - da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),
         openai_api_key.length()  ? "OK" : "MANCANTE",
@@ -86,7 +86,7 @@ void setup() {
     camInit();
     camApplySettings(camStreamSize, camStreamQuality);
 
-    // I2C — after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
+    // I2C - after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
     pinMode(I2C_SCL_PIN, OUTPUT);
     for (int i = 0; i < 9; i++) {
         digitalWrite(I2C_SCL_PIN, HIGH); delayMicroseconds(5);
@@ -124,7 +124,7 @@ void setup() {
         Serial.printf("SD: OK  tipo=%s  %lluMB totali  %lluMB usati\n",
             ts, SD_MMC.totalBytes()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
     } else {
-        Serial.println("SD: assente o non riconosciuta — modalita RAM");
+        Serial.println("SD: assente o non riconosciuta - modalita RAM");
     }
 
     initI2S();

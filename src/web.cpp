@@ -145,7 +145,7 @@ static void handleCaptiveWindows() {
 
 static void handleCaptiveAndroid() {
     if (!isConfigMode) { server.send(204, "text/plain", ""); return; }
-    // 302 verso l'IP del portal — Samsung apre il browser se riceve un non-204
+    // 302 verso l'IP del portal - Samsung apre il browser se riceve un non-204
     server.sendHeader("Cache-Control", "no-store");
     handleCaptiveRedirect();
 }
@@ -154,7 +154,7 @@ static void handleCaptiveAndroid() {
 
 static void handleRoot() {
     File f = SPIFFS.open("/index.html", "r");
-    if (!f) { server.send(503, "text/plain", "index.html non trovato — eseguire uploadfs"); return; }
+    if (!f) { server.send(503, "text/plain", "index.html non trovato - eseguire uploadfs"); return; }
     server.sendHeader("Cache-Control", "no-cache, must-revalidate");
     server.streamFile(f, "text/html; charset=utf-8");
     f.close();
@@ -440,13 +440,11 @@ static void handleLlmSave() {
         { server.send(400, "application/json", "{\"ok\":false,\"error\":\"chiave API vuota\"}"); return; }
     if (newProv != "openai" && newProv != "claude")
         { server.send(400, "application/json", "{\"ok\":false,\"error\":\"provider non valido\"}"); return; }
-    if (newModel.length() == 0)
-        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"modello non specificato\"}"); return; }
     // salva chiave per il provider scelto
     if (newProv == "claude") { claude_api_key = newKey; nvsPut("claude", claude_api_key); }
     else                     { openai_api_key = newKey; nvsPut("openai", openai_api_key); }
     llm_provider = newProv; nvsPut("llm_prov", llm_provider);
-    llm_model    = newModel; nvsPut("llm_model", llm_model);
+    if (newModel.length() > 0) { llm_model = newModel; nvsPut("llm_model", llm_model); }
     // risponde con i valori salvati
     const String& activeKey = (llm_provider == "claude") ? claude_api_key : openai_api_key;
     String out = "{\"ok\":true,\"provider\":\"" + llm_provider + "\",\"model\":\"" + llm_model
@@ -502,7 +500,7 @@ static void handleVadSave() {
 // ── /personalities/* ─────────────────────────────────────────────────────────
 
 static void handlePersonalitiesList() {
-    // legge direttamente dal JSON su SPIFFS — non carica tutto in RAM
+    // legge direttamente dal JSON su SPIFFS - non carica tutto in RAM
     if (!SPIFFS.exists("/personalities.json")) {
         savePersonalities();
     }
@@ -636,7 +634,7 @@ static void handleSensorsList() {
     server.send(200, "application/json", out);
 }
 
-// ── /cfg/* — mantenuti per compatibilità, delegano alle nuove funzioni ────────
+// ── /cfg/* - mantenuti per compatibilità, delegano alle nuove funzioni ────────
 static void handleCfgList() {
     // rimanda a personalities list per non rompere client esistenti
     handlePersonalitiesList();
@@ -812,7 +810,7 @@ static void handleSdUnmount() {
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
-// formatta la SD in FAT32 (distrugge tutti i dati) — bloccante per design
+// formatta la SD in FAT32 (distrugge tutti i dati) - bloccante per design
 static void handleSdFormatFAT() {
     HTTP_LOG();
     sdUnmount();
@@ -1208,7 +1206,7 @@ static void handleTestSimulate() {
 
 static void handleDebugPage() {
     File f = SPIFFS.open("/debug.html", "r");
-    if (!f) { server.send(503, "text/plain", "debug.html non trovato — eseguire uploadfs"); return; }
+    if (!f) { server.send(503, "text/plain", "debug.html non trovato - eseguire uploadfs"); return; }
     server.sendHeader("Cache-Control", "no-cache, must-revalidate");
     server.streamFile(f, "text/html; charset=utf-8");
     f.close();

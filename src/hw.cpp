@@ -102,7 +102,7 @@ void ch32WritePort(uint8_t value) {
     Wire.write(data, 2);
     uint8_t err = Wire.endTransmission();
     if (err) {
-        Serial.printf("IO exp err=%d port=0x%02X — tentativo recovery I2C\n", err, value);
+        Serial.printf("IO exp err=%d port=0x%02X - tentativo recovery I2C\n", err, value);
         i2cBusRecover();
         Wire.beginTransmission(CH32_ADDR);
         Wire.write(data, 2);
@@ -125,8 +125,8 @@ void ch32Init() {
     if (err) Serial.printf("IO exp init mode err=%d\n", err);
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
-    ch32SetBit(4, true); // IO4 HIGH — SD card CS
-    ch32SetBit(6, true); // IO6 HIGH — amplificatore sempre ON
+    ch32SetBit(4, true); // IO4 HIGH - SD card CS
+    ch32SetBit(6, true); // IO6 HIGH - amplificatore sempre ON
     Serial.println("IO expander: init OK, amp ON");
 }
 
@@ -260,7 +260,7 @@ bool sdMount() {
     }
     sdAvailable = ok;
     if (ok) {
-        // cardSize() può essere instabile subito dopo begin() — aspetta che si stabilizzi
+        // cardSize() può essere instabile subito dopo begin() - aspetta che si stabilizzi
         uint64_t sz = 0;
         for (int i = 0; i < 5 && sz == 0; i++) {
             vTaskDelay(20 / portTICK_PERIOD_MS);
@@ -288,7 +288,7 @@ void sdUnmount() {
 bool sdCheck() {
     if (sdAvailable) {
         if (SD_MMC.cardType() == CARD_NONE) {
-            Serial.println("SD: rimossa — modalita RAM streaming");
+            Serial.println("SD: rimossa - modalita RAM streaming");
             sdUnmount();
         }
     } else {

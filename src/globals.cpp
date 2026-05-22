@@ -56,7 +56,7 @@ int   behaviorConfigCount  = 0;
 int   activeBehaviorConfig = 0;
 
 const char* SENSOR_NAMES[] = {
-    "—", "Antenna sx", "Antenna dx", "Antenna avanti", "Antenna indietro",
+    "-", "Antenna sx", "Antenna dx", "Antenna avanti", "Antenna indietro",
     "Tickle testa", "Tickle pancia", "Tickle dx", "Tickle sx",
     "Tira coda", "Spingi lingua",
     "Dritto", "Capovolto", "Lato dx", "Lato sx",

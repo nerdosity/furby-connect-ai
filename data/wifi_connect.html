@@ -35,7 +35,7 @@ function spinColor(cls){spin.classList.replace('text-primary',cls)||spin.classLi
         clearInterval(t);
         spinColor('text-success');
         msg.textContent=T('wc.connected');
-        detail.textContent=(d.ssid||'')+' — '+(d.ip||'');
+        detail.textContent=(d.ssid||'')+' - '+(d.ip||'');
         setTimeout(function(){location.href='http://'+d.ip+'/';},800);
       } else if(d.state===3){
         clearInterval(t);
