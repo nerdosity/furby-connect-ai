@@ -108,15 +108,11 @@
         </div>
         <!-- dest row (collapsed by default) -->
         <div id="tts-dest-row" class="border-top px-3 py-2 bg-light d-flex align-items-center gap-3 flex-wrap" style="display:none">
-          <div class="d-flex gap-3">
-            <div class="form-check mb-0">
-              <input class="form-check-input" type="radio" name="tts-dest" id="tts-browser" value="browser" checked>
-              <label class="form-check-label small" for="tts-browser" data-i18n="cam.tts_browser">Browser</label>
-            </div>
-            <div class="form-check mb-0">
-              <input class="form-check-input" type="radio" name="tts-dest" id="tts-board" value="board">
-              <label class="form-check-label small" for="tts-board" data-i18n="cam.tts_board">Board</label>
-            </div>
+          <div class="btn-group btn-group-sm" role="group">
+            <input class="btn-check" type="radio" name="tts-dest" id="tts-browser" value="browser" checked autocomplete="off">
+            <label class="btn btn-outline-secondary px-3" for="tts-browser" data-i18n="cam.tts_browser">Browser</label>
+            <input class="btn-check" type="radio" name="tts-dest" id="tts-board" value="board" autocomplete="off">
+            <label class="btn btn-outline-secondary px-3" for="tts-board" data-i18n="cam.tts_board">Board</label>
           </div>
           <span class="text-muted small" data-i18n="cam.tts_hint">Browser: Web Speech API - Board: ElevenLabs via ESP32</span>
         </div>
@@ -180,19 +176,13 @@ function onFlicker(v){
   fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
 }
 function jpegToQual(q){return Math.round(10-(q-4)*(10-1)/(40-4));}
+function _selSet(id,val){if(val==null)return;var s=document.getElementById(id);for(var i=0;i<s.options.length;i++){if(s.options[i].value===String(val)){s.selectedIndex=i;return;}}}
 fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
-  var sq=jpegToQual(d.stream_quality||12);
-  document.getElementById('q-slider').value=sq;
-  document.getElementById('q-label').textContent=sq;
-  var ss=document.getElementById('stream-size-sel');
-  for(var i=0;i<ss.options.length;i++){if(ss.options[i].value===d.stream_size)ss.selectedIndex=i;}
-  var nq=jpegToQual(d.snap_quality||8);
-  document.getElementById('snap-q-slider').value=nq;
-  document.getElementById('snap-q-label').textContent=nq;
-  var ns=document.getElementById('snap-size-sel');
-  for(var i=0;i<ns.options.length;i++){if(ns.options[i].value===d.snap_size)ns.selectedIndex=i;}
-  var fl=document.getElementById('flicker-sel');
-  for(var i=0;i<fl.options.length;i++){if(parseInt(fl.options[i].value)===(d.flicker||0))fl.selectedIndex=i;}
+  if(d.stream_quality!=null){var sq=jpegToQual(d.stream_quality);document.getElementById('q-slider').value=sq;document.getElementById('q-label').textContent=sq;}
+  _selSet('stream-size-sel',d.stream_size);
+  if(d.snap_quality!=null){var nq=jpegToQual(d.snap_quality);document.getElementById('snap-q-slider').value=nq;document.getElementById('snap-q-label').textContent=nq;}
+  _selSet('snap-size-sel',d.snap_size);
+  _selSet('flicker-sel',String(d.flicker!=null?d.flicker:0));
 }).catch(function(){});
 
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){

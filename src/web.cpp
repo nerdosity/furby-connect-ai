@@ -15,15 +15,15 @@ static void nvsPut(const char* key, const String& val) {
     p.end();
 }
 
-static framesize_t strToFramesize(const String& s) {
-    if (s == "QQVGA") return FRAMESIZE_QQVGA;
-    if (s == "QVGA")  return FRAMESIZE_QVGA;
-    if (s == "VGA")   return FRAMESIZE_VGA;
-    if (s == "SVGA")  return FRAMESIZE_SVGA;
-    if (s == "XGA")   return FRAMESIZE_XGA;
-    if (s == "SXGA")  return FRAMESIZE_SXGA;
-    if (s == "UXGA")  return FRAMESIZE_UXGA;
-    return FRAMESIZE_QVGA;
+static bool strToFramesize(const String& s, framesize_t& out) {
+    if (s == "QQVGA") { out = FRAMESIZE_QQVGA; return true; }
+    if (s == "QVGA")  { out = FRAMESIZE_QVGA;  return true; }
+    if (s == "VGA")   { out = FRAMESIZE_VGA;   return true; }
+    if (s == "SVGA")  { out = FRAMESIZE_SVGA;  return true; }
+    if (s == "XGA")   { out = FRAMESIZE_XGA;   return true; }
+    if (s == "SXGA")  { out = FRAMESIZE_SXGA;  return true; }
+    if (s == "UXGA")  { out = FRAMESIZE_UXGA;  return true; }
+    return false;
 }
 static const char* framesizeToStr(framesize_t fs) {
     switch (fs) {
@@ -1642,10 +1642,13 @@ void startWebServer() {
             changed = true;
         }
         if (server.hasArg("stream_size")) {
-            camStreamSize = strToFramesize(server.arg("stream_size"));
-            Preferences p; p.begin("furby", false); p.putInt("cam_sts", (int)camStreamSize); p.end();
-            camSafeReinit();
-            changed = true;
+            framesize_t fs;
+            if (strToFramesize(server.arg("stream_size"), fs)) {
+                camStreamSize = fs;
+                Preferences p; p.begin("furby", false); p.putInt("cam_sts", (int)camStreamSize); p.end();
+                camSafeReinit();
+                changed = true;
+            }
         }
         if (server.hasArg("snap_quality")) {
             int q = constrain(server.arg("snap_quality").toInt(), 4, 63);
@@ -1654,9 +1657,12 @@ void startWebServer() {
             changed = true;
         }
         if (server.hasArg("snap_size")) {
-            camSnapSize = strToFramesize(server.arg("snap_size"));
-            Preferences p; p.begin("furby", false); p.putInt("cam_sns", (int)camSnapSize); p.end();
-            changed = true;
+            framesize_t fs;
+            if (strToFramesize(server.arg("snap_size"), fs)) {
+                camSnapSize = fs;
+                Preferences p; p.begin("furby", false); p.putInt("cam_sns", (int)camSnapSize); p.end();
+                changed = true;
+            }
         }
         if (server.hasArg("flicker")) {
             int hz = server.arg("flicker").toInt();
