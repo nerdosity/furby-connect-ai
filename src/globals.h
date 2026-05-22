@@ -22,6 +22,9 @@
 
 #define FW_VERSION "2026.0522.0151"
 
+#define BLE_SVC_DEFAULT  "dab91435-b5a1-e29c-b041-bcd562613bde"
+#define BLE_CHAR_DEFAULT "dab91383-b5a1-e29c-b041-bcd562613bde"
+
 // ── Pinout camera OV2640 ─────────────────────────────────────────────────────
 #define PWDN_GPIO_NUM     -1
 #define RESET_GPIO_NUM    -1

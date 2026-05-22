@@ -57,8 +57,8 @@ void setup() {
         elevenlabs_api_key = preferences.getString("11labs_key", "");
     elevenlabs_voice_id = preferences.getString("11labs_vid","pNInz6obpgDQGcFmaJcg");
     el_audio_fmt        = preferences.getString("11labs_fmt","pcm");
-    ble_service_uuid    = preferences.getString("ble_svc",  "dab91435-b5a1-e29c-b041-bcd562613bde");
-    ble_char_uuid_tx    = preferences.getString("ble_char", "dab91383-b5a1-e29c-b041-bcd562613bde");
+    ble_service_uuid    = preferences.getString("ble_svc",  BLE_SVC_DEFAULT);
+    ble_char_uuid_tx    = preferences.getString("ble_char", BLE_CHAR_DEFAULT);
     serviceUUID      = BLEUUID(ble_service_uuid.c_str());
     charUUID_GPWrite = BLEUUID(ble_char_uuid_tx.c_str());
     vad_threshold   = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);

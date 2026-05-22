@@ -107,7 +107,7 @@
           </select>
         </div>
         <div class="col-8">
-          <label class="form-label" id="tok-lbl"><span data-i18n="llm.label_model">Modello</span> <small class="text-muted fw-normal" id="mdl-st"></small></label>
+          <label class="form-label d-flex align-items-center gap-2" id="tok-lbl"><span data-i18n="llm.label_model">Modello</span> <small class="text-muted fw-normal" id="mdl-st"></small><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="loadModels(document.getElementById('mdl').value)" title="Ricarica modelli"><i class="bi bi-arrow-clockwise"></i></button></label>
           <select class="form-select form-select-sm" name="model" id="mdl" disabled></select>
         </div>
       </div>
@@ -137,7 +137,7 @@
         <input type="text" class="form-control form-control-sm" name="el_key" id="el-key" oninput="elKeyChange()">
       </div>
       <div class="mb-2">
-        <label class="form-label" data-i18n="el.label_voice">Voce</label>
+        <label class="form-label d-flex align-items-center gap-2" data-i18n="el.label_voice">Voce<button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button></label>
         <select class="form-select form-select-sm" name="el_vid" id="el-voice-sel" disabled></select>
         <div id="el-voice-hint" class="form-text text-warning"></div>
       </div>
@@ -245,6 +245,7 @@
         <input type="text" class="form-control form-control-sm font-monospace" name="char_uuid" id="ble-char-uuid">
       </div>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="button" class="btn btn-outline-secondary px-3" onclick="bleUuidReset()" data-i18n="ble.btn_reset"><i class="bi bi-arrow-counterclockwise"></i> Ripristina default</button>
         <button type="submit" class="btn btn-primary px-3" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
       </div>
     </form>
@@ -346,6 +347,8 @@ function applyHome(d){
   // BLE UUID
   document.getElementById('ble-svc-uuid').value=d.ble_svc_uuid||'';
   document.getElementById('ble-char-uuid').value=d.ble_char_uuid||'';
+  if(d.ble_svc_uuid_default) window._bleSvcDefault=d.ble_svc_uuid_default;
+  if(d.ble_char_uuid_default) window._bleCharDefault=d.ble_char_uuid_default;
 }
 fetch('/api/home').then(function(r){return r.json();}).then(applyHome).catch(function(){});
 
@@ -540,8 +543,7 @@ function testLlm(){
   }).then(function(d){
     el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
     el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
-    if(d.ok)loadModels(document.getElementById('mdl').value);
-    else _llmSetLoading(false);
+    _llmSetLoading(false);
   }).catch(function(){el.className='small mt-1 text-danger';el.textContent=T('llm.test_timeout');_llmSetLoading(false);});
 }
 
@@ -589,7 +591,6 @@ function testEl(){
   }).then(function(d){
     el.className='small mt-1 '+(d.ok?'text-success':'text-danger');
     el.textContent=d.ok?T('llm.test_ok')+d.info:T('llm.test_err')+d.error;
-    if(d.ok){var cur=document.getElementById('el-voice-sel').value;elUpdateVoiceState(k,cur);}
     _elSetLoading(false);
   }).catch(function(){el.className='small mt-1 text-danger';el.textContent=T('llm.test_timeout');_elSetLoading(false);});
 }
@@ -623,6 +624,13 @@ function staticSave(){
       if(d.ok) alert(T('wifi.static_saved'));
       else alert(d.error||T('error_generic'));
     }).catch(function(){alert(T('error_generic'));});
+}
+
+// BLE UUID reset
+function bleUuidReset(){
+  if(!window._bleSvcDefault) return;
+  document.getElementById('ble-svc-uuid').value=window._bleSvcDefault;
+  document.getElementById('ble-char-uuid').value=window._bleCharDefault;
 }
 
 // WiFi

@@ -18,10 +18,10 @@ String elevenlabs_api_key  = "";
 String elevenlabs_voice_id = "pNInz6obpgDQGcFmaJcg";
 String el_audio_fmt        = "pcm";
 
-String ble_service_uuid = "dab91435-b5a1-e29c-b041-bcd562613bde";
-String ble_char_uuid_tx = "dab91383-b5a1-e29c-b041-bcd562613bde";
-BLEUUID serviceUUID("dab91435-b5a1-e29c-b041-bcd562613bde");
-BLEUUID charUUID_GPWrite("dab91383-b5a1-e29c-b041-bcd562613bde");
+String ble_service_uuid = BLE_SVC_DEFAULT;
+String ble_char_uuid_tx = BLE_CHAR_DEFAULT;
+BLEUUID serviceUUID(BLE_SVC_DEFAULT);
+BLEUUID charUUID_GPWrite(BLE_CHAR_DEFAULT);
 BLEUUID charUUID_GPListen("dab91382-b5a1-e29c-b041-bcd562613bde");
 BLEUUID charUUID_NWrite("dab90757-b5a1-e29c-b041-bcd562613bde");
 BLEUUID charUUID_NListen("dab90756-b5a1-e29c-b041-bcd562613bde");

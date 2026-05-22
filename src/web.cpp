@@ -902,8 +902,10 @@ static void handleApiHome() {
     doc["vad_enabled"]    = vadEnabled;
     doc["vad_threshold"]  = vad_threshold;
     doc["stt_enabled"]    = sttEnabled;
-    doc["ble_svc_uuid"]   = ble_service_uuid;
-    doc["ble_char_uuid"]  = ble_char_uuid_tx;
+    doc["ble_svc_uuid"]        = ble_service_uuid;
+    doc["ble_char_uuid"]       = ble_char_uuid_tx;
+    doc["ble_svc_uuid_default"]  = BLE_SVC_DEFAULT;
+    doc["ble_char_uuid_default"] = BLE_CHAR_DEFAULT;
     doc["hostname"]    = WiFi.getHostname();
     doc["static_ip"]   = WiFi.localIP().toString();
     doc["static_gw"]   = WiFi.gatewayIP().toString();

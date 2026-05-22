@@ -96,3 +96,11 @@ body { background: var(--fb-bg); }
 /* ── min-width bottoni (evita bottoni troppo stretti su desktop) ── */
 .btn:not(.btn-sm) { min-width: 9rem; }
 .btn-group .btn:not(.btn-sm) { min-width: 0; }
+
+/* ── progress bar altezza ridotta (Bootstrap non ha progress-sm) ── */
+.progress-sm { height: 8px; }
+
+/* ── scroll box per log (max-height + overflow non coperto da Bootstrap) ── */
+.scroll-box { max-height: 200px; overflow-y: auto; }
+.scroll-box-sm { max-height: 120px; overflow-y: auto; }
+.scroll-box-lg { max-height: 300px; overflow-y: auto; }

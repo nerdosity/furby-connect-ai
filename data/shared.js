@@ -132,6 +132,7 @@ var _SHARED_TR={
     'ble.connect':'<i class="bi bi-link-45deg"></i> Connetti',
     'ble.label_svc':'Service UUID','ble.label_char':'Characteristic UUID TX',
     'ble.btn_save':'<i class="bi bi-floppy"></i> Salva UUID',
+    'ble.btn_reset':'<i class="bi bi-arrow-counterclockwise"></i> Ripristina default',
     'ble.connected_for':'connesso da: ',
     'wifi.connect_err':'Errore di rete',
     // camera.html
@@ -221,6 +222,7 @@ var _SHARED_TR={
     'ble.connect':'<i class="bi bi-link-45deg"></i> Connect',
     'ble.label_svc':'Service UUID','ble.label_char':'Characteristic UUID TX',
     'ble.btn_save':'<i class="bi bi-floppy"></i> Save UUID',
+    'ble.btn_reset':'<i class="bi bi-arrow-counterclockwise"></i> Restore defaults',
     'ble.connected_for':'connected for: ',
     'wifi.connect_err':'Network error',
     // camera.html
@@ -326,33 +328,30 @@ function _renderSysBar(bar, plainText, tempC, fwLatest){
   if(tempC!=null||fwLatest){
     bar.appendChild(document.createTextNode(' | '));
     var wrap=document.createElement('span');
-    wrap.style.cssText='display:inline-flex;align-items:center;gap:4px;';
+    wrap.className='d-inline-flex align-items-center gap-1';
     if(tempC!=null){
       var col=_tempColor(tempC);
       var tsp=document.createElement('span');
-      if(col){tsp.style.color=col;tsp.style.fontWeight='bold';}
+      if(col) tsp.className='fw-bold';
+      if(col) tsp.style.color=col;
       tsp.textContent='T '+tempC+'°C';
       wrap.appendChild(tsp);
     }
     if(fwLatest&&_fwCurrent){
       var cmp=_fwCompare(_fwCurrent,fwLatest);
       var badge=document.createElement('span');
-      badge.style.cursor='default';
       badge.setAttribute('data-bs-toggle','tooltip');
       badge.setAttribute('data-bs-placement','bottom');
       if(cmp<0){
-        badge.className='badge ms-1';
-        badge.style.cssText='background:#dc2626;color:#fff;';
+        badge.className='badge bg-danger ms-1';
         badge.title=T('fw.update_avail')+fwLatest+' ('+T('fw.current')+_fwCurrent+')';
         badge.innerHTML='<i class="bi bi-exclamation-circle-fill"></i> '+_fwCurrent;
       } else if(cmp===0){
-        badge.className='badge ms-1';
-        badge.style.cssText='background:#16a34a;color:#fff;';
+        badge.className='badge bg-success ms-1';
         badge.title=T('fw.up_to_date')+'('+_fwCurrent+')';
         badge.innerHTML='<i class="bi bi-check-circle-fill"></i> '+_fwCurrent;
       } else {
-        badge.className='badge ms-1';
-        badge.style.cssText='background:#d97706;color:#fff;';
+        badge.className='badge bg-warning text-dark ms-1';
         badge.title=T('fw.local_newer')+_fwCurrent+T('fw.vs_online')+fwLatest+')';
         badge.innerHTML='<i class="bi bi-question-circle-fill"></i> '+_fwCurrent;
       }

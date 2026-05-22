@@ -395,7 +395,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
     <div class="d-flex align-items-center gap-3">
-      <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px;height:40px;padding:2px">
+      <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px">
       <button class="btn btn-success px-3" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
       <button class="btn btn-outline-secondary px-3" id="btn-eyes" onclick="eyesToggle()"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
     </div>
@@ -423,7 +423,7 @@ function setLang(l){
     </div>
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
     <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
-      <div class="input-group" style="width:110px">
+      <div class="input-group w-auto">
         <span class="input-group-text">Slot</span>
         <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0">
       </div>
@@ -434,7 +434,7 @@ function setLang(l){
       <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
       <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
     </div>
-    <div id="dlc-log" class="bg-dark text-light rounded p-2 small" style="display:none;max-height:120px;overflow-y:auto"></div>
+    <div id="dlc-log" class="bg-dark text-light rounded p-2 small scroll-box-sm" style="display:none"></div>
   </div></div>
 </div>
 
@@ -494,12 +494,12 @@ function setLang(l){
     <div class="row g-3 mb-2">
       <div class="col">
         <div class="small text-muted mb-1">MIC1 (L)</div>
-        <div class="progress" style="height:12px"><div id="rms-bar-l" class="progress-bar" style="width:0%"></div></div>
+        <div class="progress progress-sm"><div id="rms-bar-l" class="progress-bar" style="width:0%"></div></div>
         <div id="rms-val-l" class="small text-muted mt-1">0</div>
       </div>
       <div class="col">
         <div class="small text-muted mb-1">MIC2 (R)</div>
-        <div class="progress" style="height:12px"><div id="rms-bar-r" class="progress-bar bg-success" style="width:0%"></div></div>
+        <div class="progress progress-sm"><div id="rms-bar-r" class="progress-bar bg-success" style="width:0%"></div></div>
         <div id="rms-val-r" class="small text-muted mt-1">0</div>
       </div>
     </div>
@@ -527,7 +527,7 @@ function setLang(l){
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.log">Log</h6>
-    <div class="bg-dark text-light rounded p-2 small" id="log" style="max-height:200px;overflow-y:auto"></div>
+    <div class="bg-dark text-light rounded p-2 small scroll-box" id="log"></div>
   </div></div>
 </div>
 
@@ -694,7 +694,7 @@ function setLang(l){
       <button class="btn btn-warning px-3" onclick="dbgRun()" id="btn-dbg-run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
     </div>
     <div id="dbg-msg" class="small mt-2 text-muted"></div>
-    <pre id="dbg-log" class="bg-dark text-light rounded p-2 mt-2 small" style="display:none;max-height:300px;overflow-y:auto"></pre>
+    <pre id="dbg-log" class="bg-dark text-light rounded p-2 mt-2 small scroll-box-lg" style="display:none"></pre>
   </div></div>
 
   <!-- Test LLM diretto -->
