@@ -1498,10 +1498,9 @@ static void handleCameraFrame() {
     esp_camera_fb_return(fb);
 }
 
-static volatile bool mjpegRunning = false;
+static TaskHandle_t mjpegTaskHandle = NULL;
 
 static void mjpegTask(void* arg) {
-    mjpegRunning = true;
     WiFiClient client = *((WiFiClient*)arg);
     delete (WiFiClient*)arg;
     client.println("HTTP/1.1 200 OK");
@@ -1519,29 +1518,38 @@ static void mjpegTask(void* arg) {
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
     client.stop();
-    mjpegRunning = false;
+    mjpegTaskHandle = NULL;
     vTaskDelete(NULL);
+}
+
+// Killa il task mjpeg (se vivo) prima di toccare il driver camera.
+static void mjpegStop() {
+    if (mjpegTaskHandle) {
+        vTaskDelete(mjpegTaskHandle);
+        mjpegTaskHandle = NULL;
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 }
 
 static void handleCameraStream() {
     HTTP_LOG();
+    if (mjpegTaskHandle) { server.send(409, "text/plain", "stream già attivo"); return; }
     if (!camActive && !camInit()) { server.send(503, "text/plain", "camera non disponibile"); return; }
     WiFiClient* client = new WiFiClient(server.client());
-    xTaskCreatePinnedToCore(mjpegTask, "mjpeg", 8192, client, 1, NULL, 1);
+    xTaskCreatePinnedToCore(mjpegTask, "mjpeg", 8192, client, 1, &mjpegTaskHandle, 1);
 }
 
 static void camSafeReinit() {
-    // aspetta che il task mjpeg si accorga che camActive=false e termini
+    mjpegStop();
     camDeinit();
-    for (int i = 0; i < 50 && mjpegRunning; i++) vTaskDelay(20 / portTICK_PERIOD_MS);
     camInit();
     camApplySettings(camStreamSize, camStreamQuality);
 }
 
 static void handleCameraOff() {
     HTTP_LOG();
+    mjpegStop();
     camDeinit();
-    for (int i = 0; i < 50 && mjpegRunning; i++) vTaskDelay(20 / portTICK_PERIOD_MS);
     server.send(200, "text/plain", "ok");
 }
 

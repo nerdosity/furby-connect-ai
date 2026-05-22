@@ -325,8 +325,7 @@ bool camInit() {
 
 void camDeinit() {
     if (!camActive) return;
-    camActive = false;  // prima, così i task che la usano smettono di girare
-    vTaskDelay(40 / portTICK_PERIOD_MS);  // lascia tempo al task corrente di uscire dal fb_get
+    camActive = false;
     esp_camera_deinit();
     Serial.println("CAM: deinit");
 }
