@@ -376,7 +376,7 @@ function setLang(l){
       <div class="col"><div class="text-muted small mb-1">subindex</div><input type="number" class="form-control form-control-sm" id="ap-sx" min="0" max="30" value="8"></div>
       <div class="col"><div class="text-muted small mb-1">specific</div><input type="number" class="form-control form-control-sm" id="ap-sp" min="0" max="10" value="1"></div>
     </div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
     </div>
   </div></div>
@@ -404,7 +404,7 @@ function setLang(l){
       </div>
       <div id="tbeh-behavior-label" class="text-muted small ms-auto"></div>
     </div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="tbehRun()" data-i18n="act.test_run"><i class="bi bi-play-fill"></i> Simula trigger</button>
     </div>
     <div id="tbeh-msg" class="small mt-2 text-muted"></div>
@@ -431,7 +431,7 @@ function setLang(l){
       <div class="col-6"><label class="form-label small mb-1">Tiredness</label><input type="number" class="form-control form-control-sm" id="m-tire" min="0" max="7" value="4"></div>
       <div class="col-6"><label class="form-label small mb-1">Excitedness</label><input type="number" class="form-control form-control-sm" id="m-exci" min="0" max="7" value="4"></div>
     </div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-primary px-3" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
     </div>
   </div></div>
@@ -473,7 +473,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3" id="cfg-editor" style="display:none"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h6>
     <div id="cfg-rules"></div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add"><i class="bi bi-plus-lg"></i> Aggiungi regola</button>
     </div>
   </div></div>
@@ -537,7 +537,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
-    <div class="d-grid d-sm-flex justify-content-sm-end">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
     </div>
     <div id="rec-result" class="small mt-2 text-muted"></div>
@@ -577,7 +577,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3" id="fm-editor-card" style="display:none"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" id="fm-editor-title">Editor</h6>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
-    <div class="d-flex gap-2 mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
       <button class="btn btn-outline-secondary px-3" onclick="fmEditorClose()" data-i18n="fm.close"><i class="bi bi-x-lg"></i> Chiudi</button>
     </div>
@@ -595,7 +595,7 @@ function setLang(l){
         <input type="file" class="form-control form-control-sm" id="fm-up-file">
       </div>
       <div class="col-12 col-md-3">
-        <div class="d-grid d-sm-flex justify-content-sm-end">
+        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
           <button class="btn btn-warning px-3" onclick="fmUpload()" data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
         </div>
       </div>
@@ -616,7 +616,7 @@ function setLang(l){
       <button class="btn btn-outline-secondary px-3" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i> Carica</button>
     </div>
     <div id="voice-load-msg" class="small text-muted mb-2"></div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="persSave()" data-i18n="persona.save_btn"><i class="bi bi-floppy"></i> Salva personalità</button>
     </div>
     <div id="pers-msg" class="small mt-1 text-muted"></div>
@@ -626,7 +626,7 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="persona.beh_title">Comportamenti</h6>
     <p class="text-muted small mb-3" data-i18n="persona.beh_desc">Ogni comportamento mappa un evento su 1-3 conseguenze.</p>
     <div id="beh-list"></div>
-    <div class="d-flex gap-2 flex-wrap mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
       <button class="btn btn-primary px-3" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
       <label class="btn btn-warning px-3 mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
@@ -656,7 +656,7 @@ function setLang(l){
       </div>
     </div>
     <div id="csq-list"></div>
-    <div class="d-grid d-sm-flex mt-2" id="csq-add-btn-wrap">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2" id="csq-add-btn-wrap">
       <button class="btn btn-success px-3" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
     </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-3">
@@ -693,7 +693,7 @@ function setLang(l){
         <label class="form-check-label small" for="sim-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
       </div>
     </div>
-    <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-warning px-3" onclick="simRun()" id="btn-sim-run" data-i18n="sim.run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
     </div>
     <div id="sim-msg" class="small mt-2 text-muted"></div>
@@ -705,7 +705,7 @@ function setLang(l){
     <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.llm_title">Test LLM</h6>
     <p class="text-muted small mb-2" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente</p>
     <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
-    <div class="d-grid d-sm-flex justify-content-sm-end">
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-primary px-3" onclick="testLlmSend()" data-i18n="test.llm_send"><i class="bi bi-send"></i> Invia</button>
     </div>
     <div id="test-llm-resp" class="mt-2 p-3 rounded border bg-light small font-monospace" style="display:none;white-space:pre-wrap"></div>
@@ -877,7 +877,7 @@ function csqCard(c,i){
     +'<option value="3"'+(c.type==3?' selected':'')+'>'+t('csq.prompt_fixed')+'</option>'
     +'<option value="4"'+(c.type==4?' selected':'')+'>'+t('csq.llm_decide')+'</option>'
     +'</select>';
-  var del='<button class="btn btn-danger btn-sm" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i></button>';
+  var del='<button class="btn btn-danger px-3 ms-auto" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i> '+t('delete_btn')+'</button>';
   var hdr='<div class="d-flex align-items-center gap-2 mb-2">'+typeSel+del+'</div>';
   var ta='form-control form-control-sm font-monospace';var body='';
   if(c.type==1){
@@ -1011,7 +1011,7 @@ var ACTIONS_WORLD=[[29,0,0,0,'Chiedi nome'],[30,0,0,0,'Ricorda nome'],[31,0,0,0,
 function buildActGrid(id,actions){
   var el=document.getElementById(id);
   actions.forEach(function(a){
-    var b=document.createElement('button');b.className='btn btn-primary act-btn';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[0]+' – '+a[4];
+    var b=document.createElement('button');b.className='btn btn-primary act-btn px-3';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[0]+' – '+a[4];
     b.title='[0x13,0x00,'+a[0]+','+a[1]+','+a[2]+','+a[3]+']';
     b.onclick=function(){wbCmd(a[4],[0x13,0x00,a[0],a[1],a[2],a[3]]);};el.appendChild(b);
   });

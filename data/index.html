@@ -47,8 +47,8 @@
         <label class="form-label" data-i18n="wifi.label_prio">Priorità (0 = massima)</label>
         <input type="text" class="form-control form-control-sm" name="prio" value="0" >
       </div>
-      <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary" data-i18n="wifi.btn_add"><i class="bi bi-plus-lg"></i> Aggiungi / Aggiorna rete</button>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary px-3" data-i18n="wifi.btn_add"><i class="bi bi-plus-lg"></i> Aggiungi / Aggiorna rete</button>
       </div>
     </form>
   </div>
@@ -80,8 +80,8 @@
         <input type="text" class="form-control form-control-sm" name="api_key" id="tok" placeholder="...">
       </div>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary" data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-flask"></i> Test</button>
+        <button type="submit" class="btn btn-primary px-3" data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
+        <button type="button" class="btn btn-outline-secondary px-3" onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-flask"></i> Test</button>
       </div>
       <div id="llm-test-result" class="small mt-1"></div>
     </form>
@@ -119,8 +119,8 @@
         <div id="fmt-hint" class="form-text"></div>
       </div>
       <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary" data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-flask"></i> Test</button>
+        <button type="submit" class="btn btn-primary px-3" data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
+        <button type="button" class="btn btn-outline-secondary px-3" onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-flask"></i> Test</button>
       </div>
       <div id="el-test-result" class="small mt-1"></div>
     </form>
@@ -158,7 +158,7 @@
         <label class="form-label" data-i18n="vad.label_thresh">Soglia sensibilità (RMS 0–32767, default 800)</label>
         <input type="number" class="form-control form-control-sm" id="vad-thresh" min="0" max="32767" onchange="vadSaveThresh()" onblur="vadSaveThresh()">
       </div>
-      <button class="btn btn-outline-secondary px-3" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic"></i></button>
+      <button class="btn btn-outline-secondary px-3" onclick="vadToggle()" id="btn-vad-tog"><i class="bi bi-mic-mute"></i> VAD</button>
     </div>
   </div>
 </div>
@@ -170,7 +170,7 @@
     </div>
     <div class="d-flex gap-2 align-items-center">
       <p class="text-muted small mb-0 flex-fill" data-i18n="stt.desc">Trascrive il parlato con Whisper prima di passarlo all'LLM.</p>
-      <button class="btn btn-outline-secondary px-3" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i></button>
+      <button class="btn btn-outline-secondary px-3" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i> STT</button>
     </div>
   </div>
 </div>
@@ -191,9 +191,9 @@
       <span data-i18n="ble.connected_for">connesso da: </span><span id="ble-uptime"></span>
     </div>
     <div class="d-flex gap-2 flex-wrap mb-2">
-      <button type="button" class="btn btn-success" id="btn-scan" onclick="bleScan()" data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca Furby</button>
-      <button type="button" class="btn btn-danger"  id="btn-stop" onclick="bleStop()" style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop scan</button>
-      <button type="button" class="btn btn-warning" id="btn-disc" onclick="bleDisc()" style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disconnetti</button>
+      <button type="button" class="btn btn-success px-3" id="btn-scan" onclick="bleScan()" data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca Furby</button>
+      <button type="button" class="btn btn-danger px-3"  id="btn-stop" onclick="bleStop()" style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop scan</button>
+      <button type="button" class="btn btn-warning px-3" id="btn-disc" onclick="bleDisc()" style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disconnetti</button>
     </div>
     <div id="ble-scanning" class="text-warning small" style="display:none" data-i18n="ble.scanning_msg">⌛ Scansione in corso...</div>
     <div id="ble-list" class="mt-2"></div>
@@ -207,8 +207,8 @@
         <label class="form-label" data-i18n="ble.label_char">Characteristic UUID TX</label>
         <input type="text" class="form-control form-control-sm font-monospace" name="char_uuid" id="ble-char-uuid">
       </div>
-      <div class="d-grid d-sm-flex justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+        <button type="submit" class="btn btn-primary px-3" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
       </div>
     </form>
   </div>
@@ -291,7 +291,7 @@ function vadApplyUI(vad_en, stt_en){
   document.getElementById('vad-label').textContent=vad_en?T('vad.active'):T('vad.disabled');
   var bv=document.getElementById('btn-vad-tog');
   bv.className=vad_en?'btn btn-success px-3':'btn btn-outline-secondary px-3';
-  bv.innerHTML=vad_en?'<i class="bi bi-mic-fill"></i>':'<i class="bi bi-mic-mute"></i>';
+  bv.innerHTML=vad_en?'<i class="bi bi-mic-fill"></i> VAD':'<i class="bi bi-mic-mute"></i> VAD';
   document.getElementById('stt-dot').className='fb-dot '+(stt_en?'fb-dot-ok':'fb-dot-warn');
   document.getElementById('stt-label').textContent=stt_en?T('stt.active'):T('stt.disabled');
   var bs=document.getElementById('btn-stt-tog');
@@ -405,7 +405,7 @@ function wifiScan(){
         +'<td class="align-middle fw-semibold">'+n.ssid+'</td>'
         +'<td class="align-middle small '+rc+'">'+n.rssi+'</td>'
         +'<td class="align-middle">'+(n.open?'<span class="badge bg-warning text-dark">'+T('wifi.open')+'</span>':'<span class="badge bg-secondary">WPA</span>')+'</td>'
-        +'<td class="align-middle text-end"><button type="button" class="btn btn-success btn-sm" onclick="document.getElementById(\'ssid-inp\').value=\''+n.ssid+'\'">'+T('wifi.scan_use')+'</button></td>'
+        +'<td class="align-middle text-end"><button type="button" class="btn btn-success btn-sm" onclick="document.getElementById(\'ssid-inp\').value=\''+n.ssid+'\'"><i class="bi bi-check-lg"></i> '+T('wifi.scan_use')+'</button></td>'
         +'</tr>';
     });
     el.innerHTML=h+'</tbody></table>';

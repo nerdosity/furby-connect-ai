@@ -20,7 +20,7 @@
 #include <BLEAdvertisedDevice.h>
 #include <SPIFFS.h>
 
-#define FW_VERSION "2026.0522.1"
+#define FW_VERSION "2026.0522.0151"
 
 // ── Pinout camera OV2640 ─────────────────────────────────────────────────────
 #define PWDN_GPIO_NUM     -1
