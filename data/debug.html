@@ -1308,7 +1308,7 @@ function micRecord(){
     }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
   }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
 }
-var _micActive=false;
+var _micEs=null;
 function _micApply(d){
   var p1=Math.min(100,Math.round(d.rms1/5000*100)),p2=Math.min(100,Math.round(d.rms2/5000*100));
   document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
@@ -1318,12 +1318,15 @@ function _micApply(d){
   else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent=t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
   else{badge.textContent=t('aud.vad_silence');badge.className='badge bg-secondary';}
 }
-function _micLoop(){
-  if(!_micActive)return;
-  fetch('/debug/mic/poll').then(r=>r.json()).then(function(d){_micApply(d);_micLoop();}).catch(function(){if(_micActive)setTimeout(_micLoop,1000);});
+function startMicPoll(){
+  if(_micEs)return;
+  _micEs=new EventSource('/debug/mic/sse');
+  _micEs.onmessage=function(e){try{_micApply(JSON.parse(e.data));}catch(ex){}};
+  _micEs.onerror=function(){_micEs.close();_micEs=null;setTimeout(startMicPoll,2000);};
 }
-function startMicPoll(){if(_micActive)return;_micActive=true;_micLoop();}
-function stopMicPoll(){_micActive=false;}
+function stopMicPoll(){
+  if(_micEs){_micEs.close();_micEs=null;}
+}
 
 var fmCurrentPath='';
 function fmFmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}

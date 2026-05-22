@@ -42,7 +42,7 @@ static void httpLog() {
     String uri = server.uri();
     // skippa polling frequente e risorse statiche
     if (uri == "/sys/info" || uri == "/debug/mic/rms" || uri == "/debug/sensors" ||
-        uri == "/ble/status" || uri.endsWith(".map")) return;
+        uri == "/ble/status" || uri == "/debug/mic/sse" || uri.endsWith(".map")) return;
     String args;
     for (int i = 0; i < server.args(); i++) {
         const String& n = server.argName(i);
@@ -1355,7 +1355,7 @@ static void handleDebugMicRms() {
         ",\"threshold\":" + String(vad_threshold) + "}");
 }
 
-// long-poll: risponde solo quando i valori cambiano o dopo 2s di timeout
+// legacy long-poll - mantenuto per compatibilità
 static void handleDebugMicPoll() {
     int prev1 = micRmsLive, prev2 = micRmsLive2;
     bool prevVad = micVadActive;
@@ -1369,6 +1369,37 @@ static void handleDebugMicPoll() {
         ",\"rms2\":" + String(micRmsLive2) +
         ",\"vad\":" + String(micVadActive ? "true" : "false") +
         ",\"threshold\":" + String(vad_threshold) + "}");
+}
+
+// SSE: stream continuo mic RMS, manda evento ogni volta che i valori cambiano
+static void handleDebugMicSse() {
+    WiFiClient client = server.client();
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/event-stream");
+    client.println("Cache-Control: no-cache");
+    client.println("Connection: keep-alive");
+    client.println("Access-Control-Allow-Origin: *");
+    client.println();
+
+    int prev1 = -1, prev2 = -1;
+    bool prevVad = false;
+    unsigned long tLast = 0;
+
+    while (client.connected()) {
+        int r1 = micRmsLive, r2 = micRmsLive2;
+        bool vad = micVadActive;
+        unsigned long now = millis();
+        // manda se cambiato o keepalive ogni 2s
+        if (r1 != prev1 || r2 != prev2 || vad != prevVad || now - tLast >= 2000) {
+            String data = "data:{\"rms1\":" + String(r1) +
+                          ",\"rms2\":" + String(r2) +
+                          ",\"vad\":" + String(vad ? "true" : "false") +
+                          ",\"threshold\":" + String(vad_threshold) + "}\n\n";
+            client.print(data);
+            prev1 = r1; prev2 = r2; prevVad = vad; tLast = now;
+        }
+        delay(40);
+    }
 }
 
 static void handleDebugAmp() {
@@ -1680,6 +1711,7 @@ void startWebServer() {
     server.on("/debug/cmd",        HTTP_POST, handleDebugCmd);
     server.on("/debug/mic/rms",    HTTP_GET,  handleDebugMicRms);
     server.on("/debug/mic/poll",   HTTP_GET,  handleDebugMicPoll);
+    server.on("/debug/mic/sse",    HTTP_GET,  handleDebugMicSse);
     server.on("/debug/amp",        HTTP_GET,  handleDebugAmp);
     server.on("/debug/amp",        HTTP_POST, handleDebugAmp);
     server.on("/debug/vol",        HTTP_POST, handleDebugVol);
