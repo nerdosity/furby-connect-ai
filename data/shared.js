@@ -161,7 +161,8 @@ var _SHARED_TR={
     'wifi.placeholder_ssid':'Nome rete','wifi.placeholder_pass':'Password (lascia vuoto se aperta)',
     'llm.placeholder_key':'Token API...','el.placeholder_key':'API key...',
     'sd.cache_cleared':'Cache eliminata.','sd.formatting':'Formattazione in corso...','sd.format_done':'Formattazione completata.',
-    'error_generic':'Errore: '
+    'error_generic':'Errore: ','error_conn':'Errore di connessione.',
+    'sys.saved':'Salvato con successo.'
   },
   en:{
     'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
@@ -253,7 +254,8 @@ var _SHARED_TR={
     'wifi.placeholder_ssid':'Network name','wifi.placeholder_pass':'Password (leave blank if open)',
     'llm.placeholder_key':'API token...','el.placeholder_key':'API key...',
     'sd.cache_cleared':'Cache cleared.','sd.formatting':'Formatting...','sd.format_done':'Format complete.',
-    'error_generic':'Error: '
+    'error_generic':'Error: ','error_conn':'Connection error.',
+    'sys.saved':'Saved successfully.'
   }
 };
 

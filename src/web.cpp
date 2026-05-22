@@ -436,33 +436,22 @@ static void handleLlmSave() {
     String newProv  = server.arg("provider");
     String newModel = server.arg("model");
     String newKey   = server.arg("api_key");
-    bool keyPresent = newKey.length() > 0 && !newKey.startsWith("****");
-    // salva la chiave per il provider indicato
-    if (keyPresent) {
-        String prov = (newProv == "openai" || newProv == "claude") ? newProv : llm_provider;
-        if (prov == "claude") {
-            claude_api_key = newKey;
-            nvsPut("claude", claude_api_key);
-        } else {
-            openai_api_key = newKey;
-            nvsPut("openai", openai_api_key);
-        }
-    }
-    // cambia provider solo se c'è già una chiave valida per quello nuovo
-    if (newProv == "openai" || newProv == "claude") {
-        const String& targetKey = (newProv == "claude") ? claude_api_key : openai_api_key;
-        if (targetKey.length() > 0) {
-            llm_provider = newProv;
-            nvsPut("llm_prov", llm_provider);
-        }
-    }
-    // salva il modello solo se c'è una chiave valida in RAM per il provider attivo
+    if (newKey.length() == 0)
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"chiave API vuota\"}"); return; }
+    if (newProv != "openai" && newProv != "claude")
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"provider non valido\"}"); return; }
+    if (newModel.length() == 0)
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"modello non specificato\"}"); return; }
+    // salva chiave per il provider scelto
+    if (newProv == "claude") { claude_api_key = newKey; nvsPut("claude", claude_api_key); }
+    else                     { openai_api_key = newKey; nvsPut("openai", openai_api_key); }
+    llm_provider = newProv; nvsPut("llm_prov", llm_provider);
+    llm_model    = newModel; nvsPut("llm_model", llm_model);
+    // risponde con i valori salvati
     const String& activeKey = (llm_provider == "claude") ? claude_api_key : openai_api_key;
-    if (newModel.length() > 0 && activeKey.length() > 0) {
-        llm_model = newModel;
-        nvsPut("llm_model", llm_model);
-    }
-    server.sendHeader("Location", "/"); server.send(303);
+    String out = "{\"ok\":true,\"provider\":\"" + llm_provider + "\",\"model\":\"" + llm_model
+               + "\",\"key\":\"" + activeKey + "\"}";
+    server.send(200, "application/json", out);
 }
 
 static void handleElSave() {
@@ -470,20 +459,19 @@ static void handleElSave() {
     String newKey = server.arg("el_key");
     String newVid = server.arg("el_vid");
     String newFmt = server.arg("el_fmt");
-    if (newKey.length() > 0 && !newKey.startsWith("****")) {
-        elevenlabs_api_key = newKey;
-        nvsPut("11labs", elevenlabs_api_key);
-    }
-    // salva la voce solo se c'è una chiave valida in RAM
-    if (newVid.length() > 0 && elevenlabs_api_key.length() > 0) {
-        elevenlabs_voice_id = newVid;
-        nvsPut("11labs_vid", elevenlabs_voice_id);
-    }
-    if (newFmt == "pcm" || newFmt == "mp3") {
-        el_audio_fmt = newFmt;
-        nvsPut("11labs_fmt", el_audio_fmt);
-    }
-    server.sendHeader("Location", "/"); server.send(303);
+    if (newKey.length() == 0)
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"chiave API vuota\"}"); return; }
+    if (newVid.length() == 0)
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"voce non selezionata\"}"); return; }
+    if (newFmt != "pcm" && newFmt != "mp3")
+        { server.send(400, "application/json", "{\"ok\":false,\"error\":\"formato non valido\"}"); return; }
+    elevenlabs_api_key  = newKey; nvsPut("11labs",     elevenlabs_api_key);
+    elevenlabs_voice_id = newVid; nvsPut("11labs_vid", elevenlabs_voice_id);
+    el_audio_fmt        = newFmt; nvsPut("11labs_fmt", el_audio_fmt);
+    String out = "{\"ok\":true,\"key\":\"" + elevenlabs_api_key
+               + "\",\"vid\":\"" + elevenlabs_voice_id
+               + "\",\"fmt\":\"" + el_audio_fmt + "\"}";
+    server.send(200, "application/json", out);
 }
 
 static void handleVadSave() {
