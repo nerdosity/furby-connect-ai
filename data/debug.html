@@ -71,7 +71,7 @@ var TRANSLATIONS={
     'cfg.new_btn':'<i class="bi bi-plus-lg"></i> Nuova','cfg.rules_label':'Regole — ',
     'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Aggiungi regola','cfg.activate':'<i class="bi bi-check-circle"></i> Attiva',
     'cfg.del_confirm':'Eliminare questa configurazione?',
-    'cfg.new_default':'Nuova config',
+    'cfg.new_default':'Nuova config','cfg.action_placeholder':'Scegli azione','cfg.rules_full':'Tutti i 16 slot sono occupati',
     'raw.title':'Comando raw (hex bytes separati da spazio)',
     'raw.placeholder':'es. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: nessun byte valido',
@@ -198,7 +198,7 @@ var TRANSLATIONS={
     'cfg.new_btn':'<i class="bi bi-plus-lg"></i> New','cfg.rules_label':'Rules — ',
     'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Add rule','cfg.activate':'<i class="bi bi-check-circle"></i> Activate',
     'cfg.del_confirm':'Delete this configuration?',
-    'cfg.new_default':'New config',
+    'cfg.new_default':'New config','cfg.action_placeholder':'Choose action','cfg.rules_full':'All 16 slots are used',
     'raw.title':'Raw command (hex bytes space-separated)',
     'raw.placeholder':'e.g. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: no valid bytes',
@@ -1104,32 +1104,63 @@ function cfgNew(){
 }
 function cfgDel(idx){if(!confirm(t('cfg.del_confirm')))return;var fd=new FormData();fd.append('idx',idx);fetch('/cfg/del',{method:'POST',body:fd}).then(function(){cfgLoad();document.getElementById('cfg-editor').style.display='none';});}
 function cfgEdit(idx,name){cfgEditIdx=idx;document.getElementById('cfg-editor').style.display='';document.getElementById('cfg-editor-name').textContent=name;cfgRulesLoad(idx);}
+function _cfgActSel(slot,selId){
+  var opts='<option value="">— '+t('cfg.action_placeholder')+' —</option>';
+  gActions.forEach(function(a){opts+='<option value="'+a.id+'"'+(selId===a.id?' selected':'')+'>'+a.label+'</option>';});
+  return '<select class="form-select form-select-sm" id="ra-'+slot+'" onchange="cfgRuleChange('+slot+')">'+opts+'</select>';
+}
+function _cfgSenSel(slot,senId){
+  var opts='';
+  SENSOR_NAMES.forEach(function(n,i){if(i===0)return;opts+='<option value="'+i+'"'+(senId===i?' selected':'')+'>'+n+'</option>';});
+  return '<select class="form-select form-select-sm" id="rs-'+slot+'" onchange="cfgRuleChange('+slot+')">'+opts+'</select>';
+}
 function cfgRulesLoad(idx){
   fetch('/cfg/list').then(r=>r.json()).then(function(d){
     var cfg=d.configs[idx];if(!cfg)return;
     var el=document.getElementById('cfg-rules');el.innerHTML='';
-    for(var slot=0;slot<16;slot++){
-      var rule=cfg.rules.find(function(r){return r.slot===slot;})||{slot:slot,sensorId:0,bytes:[],len:0};
-      var row=document.createElement('div');row.className='rule-row';
-      var senSel='<select class="form-select form-select-sm" id="rs-'+slot+'" onchange="cfgRuleChange('+slot+')">';
-      SENSOR_NAMES.forEach(function(n,i){senSel+='<option value="'+i+'"'+(rule.sensorId===i?' selected':'')+'>'+n+'</option>';});
-      senSel+='</select>';
-      var bytesVal=rule.bytes&&rule.bytes.length?rule.bytes.map(function(b){return '0x'+b.toString(16).padStart(2,'0');}).join(' '):'';
-      row.innerHTML='<span class="text-muted small" style="width:20px">'+slot+'</span>'+senSel
-        +'<input type="text" class="form-control form-control-sm font-monospace flex-fill" id="rb-'+slot+'" value="'+bytesVal+'" placeholder="bytes hex" onchange="cfgRuleChange('+slot+')">'
-        +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+slot+')"><i class="bi bi-x-lg"></i></button>';
+    var activeRules=cfg.rules.filter(function(r){return r.sensorId>0;});
+    activeRules.forEach(function(rule){
+      var row=document.createElement('div');row.className='rule-row align-items-center';
+      var actionId='';
+      if(rule.bytes&&rule.bytes.length){
+        var hexStr=rule.bytes.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+        gActions.forEach(function(a){
+          var ah=Array.from(a.bytes||[]).slice(0,a.len).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+          if(ah===hexStr.slice(0,ah.length))actionId=a.id;
+        });
+      }
+      row.innerHTML=_cfgSenSel(rule.slot,rule.sensorId)+_cfgActSel(rule.slot,actionId)
+        +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+rule.slot+')"><i class="bi bi-trash3"></i></button>';
       el.appendChild(row);
-    }
+    });
   });
 }
 function cfgRuleChange(slot){
-  var senId=+document.getElementById('rs-'+slot).value,rawHex=document.getElementById('rb-'+slot).value.trim().split(/\s+/);
-  var bytes=rawHex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});
+  var senId=+document.getElementById('rs-'+slot).value;
+  var actId=document.getElementById('ra-'+slot).value;
+  var act=gActions.find(function(a){return a.id===actId;});
+  if(!senId||!act)return;
+  var bytes=Array.from(act.bytes||[]).slice(0,act.len);
   var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fd.append('sensorId',senId);fd.append('bytes',JSON.stringify(bytes));
   fetch('/cfg/rule/set',{method:'POST',body:fd});
 }
 function cfgRuleClear(slot){var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fetch('/cfg/rule/del',{method:'POST',body:fd}).then(function(){cfgRulesLoad(cfgEditIdx);});}
-function cfgRuleAdd(){cfgRulesLoad(cfgEditIdx);}
+function cfgRuleAdd(){
+  fetch('/cfg/list').then(r=>r.json()).then(function(d){
+    var cfg=d.configs[cfgEditIdx];if(!cfg)return;
+    var used=cfg.rules.filter(function(r){return r.sensorId>0;}).map(function(r){return r.slot;});
+    var slot=-1;for(var i=0;i<16;i++){if(used.indexOf(i)<0){slot=i;break;}}
+    if(slot<0){alert(t('cfg.rules_full'));return;}
+    var el=document.getElementById('cfg-rules');
+    var row=document.createElement('div');row.className='rule-row align-items-center';
+    row.innerHTML=_cfgSenSel(slot,0)+_cfgActSel(slot,'')
+      +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+slot+')"><i class="bi bi-trash3"></i></button>';
+    el.appendChild(row);
+    // salva appena l'utente sceglie sensore e azione
+    document.getElementById('rs-'+slot).addEventListener('change',function(){cfgRuleChange(slot);});
+    document.getElementById('ra-'+slot).addEventListener('change',function(){cfgRuleChange(slot);});
+  });
+}
 
 var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;

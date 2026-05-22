@@ -824,6 +824,9 @@ static void handleBehaviorsActions() {
         JsonObject o = arr.add<JsonObject>();
         o["id"]    = FURBY_ACTIONS[i].id;
         o["label"] = FURBY_ACTIONS[i].label;
+        o["len"]   = FURBY_ACTIONS[i].len;
+        JsonArray ba = o["bytes"].to<JsonArray>();
+        for (int b = 0; b < FURBY_ACTIONS[i].len; b++) ba.add(FURBY_ACTIONS[i].cmd[b]);
     }
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
