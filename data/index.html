@@ -572,8 +572,9 @@ function elSubmit(e){
   e.preventDefault();
   var k=document.getElementById('el-key').value.trim();
   if(!k||_elLoading)return false;
-  _elSetLoading(true);
   var fd=new FormData(document.getElementById('el-form'));
+  fd.set('el_vid',document.getElementById('el-voice-sel').value);
+  _elSetLoading(true);
   fetch('/el/save',{method:'POST',body:fd}).then(function(){
     return fetch('/api/home').then(function(r){return r.json();}).then(applyHome);
   }).catch(function(){}).finally(function(){_elSetLoading(false);});
@@ -584,8 +585,9 @@ function testEl(){
   if(!k||_elLoading)return;
   var el=document.getElementById('el-test-result');
   el.className='small mt-1 text-warning';el.textContent=T('llm.test_running');
-  _elSetLoading(true);
   var fd=new FormData(document.getElementById('el-form'));
+  fd.set('el_vid',document.getElementById('el-voice-sel').value);
+  _elSetLoading(true);
   fetch('/el/save',{method:'POST',body:fd}).then(function(){
     return fetch('/api/test?type=el').then(function(r){return r.json();});
   }).then(function(d){
