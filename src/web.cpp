@@ -46,13 +46,13 @@ static String jsonEscape(const String& s) {
     return o;
 }
 
-static String _spiffsVersion;
-static const String& spiffsVersion() {
-    if (_spiffsVersion.length()) return _spiffsVersion;
+static String spiffsVersion() {
     File f = SPIFFS.open("/version.txt", "r");
-    if (f) { _spiffsVersion = f.readStringUntil('\n'); _spiffsVersion.trim(); f.close(); }
-    if (!_spiffsVersion.length()) _spiffsVersion = FW_VERSION;
-    return _spiffsVersion;
+    if (!f) return FW_VERSION;
+    String v = f.readStringUntil('\n');
+    f.close();
+    v.trim();
+    return v.length() ? v : FW_VERSION;
 }
 
 static void serveSpiffs(const char* path, const char* mime, const char* cache) {
@@ -1635,10 +1635,10 @@ void startWebServer() {
     server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                            "public, max-age=86400"); });
     server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                            "public, max-age=86400"); });
     server.on("/shared.css", HTTP_GET, []() {
-        serveSpiffsETag("/shared.css", "text/css; charset=utf-8", "public, max-age=3600");
+        serveSpiffsETag("/shared.css", "text/css; charset=utf-8", "no-cache");
     });
     server.on("/shared.js",  HTTP_GET, []() {
-        serveSpiffsETag("/shared.js", "application/javascript; charset=utf-8", "public, max-age=3600");
+        serveSpiffsETag("/shared.js", "application/javascript; charset=utf-8", "no-cache");
     });
 
     static const char* hdrs[] = {"If-None-Match"};

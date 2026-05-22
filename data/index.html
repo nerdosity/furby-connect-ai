@@ -137,7 +137,7 @@
         <input type="text" class="form-control form-control-sm" name="el_key" id="el-key" oninput="elKeyChange()">
       </div>
       <div class="mb-2">
-        <label class="form-label d-flex align-items-center gap-2" data-i18n="el.label_voice">Voce<button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button></label>
+        <label class="form-label d-flex align-items-center gap-2"><span data-i18n="el.label_voice">Voce</span><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button></label>
         <select class="form-select form-select-sm" name="el_vid" id="el-voice-sel" disabled></select>
         <div id="el-voice-hint" class="form-text text-warning"></div>
       </div>
