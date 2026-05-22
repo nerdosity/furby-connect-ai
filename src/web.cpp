@@ -1632,6 +1632,9 @@ void startWebServer() {
     server.on("/apple-touch-icon.png",            HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
     server.on("/apple-touch-icon-precomposed.png",HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
     server.on("/manifest.json",                   HTTP_GET, []() { server.send(204); });
+    server.on("/robots.txt",                      HTTP_GET, []() { server.send(204); });
+    server.on("/sitemap.xml",                     HTTP_GET, []() { server.send(204); });
+    server.on("/.well-known/appspecific/com.chrome.devtools.json", HTTP_GET, []() { server.send(204); });
     server.on("/img/logo.png",  HTTP_GET, []() { serveSpiffs("/logo.png",  "image/png",                            "public, max-age=86400"); });
     server.on("/img/title.png", HTTP_GET, []() { serveSpiffs("/title.png", "image/png",                            "public, max-age=86400"); });
     server.on("/shared.css", HTTP_GET, []() {

@@ -134,13 +134,14 @@ void setup() {
         Preferences p; p.begin("furby", true);
         String hn = p.getString("hostname", "furby");
         WiFi.setHostname(hn.c_str());
-        String sip = p.getString("static_ip", "");
+        String sip = p.isKey("static_ip") ? p.getString("static_ip", "") : "";
         if (sip.length()) {
             IPAddress ip, gw, mask, dns;
-            if (ip.fromString(sip) &&
-                gw.fromString(p.getString("static_gw", "")) &&
-                mask.fromString(p.getString("static_mask", ""))) {
-                dns.fromString(p.getString("static_dns", p.getString("static_gw", "")));
+            String sgw   = p.isKey("static_gw")   ? p.getString("static_gw",   "") : "";
+            String smask = p.isKey("static_mask")  ? p.getString("static_mask", "") : "";
+            String sdns  = p.isKey("static_dns")   ? p.getString("static_dns",  "") : sgw;
+            if (ip.fromString(sip) && gw.fromString(sgw) && mask.fromString(smask)) {
+                dns.fromString(sdns.length() ? sdns : sgw);
                 WiFi.config(ip, gw, mask, dns);
             }
         }
