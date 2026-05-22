@@ -102,6 +102,11 @@ const int FURBY_ACTIONS_COUNT = (int)(sizeof(FURBY_ACTIONS)/sizeof(FURBY_ACTIONS
 String        gPersonalityPrompt;
 String        gPersonalityVoiceId;
 String        gCamDescPrompt;
+
+int          camStreamQuality = 12;
+framesize_t  camStreamSize    = FRAMESIZE_QVGA;
+int          camSnapQuality   = 8;
+framesize_t  camSnapSize      = FRAMESIZE_VGA;
 EventBehavior* gEventBehaviors     = nullptr;  // allocato in PSRAM da setup()
 int            gEventBehaviorCount = 0;
 

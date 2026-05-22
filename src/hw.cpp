@@ -130,10 +130,6 @@ void ch32Init() {
     Serial.println("IO expander: init OK, amp ON");
 }
 
-void setAmplifier(bool enable) {
-    // IO6 = amplificatore NS4150 (come da sample Waveshare 05_audio_out_tf)
-    ch32SetBit(6, enable);
-}
 
 int readBatteryMv() {
     static bool batFailed = false;
@@ -332,4 +328,12 @@ void camDeinit() {
     esp_camera_deinit();
     camActive = false;
     Serial.println("CAM: deinit");
+}
+
+void camApplySettings(framesize_t size, int quality) {
+    if (!camActive) return;
+    sensor_t* s = esp_camera_sensor_get();
+    if (!s) return;
+    s->set_framesize(s, size);
+    s->set_quality(s, quality);
 }

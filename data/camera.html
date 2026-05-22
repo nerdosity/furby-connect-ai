@@ -23,9 +23,55 @@
       <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
         <span class="text-muted small flex-fill" id="cam-status" data-i18n="cam.streaming">Streaming MJPEG attivo</span>
         <button class="btn btn-outline-secondary px-3" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause"><i class="bi bi-pause-fill"></i> Pausa</button>
-        <button class="btn btn-outline-secondary px-3" onclick="setQuality(12)" data-i18n="cam.quality_high"><i class="bi bi-arrow-up-circle"></i> Qualità alta</button>
-        <button class="btn btn-outline-secondary px-3" onclick="setQuality(25)" data-i18n="cam.quality_low"><i class="bi bi-arrow-down-circle"></i> Qualità bassa</button>
       </div>
+      <div class="row g-2 mt-1 align-items-center">
+        <div class="col-auto"><label class="form-label mb-0 small text-muted" data-i18n="cam.stream_quality">Qualità</label></div>
+        <div class="col">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">1</span>
+            <input type="range" class="form-range flex-fill" id="q-slider" min="1" max="10" step="1" value="6" oninput="onQualitySlider(this.value)">
+            <span class="text-muted small">10</span>
+            <span class="badge bg-secondary" id="q-label" style="min-width:2rem">6</span>
+          </div>
+        </div>
+        <div class="col-auto">
+          <select class="form-select form-select-sm" id="stream-size-sel" onchange="onStreamSize(this.value)">
+            <option value="QQVGA">QQVGA 160×120</option>
+            <option value="QVGA" selected>QVGA 320×240</option>
+            <option value="VGA">VGA 640×480</option>
+            <option value="SVGA">SVGA 800×600</option>
+            <option value="XGA">XGA 1024×768</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- snapshot LLM settings -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-camera"></i> <span data-i18n="cam.snap_title">Impostazioni snapshot LLM</span></h6>
+      <div class="row g-2 align-items-center">
+        <div class="col-auto"><label class="form-label mb-0 small text-muted" data-i18n="cam.snap_quality">Qualità</label></div>
+        <div class="col">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">1</span>
+            <input type="range" class="form-range flex-fill" id="snap-q-slider" min="1" max="10" step="1" value="8" oninput="onSnapQuality(this.value)">
+            <span class="text-muted small">10</span>
+            <span class="badge bg-secondary" id="snap-q-label" style="min-width:2rem">8</span>
+          </div>
+        </div>
+        <div class="col-auto">
+          <select class="form-select form-select-sm" id="snap-size-sel" onchange="onSnapSize(this.value)">
+            <option value="QQVGA">QQVGA 160×120</option>
+            <option value="QVGA">QVGA 320×240</option>
+            <option value="VGA" selected>VGA 640×480</option>
+            <option value="SVGA">SVGA 800×600</option>
+            <option value="XGA">XGA 1024×768</option>
+          </select>
+        </div>
+      </div>
+      <p class="text-muted small mb-0 mt-1" data-i18n="cam.snap_hint">Risoluzione e qualità usate per catturare il frame inviato all'LLM. Indipendenti dallo stream.</p>
     </div>
   </div>
 
@@ -80,7 +126,49 @@ function toggleStream(){
   if(running){img.src='/camera/stream';st.textContent=T('cam.streaming');}
   else{img.src='';st.textContent=T('cam.paused');}
 }
-function setQuality(q){fetch('/camera/quality?q='+q,{method:'POST'}).catch(function(){});}
+// qualità 1-10 → JPEG 4-40 (inverso: 1=massima qualità=valore basso)
+function qualToJpeg(v){return Math.round(4+(10-v)*(40-4)/9);}
+
+var _stTimer=null,_snTimer=null;
+function onQualitySlider(v){
+  document.getElementById('q-label').textContent=v;
+  clearTimeout(_stTimer);
+  _stTimer=setTimeout(function(){
+    var q=qualToJpeg(v);
+    var fd=new FormData();fd.append('stream_quality',q);
+    fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+  },300);
+}
+function onStreamSize(v){
+  var fd=new FormData();fd.append('stream_size',v);
+  fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+}
+function onSnapQuality(v){
+  document.getElementById('snap-q-label').textContent=v;
+  clearTimeout(_snTimer);
+  _snTimer=setTimeout(function(){
+    var q=qualToJpeg(v);
+    var fd=new FormData();fd.append('snap_quality',q);
+    fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+  },300);
+}
+function onSnapSize(v){
+  var fd=new FormData();fd.append('snap_size',v);
+  fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+}
+function jpegToQual(q){return Math.round(10-(q-4)*(10-1)/(40-4));}
+fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
+  var sq=jpegToQual(d.stream_quality||12);
+  document.getElementById('q-slider').value=sq;
+  document.getElementById('q-label').textContent=sq;
+  var ss=document.getElementById('stream-size-sel');
+  for(var i=0;i<ss.options.length;i++){if(ss.options[i].value===d.stream_size)ss.selectedIndex=i;}
+  var nq=jpegToQual(d.snap_quality||8);
+  document.getElementById('snap-q-slider').value=nq;
+  document.getElementById('snap-q-label').textContent=nq;
+  var ns=document.getElementById('snap-size-sel');
+  for(var i=0;i<ns.options.length;i++){if(ns.options[i].value===d.snap_size)ns.selectedIndex=i;}
+}).catch(function(){});
 
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){
   document.getElementById('desc-prompt').value=d.prompt||'';

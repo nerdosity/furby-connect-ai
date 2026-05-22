@@ -63,6 +63,10 @@ void setup() {
     sttEnabled      = preferences.getBool("stt_en",  false);
     gCamDescPrompt  = preferences.getString("cam_desc_prompt",
         "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
+    camStreamQuality = preferences.getInt("cam_stq", 12);
+    camStreamSize    = (framesize_t)preferences.getInt("cam_sts", (int)FRAMESIZE_QVGA);
+    camSnapQuality   = preferences.getInt("cam_snq", 8);
+    camSnapSize      = (framesize_t)preferences.getInt("cam_sns", (int)FRAMESIZE_VGA);
     preferences.end(); // chiude handle globale — da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),
@@ -80,6 +84,7 @@ void setup() {
     loadEventBehaviors();
 
     camInit();
+    camApplySettings(camStreamSize, camStreamQuality);
 
     // I2C — after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
     pinMode(I2C_SCL_PIN, OUTPUT);

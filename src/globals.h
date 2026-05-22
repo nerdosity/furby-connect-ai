@@ -299,6 +299,11 @@ extern const int   FURBY_ACTIONS_COUNT;
 extern String        gPersonalityPrompt;
 extern String        gPersonalityVoiceId;
 extern String        gCamDescPrompt;
+
+extern int           camStreamQuality;   // JPEG quality stream (4-63)
+extern framesize_t   camStreamSize;      // risoluzione stream
+extern int           camSnapQuality;     // JPEG quality snapshot LLM (4-63)
+extern framesize_t   camSnapSize;        // risoluzione snapshot LLM
 // Array in PSRAM — allocato in setup() via gEventBehaviorsInit()
 extern EventBehavior* gEventBehaviors;
 extern int            gEventBehaviorCount;

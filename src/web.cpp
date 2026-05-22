@@ -15,6 +15,25 @@ static void nvsPut(const char* key, const String& val) {
     p.end();
 }
 
+static framesize_t strToFramesize(const String& s) {
+    if (s == "QQVGA") return FRAMESIZE_QQVGA;
+    if (s == "QVGA")  return FRAMESIZE_QVGA;
+    if (s == "VGA")   return FRAMESIZE_VGA;
+    if (s == "SVGA")  return FRAMESIZE_SVGA;
+    if (s == "XGA")   return FRAMESIZE_XGA;
+    return FRAMESIZE_QVGA;
+}
+static const char* framesizeToStr(framesize_t fs) {
+    switch (fs) {
+        case FRAMESIZE_QQVGA: return "QQVGA";
+        case FRAMESIZE_QVGA:  return "QVGA";
+        case FRAMESIZE_VGA:   return "VGA";
+        case FRAMESIZE_SVGA:  return "SVGA";
+        case FRAMESIZE_XGA:   return "XGA";
+        default:              return "QVGA";
+    }
+}
+
 static void httpLog() {
     String uri = server.uri();
     // skippa polling frequente e risorse statiche
@@ -1352,9 +1371,7 @@ static void handleDebugMicPoll() {
 
 static void handleDebugAmp() {
     HTTP_LOG();
-    if (server.method() == HTTP_POST) setAmplifier(server.arg("on") == "1");
-    bool on = (ch32PortState >> 6) & 1;
-    server.send(200, "application/json", "{\"ok\":true,\"on\":" + String(on ? "true" : "false") + "}");
+    server.send(200, "application/json", "{\"ok\":true,\"on\":true}");
 }
 
 static void handleDebugVol() {
@@ -1581,13 +1598,43 @@ void startWebServer() {
     server.on("/camera/describe",         HTTP_POST, handleCamDescribe);
     server.on("/camera/describe/prompt",  HTTP_GET,  handleCamDescPromptGet);
     server.on("/camera/describe/prompt",  HTTP_POST, handleCamDescPromptSave);
-    server.on("/camera/quality", HTTP_POST, []() {
-        int q = server.arg("q").toInt();
-        if (camActive && q >= 4 && q <= 63) {
-            sensor_t* s = esp_camera_sensor_get();
-            if (s) s->set_quality(s, q);
+    server.on("/camera/settings", HTTP_GET, []() {
+        JsonDocument d;
+        d["stream_quality"] = camStreamQuality;
+        d["stream_size"]    = framesizeToStr(camStreamSize);
+        d["snap_quality"]   = camSnapQuality;
+        d["snap_size"]      = framesizeToStr(camSnapSize);
+        String out; serializeJson(d, out);
+        server.send(200, "application/json", out);
+    });
+    server.on("/camera/settings", HTTP_POST, []() {
+        HTTP_LOG();
+        bool changed = false;
+        if (server.hasArg("stream_quality")) {
+            int q = constrain(server.arg("stream_quality").toInt(), 4, 63);
+            camStreamQuality = q;
+            Preferences p; p.begin("furby", false); p.putInt("cam_stq", q); p.end();
+            camApplySettings(camStreamSize, camStreamQuality);
+            changed = true;
         }
-        server.send(200, "text/plain", "ok");
+        if (server.hasArg("stream_size")) {
+            camStreamSize = strToFramesize(server.arg("stream_size"));
+            Preferences p; p.begin("furby", false); p.putInt("cam_sts", (int)camStreamSize); p.end();
+            camApplySettings(camStreamSize, camStreamQuality);
+            changed = true;
+        }
+        if (server.hasArg("snap_quality")) {
+            int q = constrain(server.arg("snap_quality").toInt(), 4, 63);
+            camSnapQuality = q;
+            Preferences p; p.begin("furby", false); p.putInt("cam_snq", q); p.end();
+            changed = true;
+        }
+        if (server.hasArg("snap_size")) {
+            camSnapSize = strToFramesize(server.arg("snap_size"));
+            Preferences p; p.begin("furby", false); p.putInt("cam_sns", (int)camSnapSize); p.end();
+            changed = true;
+        }
+        server.send(200, "application/json", "{\"ok\":true}");
     });
     server.on("/debug",            HTTP_GET,  handleDebugPage);
     server.on("/debug/sensors",    HTTP_GET,  handleDebugSensors);

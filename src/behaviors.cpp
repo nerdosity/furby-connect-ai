@@ -417,6 +417,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
 
     String base64Img;
     if (camActive || camInit()) {
+        camApplySettings(camSnapSize, camSnapQuality);
         camera_fb_t* fb = esp_camera_fb_get();
         if (fb) {
             base64Img = base64Encode(fb->buf, fb->len);
@@ -425,6 +426,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         } else {
             L("[SIM] camera: esp_camera_fb_get() NULL, procedo senza immagine");
         }
+        camApplySettings(camStreamSize, camStreamQuality);
     } else {
         L("[SIM] camera: non disponibile");
     }
@@ -509,6 +511,7 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
 
     String base64Img;
     if (camActive || camInit()) {
+        camApplySettings(camSnapSize, camSnapQuality);
         camera_fb_t* fb = esp_camera_fb_get();
         if (fb) {
             base64Img = base64Encode(fb->buf, fb->len);
@@ -516,6 +519,7 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
         } else {
             Serial.println("[STIMULUS] WARN: esp_camera_fb_get() restituito NULL");
         }
+        camApplySettings(camStreamSize, camStreamQuality);
     } else {
         Serial.println("[STIMULUS] WARN: camera non disponibile, procedo senza immagine");
     }

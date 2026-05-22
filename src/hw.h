@@ -4,7 +4,6 @@
 void ch32WritePort(uint8_t value);
 void ch32SetBit(uint8_t bit, bool val);
 void ch32Init();
-void setAmplifier(bool enable);
 int  readBatteryMv();
 
 void es8311WriteReg(uint8_t reg, uint8_t val);
@@ -15,6 +14,7 @@ void initI2S();
 
 bool camInit();
 void camDeinit();
+void camApplySettings(framesize_t size, int quality);
 
 bool sdMount();
 void sdUnmount();
