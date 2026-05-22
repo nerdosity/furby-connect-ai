@@ -349,7 +349,7 @@ function setLang(l){
         <div class="sensor"><div class="dot" id="s-tr"></div><span data-i18n="sen.tilt_r">Inclinato dx</span></div>
         <div class="sensor"><div class="dot" id="s-tl"></div><span data-i18n="sen.tilt_l">Inclinato sx</span></div>
       </div>
-      <div class="fb-raw mt-2" id="raw-bytes">raw: —</div>
+      <div class="font-monospace text-muted small mt-2" id="raw-bytes">raw: —</div>
     </div>
   </div>
 </div>
@@ -1247,87 +1247,6 @@ function dlcLog(msg){var el=document.getElementById('dlc-log');el.style.display=
 function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;var label='dlc-'+code.toString(16);var bytes=code===0x61?[code]:[code,s];var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));if(code===0x61)fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||'')));if(d.response)dlcLog(d.response);});}
 function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().split(/\s+/),bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});if(!bytes.length){log(t('raw.no_bytes'));return;}if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);}
 
-var cfgEditIdx=-1;
-function cfgLoad(){
-  fetch('/cfg/list').then(r=>r.json()).then(function(d){
-    var el=document.getElementById('cfg-list');el.innerHTML='';
-    d.configs.forEach(function(c){
-      var div=document.createElement('div');div.className='cfg-item'+(c.idx===d.active?' active-cfg':'');
-      div.innerHTML='<span class="cfg-name">'+(c.idx===d.active?'★ ':'')+c.name+'</span>'
-        +'<span class="text-muted small">'+c.rules.length+' regole</span>'
-        +'<button class="btn btn-success px-3" onclick="cfgActivate('+c.idx+')"><i class="bi bi-check-circle"></i> '+t('cfg.activate')+'</button>'
-        +'<button class="btn btn-outline-secondary btn-sm" onclick="cfgEdit('+c.idx+',\''+c.name+'\')"><i class="bi bi-pencil"></i></button>'
-        +(d.configs.length>1?'<button class="btn btn-danger btn-sm" onclick="cfgDel('+c.idx+')"><i class="bi bi-trash3"></i></button>':'');
-      el.appendChild(div);
-    });
-  });
-}
-function cfgActivate(idx){var fd=new FormData();fd.append('idx',idx);fetch('/cfg/activate',{method:'POST',body:fd}).then(cfgLoad);}
-function cfgNew(){
-  var nm=document.getElementById('new-cfg-name').value.trim()||t('cfg.new_default');
-  var fd=new FormData();fd.append('name',nm);
-  fetch('/cfg/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){document.getElementById('new-cfg-name').value='';cfgLoad();cfgEdit(d.idx,nm);});
-}
-function cfgDel(idx){if(!confirm(t('cfg.del_confirm')))return;var fd=new FormData();fd.append('idx',idx);fetch('/cfg/del',{method:'POST',body:fd}).then(function(){cfgLoad();document.getElementById('cfg-editor').style.display='none';});}
-function cfgEdit(idx,name){cfgEditIdx=idx;document.getElementById('cfg-editor').style.display='';document.getElementById('cfg-editor-name').textContent=name;cfgRulesLoad(idx);}
-function _cfgActSel(slot,selId){
-  var opts='<option value="">— '+t('cfg.action_placeholder')+' —</option>';
-  gActions.forEach(function(a){opts+='<option value="'+a.id+'"'+(selId===a.id?' selected':'')+'>'+a.label+'</option>';});
-  return '<select class="form-select form-select-sm" id="ra-'+slot+'" onchange="cfgRuleChange('+slot+')">'+opts+'</select>';
-}
-function _cfgSenSel(slot,senId){
-  var opts='';
-  SENSOR_NAMES.forEach(function(n,i){if(i===0)return;opts+='<option value="'+i+'"'+(senId===i?' selected':'')+'>'+n+'</option>';});
-  return '<select class="form-select form-select-sm" id="rs-'+slot+'" onchange="cfgRuleChange('+slot+')">'+opts+'</select>';
-}
-function cfgRulesLoad(idx){
-  fetch('/cfg/list').then(r=>r.json()).then(function(d){
-    var cfg=d.configs[idx];if(!cfg)return;
-    var el=document.getElementById('cfg-rules');el.innerHTML='';
-    var activeRules=cfg.rules.filter(function(r){return r.sensorId>0;});
-    activeRules.forEach(function(rule){
-      var row=document.createElement('div');row.className='rule-row align-items-center';
-      var actionId='';
-      if(rule.bytes&&rule.bytes.length){
-        var hexStr=rule.bytes.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-        gActions.forEach(function(a){
-          var ah=Array.from(a.bytes||[]).slice(0,a.len).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-          if(ah===hexStr.slice(0,ah.length))actionId=a.id;
-        });
-      }
-      row.innerHTML=_cfgSenSel(rule.slot,rule.sensorId)+_cfgActSel(rule.slot,actionId)
-        +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+rule.slot+')"><i class="bi bi-trash3"></i></button>';
-      el.appendChild(row);
-    });
-  });
-}
-function cfgRuleChange(slot){
-  var senId=+document.getElementById('rs-'+slot).value;
-  var actId=document.getElementById('ra-'+slot).value;
-  var act=gActions.find(function(a){return a.id===actId;});
-  if(!senId||!act)return;
-  var bytes=Array.from(act.bytes||[]).slice(0,act.len);
-  var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fd.append('sensorId',senId);fd.append('bytes',JSON.stringify(bytes));
-  fetch('/cfg/rule/set',{method:'POST',body:fd});
-}
-function cfgRuleClear(slot){var fd=new FormData();fd.append('idx',cfgEditIdx);fd.append('slot',slot);fetch('/cfg/rule/del',{method:'POST',body:fd}).then(function(){cfgRulesLoad(cfgEditIdx);});}
-function cfgRuleAdd(){
-  fetch('/cfg/list').then(r=>r.json()).then(function(d){
-    var cfg=d.configs[cfgEditIdx];if(!cfg)return;
-    var used=cfg.rules.filter(function(r){return r.sensorId>0;}).map(function(r){return r.slot;});
-    var slot=-1;for(var i=0;i<16;i++){if(used.indexOf(i)<0){slot=i;break;}}
-    if(slot<0){alert(t('cfg.rules_full'));return;}
-    var el=document.getElementById('cfg-rules');
-    var row=document.createElement('div');row.className='rule-row align-items-center';
-    row.innerHTML=_cfgSenSel(slot,0)+_cfgActSel(slot,'')
-      +'<button class="btn btn-danger btn-sm" onclick="cfgRuleClear('+slot+')"><i class="bi bi-trash3"></i></button>';
-    el.appendChild(row);
-    // salva appena l'utente sceglie sensore e azione
-    document.getElementById('rs-'+slot).addEventListener('change',function(){cfgRuleChange(slot);});
-    document.getElementById('ra-'+slot).addEventListener('change',function(){cfgRuleChange(slot);});
-  });
-}
-
 var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;
 function pollSensors(){
@@ -1388,8 +1307,8 @@ function fmLoad(){
     d.files.forEach(function(f){
       var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
       var ro=/\.(html|htm|css|js|woff2|png)$/.test(f.name);
-      rows+='<tr><td class="fm-name">'+n+(ro?' <span class="badge bg-secondary" style="font-size:.55rem">RO</span>':'')+'</td>'
-        +'<td class="fm-size">'+fmFmtSize(f.size)+'</td>'
+      rows+='<tr><td class="font-monospace small text-break">'+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
+        +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
         +'<td>'+(ro?'':'<button class="btn btn-outline-secondary btn-sm py-0" onclick="fmEdit(\''+n+'\')"><i class="bi bi-pencil"></i></button>')+'</td>'
         +'<td><a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none" href="/fs/get'+n+'" download>↓</a></td>'
         +'<td>'+(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+n+'\')"><i class="bi bi-trash3"></i></button>')+'</td></tr>';

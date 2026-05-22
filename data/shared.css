@@ -1,9 +1,17 @@
 /* shared.css — solo ciò che Bootstrap non copre */
 
-/* page loader */
+/* ── CSS vars ── */
+:root {
+  --fb-navy: #1a2340;
+  --fb-mid:  #2d3f6e;
+  --fb-bg:   #f0f4f8;
+}
+body { background: var(--fb-bg); }
+
+/* ── page loader (fixed overlay + spinner — non ha equivalente Bootstrap) ── */
 #fb-loader {
   position: fixed; inset: 0; z-index: 9999;
-  background: var(--fb-navy, #1a2340);
+  background: var(--fb-navy);
   display: flex; align-items: center; justify-content: center;
   transition: opacity .25s ease;
 }
@@ -16,29 +24,9 @@
 }
 @keyframes fb-spin { to { transform: rotate(360deg); } }
 
-/* desktop layout: container più ampio, font più grandi */
-.fb-page { max-width: 860px; }
-@media(min-width:900px){
-  .fb-page { max-width: 100%; }
-  body { font-size: 1rem; }
-  .card { padding: 2px; }
-  .card-body { padding: 1.25rem 1.5rem; }
-  h6.text-uppercase { font-size: .8rem; }
-  .form-label { font-size: .95rem; }
-  .form-control, .form-select { font-size: .95rem; }
-  .btn { font-size: .95rem; }
-  .small { font-size: .85rem; }
-  .text-muted.small { font-size: .82rem; }
-}
-:root {
-  --fb-navy: #1a2340; --fb-mid: #2d3f6e; --fb-blue: #3a5298;
-  --fb-muted: #8a9ab5; --fb-border: #e4eaf4; --fb-bg: #f0f4f8;
-}
-body { background: var(--fb-bg); }
-
-/* header */
+/* ── header (gradient + layout — Bootstrap navbar non usa gradienti custom) ── */
 .fb-header {
-  background: linear-gradient(135deg,#1a2340 0%,#2d3f6e 60%,#3a5298 100%);
+  background: linear-gradient(135deg, #1a2340 0%, #2d3f6e 60%, #3a5298 100%);
   padding: 12px 20px; display: flex; align-items: center; gap: 14px;
   box-shadow: 0 3px 12px rgba(0,0,0,.35);
 }
@@ -48,89 +36,63 @@ body { background: var(--fb-bg); }
 .fb-header-text p { color: #8fb3e8; font-size: .72rem; margin: 2px 0 0; }
 .fb-header-text h1 { color: #fff; font-size: 1.2rem; font-weight: 800; margin: 0; }
 
-/* desktop nav */
+/* ── desktop nav (link colorati su sfondo scuro) ── */
 .fb-nav { display: none; align-items: center; gap: 4px; margin-left: auto; }
 .fb-nav a { color: #c8d8f0; text-decoration: none; font-size: .85rem; font-weight: 600; padding: 6px 13px; border-radius: 7px; transition: background .15s; white-space: nowrap; }
 .fb-nav a:hover, .fb-nav a.active { background: #ffffff22; color: #fff; }
-@media(min-width:900px){ .fb-nav{display:flex;} .fb-hamburger{display:none!important;} }
+@media(min-width:900px) { .fb-nav { display: flex; } .fb-hamburger { display: none !important; } }
 
-/* lang select nel header */
-.fb-lang { width:auto; background:#ffffff22; border:1.5px solid #ffffff44; border-radius:7px; color:#c8d8f0; font-size:.78rem; font-weight:700; padding:4px 8px; cursor:pointer; flex-shrink:0; appearance:none; }
+/* ── lang select nel header (sfondo semitrasparente su dark) ── */
+.fb-lang { width: auto; background: #ffffff22; border: 1.5px solid #ffffff44; border-radius: 7px; color: #c8d8f0; font-size: .78rem; font-weight: 700; padding: 4px 8px; cursor: pointer; flex-shrink: 0; appearance: none; }
 
-/* hamburger */
-.fb-hamburger { background:none; border:none; cursor:pointer; padding:6px; flex-shrink:0; }
-.fb-hamburger span { display:block; width:22px; height:2px; background:#fff; margin:5px 0; border-radius:2px; }
+/* ── hamburger (3 linee bianche — Bootstrap non ha questo pattern) ── */
+.fb-hamburger { background: none; border: none; cursor: pointer; padding: 6px; flex-shrink: 0; }
+.fb-hamburger span { display: block; width: 22px; height: 2px; background: #fff; margin: 5px 0; border-radius: 2px; }
 
-/* offcanvas nav */
+/* ── offcanvas nav (sfondo navy, link stile lista) ── */
 .fb-offcanvas { background: var(--fb-navy) !important; }
 .fb-offcanvas .offcanvas-header { border-bottom: 1px solid var(--fb-mid); }
 .fb-offcanvas .offcanvas-title { color: #8fb3e8; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 .fb-offcanvas .btn-close { filter: invert(1) opacity(.5); }
-.fb-nav-item { display:flex; align-items:center; gap:10px; padding:13px 18px; color:#c8d8f0; font-size:.88rem; font-weight:600; text-decoration:none; border-bottom:1px solid #243050; transition:background .15s; }
-.fb-nav-item:hover,.fb-nav-item.active { background:#243050; color:#fff; }
-.fb-nav-item svg { width:18px; height:18px; flex-shrink:0; opacity:.75; }
+.fb-nav-item { display: flex; align-items: center; gap: 10px; padding: 13px 18px; color: #c8d8f0; font-size: .88rem; font-weight: 600; text-decoration: none; border-bottom: 1px solid #243050; transition: background .15s; }
+.fb-nav-item:hover, .fb-nav-item.active { background: #243050; color: #fff; }
+.fb-nav-item svg { width: 18px; height: 18px; flex-shrink: 0; opacity: .75; }
 
-/* sys bar */
-#sys-bar,#sys-info-bar { background:var(--fb-navy); padding:4px 16px; font-size:.6rem; font-family:monospace; color:#8fb3e8; overflow-x:auto; white-space:nowrap; }
+/* ── sys bar (monospace dark strip) ── */
+#sys-bar, #sys-info-bar { background: var(--fb-navy); padding: 4px 16px; font-size: .6rem; font-family: monospace; color: #8fb3e8; overflow-x: auto; white-space: nowrap; }
 
-/* section title */
-.fb-sec { display:flex; align-items:center; gap:8px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--fb-muted); margin:20px 0 8px; }
-.fb-sec svg { width:17px; height:17px; opacity:.7; flex-shrink:0; }
+/* ── section title con icona SVG inline (Bootstrap non ha questo pattern) ── */
+.fb-sec { display: flex; align-items: center; gap: 8px; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #8a9ab5; margin: 20px 0 8px; }
+.fb-sec svg { width: 17px; height: 17px; opacity: .7; flex-shrink: 0; }
 
-/* status dot */
-.fb-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; display:inline-block; }
-.fb-dot-ok   { background:#22c55e; box-shadow:0 0 6px #22c55e88; }
-.fb-dot-warn { background:#f59e0b; box-shadow:0 0 6px #f59e0b88; }
-.fb-dot-err  { background:#ef4444; box-shadow:0 0 6px #ef444488; }
+/* ── status dot con glow (box-shadow glow non coperto da Bootstrap) ── */
+.fb-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.fb-dot-ok   { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+.fb-dot-warn { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; }
+.fb-dot-err  { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
 
-/* BLE bar (debug) */
-.ble-bar { display:flex; align-items:center; gap:8px; padding:8px 20px; background:#fff; border-bottom:1px solid var(--fb-border); font-size:.8rem; }
-.ble-dot { width:10px; height:10px; border-radius:50%; background:#ef4444; flex-shrink:0; box-shadow:0 0 5px #ef444488; }
-.ble-dot.on   { background:#22c55e; box-shadow:0 0 5px #22c55e88; }
-.ble-dot.scan { background:#f59e0b; box-shadow:0 0 5px #f59e0b88; }
+/* ── BLE bar dot (stessa logica fb-dot, sfondo bianco bar) ── */
+.ble-bar { display: flex; align-items: center; gap: 8px; padding: 8px 20px; background: #fff; border-bottom: 1px solid #e4eaf4; font-size: .8rem; }
+.ble-dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; flex-shrink: 0; box-shadow: 0 0 5px #ef444488; }
+.ble-dot.on   { background: #22c55e; box-shadow: 0 0 5px #22c55e88; }
+.ble-dot.scan { background: #f59e0b; box-shadow: 0 0 5px #f59e0b88; }
 
-/* tabs (debug) */
-.tab-content > .tab-pane { padding:16px 0; }
-@media(min-width:900px){ .tab-content > .tab-pane { padding:24px 0; } }
+/* ── sensors grid (CSS Grid responsive a 3/4 colonne — Bootstrap row/col non ha auto-fill) ── */
+.sensors { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 12px; }
+.sensor  { display: flex; align-items: center; gap: 7px; font-size: .85rem; padding: 4px 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: #e4eaf4; transition: background .12s; }
+.dot.on { background: #22c55e; box-shadow: 0 0 5px #22c55e88; }
+@media(min-width:900px) { .sensors { grid-template-columns: 1fr 1fr 1fr 1fr; } .sensor { font-size: .95rem; } }
 
-/* sensors (debug) */
-.sensors { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px 12px; }
-.sensor { display:flex; align-items:center; gap:7px; font-size:.85rem; padding:4px 0; }
-.dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; background:var(--fb-border); transition:background .12s; }
-.dot.on { background:#22c55e; box-shadow:0 0 5px #22c55e88; }
-@media(min-width:900px){ .sensors{grid-template-columns:1fr 1fr 1fr 1fr;} .sensor{font-size:.95rem;} }
+/* ── act grid (auto-fill responsive — Bootstrap non ha minmax) ── */
+.act-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+.act-btn  { padding: 8px 10px; font-size: .8rem; text-align: left; line-height: 1.3; white-space: normal; }
+@media(min-width:900px) { .act-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } .act-btn { font-size: .9rem; padding: 10px 14px; } }
 
-/* act grid (debug) */
-.act-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; }
-.act-btn { padding:8px 10px; font-size:.8rem; text-align:left; line-height:1.3; white-space:normal; }
-@media(min-width:900px){ .act-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));} .act-btn{font-size:.9rem;padding:10px 14px;} }
+/* ── file manager editor (textarea monospace a tutta altezza) ── */
+.fm-editor { width: 100%; height: 220px; font-family: monospace; font-size: .72rem; background: var(--fb-navy); color: #8fb3e8; border: 1.5px solid #2d3f6e; border-radius: 8px; padding: 8px; resize: vertical; }
+@media(min-width:900px) { .fm-editor { height: 480px; font-size: .88rem; } }
 
-/* cfg item (debug) */
-.cfg-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background:#f5f8ff; margin-bottom:7px; border:1.5px solid var(--fb-border); }
-.cfg-item.active-cfg { border-color:#22c55e; background:#f0fff4; }
-.cfg-name { flex:1; font-size:.88rem; font-weight:700; color:var(--fb-navy); }
-.rule-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:.82rem; }
-.rule-row select,.rule-row input { font-size:.8rem; }
-
-@media(min-width:900px){ .cfg-name{font-size:.95rem;} .rule-row{font-size:.9rem;} .rule-row select,.rule-row input{font-size:.88rem;} }
-
-/* file manager (debug) */
-.fm-name { font-family:monospace; color:var(--fb-navy); font-size:.72rem; word-break:break-all; }
-.fm-size { color:var(--fb-muted); white-space:nowrap; }
-.fm-editor { width:100%; height:220px; font-family:monospace; font-size:.72rem; background:var(--fb-navy); color:#8fb3e8; border:1.5px solid #2d3f6e; border-radius:8px; padding:8px; resize:vertical; }
-@media(min-width:900px){ .fm-editor{height:480px;font-size:.88rem;} .fm-name{font-size:.82rem;} }
-
-/* dimensione minima bottoni — circa 15 caratteri a .95rem */
+/* ── min-width bottoni (evita bottoni troppo stretti su desktop) ── */
 .btn:not(.btn-sm) { min-width: 9rem; }
 .btn-group .btn:not(.btn-sm) { min-width: 0; }
-
-/* misc */
-.fb-raw { font-size:.72rem; color:var(--fb-muted); margin-top:8px; font-family:monospace; }
-
-/* form actions — mobile: flex-fill (50/50); desktop: auto width allineati a destra */
-.fb-actions { display:flex; gap:.5rem; margin-top:.75rem; }
-.fb-actions .btn { flex:1 1 0; }
-@media(min-width:900px){
-  .fb-actions { justify-content:flex-end; }
-  .fb-actions .btn { flex:0 0 auto; }
-}
