@@ -386,19 +386,20 @@ function _updateSysBar(d){
     if(!_uptimeTimer)_uptimeTimer=setInterval(_uptimeTick,1000);
   }
   _uptimeTick();
-  if(d.fw_version&&!_fwCurrent){
+  if(d.fw_version){
     _fwCurrent=d.fw_version;
-    fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt')
-      .then(function(r){return r.text();})
-      .then(function(t){
-        var latest=t.trim();
-        if(latest){
-          _fwLatestVersion=latest;
-          _fwUpdateAvailable=_fwCompare(_fwCurrent,latest)<0;
-          var bar=document.getElementById('sys-bar')||document.getElementById('sys-info-bar');
-          if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC, latest);
-        }
-      }).catch(function(){});
+    Promise.all([
+      fetch('/version.txt').then(function(r){return r.text();}).catch(function(){return '';}),
+      fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt').then(function(r){return r.text();}).catch(function(){return '';})
+    ]).then(function(results){
+      var local=results[0].trim();
+      var latest=results[1].trim();
+      if(local) _fwCurrent=local;
+      if(latest) _fwLatestVersion=latest;
+      _fwUpdateAvailable=!!(_fwCurrent&&_fwLatestVersion&&_fwCompare(_fwCurrent,_fwLatestVersion)<0);
+      var bar=document.getElementById('sys-bar')||document.getElementById('sys-info-bar');
+      if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC, _fwLatestVersion||'');
+    });
   }
 }
 
