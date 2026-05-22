@@ -138,7 +138,8 @@
       <span class="fb-dot fb-dot-warn"></span>
       <span class="fw-semibold" data-i18n="sys.loading">carico...</span>
     </div>
-    <div id="sd-btn"></div>
+    <div id="sd-btn" class="mb-1"></div>
+    <div id="sd-msg" class="small text-muted mt-1"></div>
   </div>
 </div>
 
@@ -259,13 +260,17 @@ function applyHome(d){
   // SD
   var sdRow=document.getElementById('sd-status-row');
   var sdBtn=document.getElementById('sd-btn');
+  var sdMsg=document.getElementById('sd-msg');
   if(d.sd_present){
     sdRow.innerHTML='<span class="fb-dot fb-dot-ok"></span><span class="fw-semibold">'+T('sd.present')+'</span><span class="ms-auto text-muted small">'+d.sd_used_mb+' / '+d.sd_total_mb+' MB</span>';
-    sdBtn.innerHTML='<form action="/sd/format" method="POST"><button type="submit" class="btn btn-danger px-3" onclick="return confirm(\''+T('sd.format_confirm')+'\')"><i class="bi bi-exclamation-triangle"></i> '+T('sd.btn_format')+'</button></form>';
   } else {
     sdRow.innerHTML='<span class="fb-dot fb-dot-warn"></span><span class="fw-semibold">'+T('sd.absent')+'</span><span class="ms-auto text-muted small">'+T('sd.absent_sub')+'</span>';
-    sdBtn.innerHTML='';
   }
+  sdBtn.innerHTML='<div class="d-grid d-sm-flex gap-2 justify-content-sm-start">'
+    +'<button class="btn btn-outline-primary px-3" onclick="sdReinit()"><i class="bi bi-arrow-clockwise"></i> '+T('sd.btn_reinit')+'</button>'
+    +(d.sd_present ? '<button class="btn btn-outline-warning px-3" onclick="sdClearCache()"><i class="bi bi-trash3"></i> '+T('sd.btn_format')+'</button>' : '')
+    +'<button class="btn btn-danger px-3" onclick="sdFormatFAT()"><i class="bi bi-exclamation-triangle"></i> '+T('sd.btn_formatfat')+'</button>'
+    +'</div>';
 
   // VAD / STT
   _vadThresh=d.vad_threshold||800;
@@ -278,6 +283,30 @@ function applyHome(d){
 }
 fetch('/api/home').then(function(r){return r.json();}).then(applyHome).catch(function(){});
 
+function sdMsg(txt,cls){var el=document.getElementById('sd-msg');if(!el)return;el.textContent=txt;el.className='small mt-1 text-'+(cls||'muted');}
+function sdReinit(){
+  sdMsg('...','muted');
+  fetch('/sd/reinit',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){sdMsg(T('sd.present')+' — '+d.type+' '+d.total_mb+'MB','success');fetch('/api/home').then(function(r){return r.json();}).then(applyHome);}
+    else sdMsg(d.error||T('sd.absent'),'danger');
+  }).catch(function(){sdMsg(T('error_conn'),'danger');});
+}
+function sdClearCache(){
+  if(!confirm(T('sd.format_confirm')))return;
+  fetch('/sd/format',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    sdMsg(d.ok?'Cache eliminata.':('Errore: '+(d.error||'?')),d.ok?'success':'danger');
+    if(d.ok)fetch('/api/home').then(function(r){return r.json();}).then(applyHome);
+  }).catch(function(){sdMsg(T('error_conn'),'danger');});
+}
+function sdFormatFAT(){
+  if(!confirm(T('sd.formatfat_confirm')))return;
+  if(!confirm(T('sd.formatfat_confirm2')))return;
+  sdMsg('Formattazione in corso...','warning');
+  fetch('/sd/formatfat',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    sdMsg(d.ok?'Formattazione completata.':('Errore: '+(d.error||'?')),d.ok?'success':'danger');
+    if(d.ok)fetch('/api/home').then(function(r){return r.json();}).then(applyHome);
+  }).catch(function(){sdMsg(T('error_conn'),'danger');});
+}
 var _vadEnabled=false,_vadThresh=800,_sttEnabled=false;
 function vadSaveThresh(){
   var thr=document.getElementById('vad-thresh').value;

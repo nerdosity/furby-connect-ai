@@ -724,9 +724,10 @@ static void handleBleSave() {
     server.sendHeader("Location", "/"); server.send(303);
 }
 
+// svuota solo file .pcm e index.json (cache audio)
 static void handleSdFormat() {
     HTTP_LOG();
-    if (!sdAvailable) { server.send(400, "text/plain", "SD non disponibile"); return; }
+    if (!sdAvailable) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"SD non disponibile\"}"); return; }
     File root = SD_MMC.open("/");
     File file = root.openNextFile();
     while (file) {
@@ -738,7 +739,44 @@ static void handleSdFormat() {
     root.close();
     Preferences prefs; prefs.begin("furby_sys", false);
     prefs.putInt("file_id", 0); prefs.end();
-    server.sendHeader("Location", "/"); server.send(303);
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// tenta di rimontare la SD senza riavvio — prova 20MHz poi 4MHz
+static void handleSdReinit() {
+    HTTP_LOG();
+    SD_MMC.end(); delay(100);
+    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
+    sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
+    if (!sdAvailable) {
+        SD_MMC.end(); delay(50);
+        sdAvailable = SD_MMC.begin("/sdcard", true, false, 4000);
+    }
+    if (sdAvailable) {
+        uint8_t t = SD_MMC.cardType();
+        const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
+        String msg = String("{\"ok\":true,\"type\":\"") + ts
+            + "\",\"total_mb\":" + String((int)(SD_MMC.totalBytes()/(1024*1024)))
+            + ",\"used_mb\":"  + String((int)(SD_MMC.usedBytes()/(1024*1024))) + "}";
+        server.send(200, "application/json", msg);
+    } else {
+        server.send(200, "application/json", "{\"ok\":false,\"error\":\"card non riconosciuta (0x107 timeout)\"}");
+    }
+}
+
+// formatta la SD in FAT32 (distrugge tutti i dati) — usa 4MHz per compatibilità
+static void handleSdFormatFAT() {
+    HTTP_LOG();
+    SD_MMC.end(); delay(100);
+    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
+    sdAvailable = SD_MMC.begin("/sdcard", true, true, 4000);
+    if (sdAvailable) {
+        Preferences prefs; prefs.begin("furby_sys", false);
+        prefs.putInt("file_id", 0); prefs.end();
+        server.send(200, "application/json", "{\"ok\":true}");
+    } else {
+        server.send(200, "application/json", "{\"ok\":false,\"error\":\"formattazione fallita\"}");
+    }
 }
 
 static void handleBleAbort() {
@@ -1421,6 +1459,8 @@ void startWebServer() {
     server.on("/llm/save",       HTTP_POST, handleLlmSave);
     server.on("/el/save",        HTTP_POST, handleElSave);
     server.on("/sd/format",      HTTP_POST, handleSdFormat);
+    server.on("/sd/reinit",      HTTP_POST, handleSdReinit);
+    server.on("/sd/formatfat",   HTTP_POST, handleSdFormatFAT);
     server.on("/vad/save",       HTTP_POST, handleVadSave);
     server.on("/cfg/list",       HTTP_GET,  handleCfgList);
     server.on("/cfg/activate",   HTTP_POST, handleCfgActivate);
