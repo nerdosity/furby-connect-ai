@@ -1198,7 +1198,7 @@ function dbBleApply(d){
   if(d.connected){
     dot.className='ble-dot on';lbl.textContent=t('ble_bar.connected')+d.name;disc.style.display='';lst.innerHTML='';
   } else if(d.connecting){
-    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.connecting');abort.style.display='';setTimeout(dbBlePoll,800);
+    dot.className='ble-dot scan';lbl.textContent=t('ble_bar.connecting');abort.style.display='';
   } else if(d.scanning){
     dot.className='ble-dot scan';lbl.textContent=t('ble_bar.scanning');stop.style.display='';
     if(d.devices&&d.devices.length){
@@ -1206,7 +1206,6 @@ function dbBleApply(d){
       d.devices.forEach(function(dv){h+='<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="flex-fill small fw-semibold">'+dv.name+' <span class="text-muted fw-normal">'+dv.addr+'</span></span><button class="btn btn-success px-3" onclick="dbBleConn(\''+dv.addr+'\')"><i class="bi bi-link-45deg"></i> '+t('ble_bar.conn_btn')+'</button></div>';});
       lst.innerHTML=h;
     }
-    setTimeout(dbBlePoll,1500);
   } else {
     dot.className='ble-dot';lbl.textContent=t('ble_bar.not_connected');scan.style.display='';
     if(d.devices&&d.devices.length){
@@ -1216,19 +1215,22 @@ function dbBleApply(d){
     }else{lst.innerHTML='';}
   }
 }
-var _dbBleIdleIv=null;
-function _dbBleStartIdle(){if(_dbBleIdleIv)return;_dbBleIdleIv=setInterval(dbBlePoll,30000);}
-function _dbBleStopIdle(){if(_dbBleIdleIv){clearInterval(_dbBleIdleIv);_dbBleIdleIv=null;}}
-function dbBleApplyAndSchedule(d){dbBleApply(d);if(d.connected||d.scanning||d.connecting)_dbBleStopIdle();else _dbBleStartIdle();}
-function dbBlePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(dbBleApplyAndSchedule).catch(function(){});}
-function dbBleScan(){_dbBleStopIdle();document.getElementById('db-ble-list').innerHTML='';dbBleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
-function dbBleConn(addr){_dbBleStopIdle();var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});dbBleConnPoll();}).catch(function(){});}
-function dbBleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){dbBleApplyAndSchedule(d);if(d.connecting)setTimeout(dbBleConnPoll,800);}).catch(function(){setTimeout(dbBleConnPoll,1000);});}
-function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
-dbBlePoll();
+var _bleEs=null;
+function _bleEsStart(){
+  if(_bleEs)return;
+  _bleEs=new EventSource('/ble/status/sse');
+  _bleEs.onmessage=function(e){try{dbBleApply(JSON.parse(e.data));}catch(ex){}};
+  _bleEs.onerror=function(){_bleEs.close();_bleEs=null;setTimeout(_bleEsStart,2000);};
+}
+function _bleEsStop(){if(_bleEs){_bleEs.close();_bleEs=null;}}
+function dbBlePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(dbBleApply).catch(function(){});}
+function dbBleScan(){document.getElementById('db-ble-list').innerHTML='';dbBleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
+function dbBleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});}).catch(function(){});}
+function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).catch(function(){});}
+function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).catch(function(){});}
+function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).catch(function(){});}
+function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).catch(function(){});}
+_bleEsStart();
 
 function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
 function wbCmd(label,bytes){espCmd(label,bytes);}
@@ -1262,18 +1264,25 @@ function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().spli
 
 var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;
-function pollSensors(){
-  if(!_bleConnected)return;
-  fetch('/debug/sensors').then(r=>r.json()).then(function(d){
-    document.getElementById('sensor-age').textContent=d.sensor_age_ms<5000?(d.sensor_age_ms+'ms fa'):'-';
-    for(var k in sensorMap){var el=document.getElementById(sensorMap[k]);if(el)el.className='dot'+(d[k]?' on':'');}
-    document.getElementById('raw-bytes').textContent='raw: '+[d.rawB1,d.rawB2,d.rawB3,d.rawB4].map(function(x){return '0x'+(x||0).toString(16).padStart(2,'0');}).join(' ');
-  }).catch(function(){});
+function _sensorsApply(d){
+  document.getElementById('sensor-age').textContent=d.sensor_age_ms<5000?(d.sensor_age_ms+'ms fa'):'-';
+  for(var k in sensorMap){var el=document.getElementById(sensorMap[k]);if(el)el.className='dot'+(d[k]?' on':'');}
+  document.getElementById('raw-bytes').textContent='raw: '+[d.rawB1,d.rawB2,d.rawB3,d.rawB4].map(function(x){return '0x'+(x||0).toString(16).padStart(2,'0');}).join(' ');
 }
+var _sensorsEs=null;
+function startSensorsSse(){
+  if(_sensorsEs)return;
+  _sensorsEs=new EventSource('/debug/sensors/sse');
+  _sensorsEs.onmessage=function(e){try{_sensorsApply(JSON.parse(e.data));}catch(ex){}};
+  _sensorsEs.onerror=function(){_sensorsEs.close();_sensorsEs=null;setTimeout(startSensorsSse,2000);};
+}
+function stopSensorsSse(){if(_sensorsEs){_sensorsEs.close();_sensorsEs=null;}}
 
+var _vadThreshold=800;
 function dbgVadLoad(){
   fetch('/api/home').then(r=>r.json()).then(function(d){
     var v=d.vad_threshold||800;
+    _vadThreshold=v;
     document.getElementById('dbg-vad-slider').value=v;
     document.getElementById('dbg-vad-num').value=v;
   }).catch(function(){});
@@ -1287,6 +1296,7 @@ function dbgVadSave(){
   msg.className='small mt-1 text-muted';msg.textContent=t('sending');
   var fd=new FormData();fd.append('threshold',v);
   fetch('/vad/save',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok)_vadThreshold=v;
     msg.className='small mt-1 '+(d.ok?'text-success':'text-danger');
     msg.textContent=d.ok?t('saved'):t('error');
     setTimeout(function(){msg.textContent='';msg.className='small mt-1 text-muted';},2000);
@@ -1309,13 +1319,15 @@ function micRecord(){
   }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
 }
 var _micEs=null;
-function _micApply(d){
-  var p1=Math.min(100,Math.round(d.rms1/5000*100)),p2=Math.min(100,Math.round(d.rms2/5000*100));
+function _micApply(arr){
+  // formato compatto: [rms1, rms2, vad_bool]
+  var r1=arr[0],r2=arr[1],vad=!!arr[2];
+  var p1=Math.min(100,Math.round(r1/5000*100)),p2=Math.min(100,Math.round(r2/5000*100));
   document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
-  document.getElementById('rms-val-l').textContent=d.rms1;document.getElementById('rms-val-r').textContent=d.rms2;
+  document.getElementById('rms-val-l').textContent=r1;document.getElementById('rms-val-r').textContent=r2;
   var badge=document.getElementById('vad-badge');
-  if(d.vad){badge.textContent=t('aud.vad_speech');badge.className='badge bg-success';}
-  else if(d.rms1>d.threshold||d.rms2>d.threshold){badge.textContent=t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
+  if(vad){badge.textContent=t('aud.vad_speech');badge.className='badge bg-success';}
+  else if(r1>_vadThreshold||r2>_vadThreshold){badge.textContent=t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
   else{badge.textContent=t('aud.vad_silence');badge.className='badge bg-secondary';}
 }
 function startMicPoll(){
@@ -1382,7 +1394,7 @@ function fmUpload(){
 }
 
 fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
-setInterval(pollSensors,500);pollSensors();
+startSensorsSse();
 setLang(gLang);
 fetch('/api/home').then(r=>r.json()).then(function(d){
   var hasLlm=!!(d.cur_key&&d.cur_key.length>0);

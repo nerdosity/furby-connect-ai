@@ -434,20 +434,16 @@ document.addEventListener('DOMContentLoaded',function(){
   applyI18n();
   _loaderDone();
 
-  var _sysTimer=null;
-  function scheduleSys(ms){
-    clearTimeout(_sysTimer);
-    if(!document.hidden) _sysTimer=setTimeout(sysLoop,ms);
-  }
-  function sysLoop(){
-    if(document.hidden){return;}
-    fetch('/sys/info').then(function(r){return r.json();}).then(function(d){
-      _updateSysBar(d);
-      scheduleSys(60000);
-    }).catch(function(){scheduleSys(60000);});
+  var _sysEs=null;
+  function _sysEsStart(){
+    if(_sysEs)return;
+    _sysEs=new EventSource('/sys/info/sse');
+    _sysEs.onmessage=function(e){try{_updateSysBar(JSON.parse(e.data));}catch(ex){}};
+    _sysEs.onerror=function(){_sysEs.close();_sysEs=null;setTimeout(_sysEsStart,5000);};
   }
   document.addEventListener('visibilitychange',function(){
-    if(!document.hidden) scheduleSys(0);
+    if(!document.hidden&&!_sysEs) _sysEsStart();
+    else if(document.hidden&&_sysEs){_sysEs.close();_sysEs=null;}
   });
-  sysLoop();
+  _sysEsStart();
 });
