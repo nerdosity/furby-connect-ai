@@ -4,87 +4,191 @@
 #include "ble_furby.h"
 #include "hw.h"
 
-void saveEventBehaviors() {
+// ── Helpers JSON per serializzare/deserializzare EventBehavior ────────────────
+static void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
+    bo["id"]        = b.id;
+    bo["trigger"]   = (int)b.trigger;
+    bo["sensor_id"] = (int)b.sensor_id;
+    bo["name"]      = b.name;
+    JsonArray cs = bo["consequences"].to<JsonArray>();
+    for (int c = 0; c < b.consequence_count; c++) {
+        const Consequence& q = b.consequences[c];
+        JsonObject co = cs.add<JsonObject>();
+        co["type"]      = (int)q.type;
+        co["action_id"] = q.action_id;
+        co["text"]      = q.text;
+        co["snapshot"]  = q.snapshot;
+        JsonArray ra = co["reactions"].to<JsonArray>();
+        for (int r = 0; r < q.reaction_count; r++) ra.add(q.reactions[r]);
+    }
+}
+
+static void deserializeBehavior(EventBehavior& b, JsonObject bo) {
+    strlcpy(b.id,   bo["id"]   | "", sizeof(b.id));
+    b.trigger   = (TriggerType)(bo["trigger"]   | (int)(bo["event"] | 0));
+    b.sensor_id = (uint8_t)(bo["sensor_id"] | 0);
+    strlcpy(b.name, bo["name"] | "", sizeof(b.name));
+    b.consequence_count = 0;
+    for (JsonObject co : bo["consequences"].as<JsonArray>()) {
+        if (b.consequence_count >= MAX_CONSEQUENCES) break;
+        Consequence& q = b.consequences[b.consequence_count++];
+        q.type     = (ConsequenceType)(co["type"] | 0);
+        strlcpy(q.action_id, co["action_id"] | "", sizeof(q.action_id));
+        strlcpy(q.text,      co["text"]      | "", sizeof(q.text));
+        q.snapshot = co["snapshot"] | false;
+        q.reaction_count = 0;
+        for (JsonVariant rv : co["reactions"].as<JsonArray>()) {
+            if (q.reaction_count >= MAX_REACTIONS) break;
+            const char* s = rv.as<const char*>();
+            strlcpy(q.reactions[q.reaction_count++], s ? s : "", 32);
+        }
+    }
+}
+
+// ── Persistenza multi-personality ─────────────────────────────────────────────
+void savePersonalities() {
     JsonDocument doc;
-    JsonObject pers = doc["personality"].to<JsonObject>();
-    pers["prompt"]   = gPersonalityPrompt;
-    pers["voice_id"] = gPersonalityVoiceId;
-    JsonArray arr = doc["behaviors"].to<JsonArray>();
-    for (int i = 0; i < gEventBehaviorCount; i++) {
-        EventBehavior& b = gEventBehaviors[i];
-        JsonObject bo = arr.add<JsonObject>();
-        bo["id"]        = b.id;
-        bo["trigger"]   = (int)b.trigger;
-        bo["sensor_id"] = (int)b.sensor_id;
-        bo["name"]      = b.name;
-        JsonArray cs = bo["consequences"].to<JsonArray>();
-        for (int c = 0; c < b.consequence_count; c++) {
-            Consequence& q = b.consequences[c];
-            JsonObject co = cs.add<JsonObject>();
-            co["type"]      = (int)q.type;
-            co["action_id"] = q.action_id;
-            co["text"]      = q.text;
-            co["snapshot"]  = q.snapshot;
-            JsonArray ra = co["reactions"].to<JsonArray>();
-            for (int r = 0; r < q.reaction_count; r++) ra.add(q.reactions[r]);
+    doc["active"] = gActivePersonality;
+    JsonArray arr = doc["personalities"].to<JsonArray>();
+    for (int i = 0; i < gPersonalityCount; i++) {
+        Personality& p = gPersonalities[i];
+        JsonObject po = arr.add<JsonObject>();
+        po["id"]       = p.id;
+        po["name"]     = p.name;
+        po["prompt"]   = p.prompt;
+        po["voice_id"] = p.voice_id;
+        JsonArray ba = po["behaviors"].to<JsonArray>();
+        for (int b = 0; b < p.behavior_count; b++) {
+            JsonObject bo = ba.add<JsonObject>();
+            serializeBehavior(bo, p.behaviors[b]);
         }
     }
     String out; serializeJson(doc, out);
-    File f = SPIFFS.open("/behaviors.json", "w");
+    File f = SPIFFS.open("/personalities.json", "w");
     if (f) { f.print(out); f.close(); }
 }
 
-void loadEventBehaviors() {
-    gPersonalityPrompt  = "Sei un giocattolo cinico, volgare e scontroso. Genera frasi BREVISSIME (max 8 parole). Sii diretto e sgarbato.";
-    gPersonalityVoiceId = elevenlabs_voice_id;
-    gEventBehaviorCount = 0;
-    if (!SPIFFS.exists("/behaviors.json")) {
-        EventBehavior& b = gEventBehaviors[0];
-        strlcpy(b.id,   "vad_default", sizeof(b.id));
-        b.trigger   = TRG_VAD;
-        b.sensor_id = 0;
-        strlcpy(b.name, "Parlato rilevato (VAD)", sizeof(b.name));
-        b.consequences[0].type     = CSQ_PROMPT_LLM;
-        b.consequences[0].snapshot = true;
-        strlcpy(b.consequences[0].text, "Qualcuno ti sta parlando. Reagisci.", sizeof(b.consequences[0].text));
-        b.consequence_count = 1;
-        gEventBehaviorCount = 1;
-        saveEventBehaviors();
+static void buildDefaultPersonality(Personality& p) {
+    strlcpy(p.id,       "default", sizeof(p.id));
+    strlcpy(p.name,     "Default", sizeof(p.name));
+    strlcpy(p.prompt,   "Sei un giocattolo cinico, volgare e scontroso. Genera frasi BREVISSIME (max 8 parole). Sii diretto e sgarbato.", sizeof(p.prompt));
+    strlcpy(p.voice_id, elevenlabs_voice_id.c_str(), sizeof(p.voice_id));
+    EventBehavior& b = p.behaviors[0];
+    strlcpy(b.id,   "vad_default", sizeof(b.id));
+    b.trigger   = TRG_VAD;
+    b.sensor_id = 0;
+    strlcpy(b.name, "Parlato rilevato (VAD)", sizeof(b.name));
+    b.consequences[0].type     = CSQ_PROMPT_LLM;
+    b.consequences[0].snapshot = true;
+    strlcpy(b.consequences[0].text, "Qualcuno ti sta parlando. Reagisci.", sizeof(b.consequences[0].text));
+    b.consequence_count = 1;
+    p.behavior_count = 1;
+}
+
+void loadPersonalities() {
+    gPersonalityCount  = 0;
+    gActivePersonality = 0;
+
+    // migrazione da /behaviors.json (formato vecchio)
+    bool migrateFromOld = false;
+    if (!SPIFFS.exists("/personalities.json") && SPIFFS.exists("/behaviors.json")) {
+        migrateFromOld = true;
+    }
+
+    if (!SPIFFS.exists("/personalities.json") && !migrateFromOld) {
+        buildDefaultPersonality(gPersonalities[0]);
+        gPersonalityCount = 1;
+        savePersonalities();
+        applyActivePersonality();
         return;
     }
-    File f = SPIFFS.open("/behaviors.json", "r");
-    if (!f) return;
+
+    const char* src = migrateFromOld ? "/behaviors.json" : "/personalities.json";
+    File f = SPIFFS.open(src, "r");
+    if (!f) {
+        buildDefaultPersonality(gPersonalities[0]);
+        gPersonalityCount = 1;
+        applyActivePersonality();
+        return;
+    }
     String raw = f.readString(); f.close();
     JsonDocument doc;
-    if (deserializeJson(doc, raw) != DeserializationError::Ok) return;
-    if (doc["personality"].is<JsonObject>()) {
-        gPersonalityPrompt  = doc["personality"]["prompt"]   | gPersonalityPrompt;
-        gPersonalityVoiceId = doc["personality"]["voice_id"] | gPersonalityVoiceId;
+    if (deserializeJson(doc, raw) != DeserializationError::Ok) {
+        buildDefaultPersonality(gPersonalities[0]);
+        gPersonalityCount = 1;
+        applyActivePersonality();
+        return;
     }
-    for (JsonObject bo : doc["behaviors"].as<JsonArray>()) {
-        if (gEventBehaviorCount >= MAX_EVENT_BEHAVIORS) break;
-        EventBehavior& b = gEventBehaviors[gEventBehaviorCount++];
-        strlcpy(b.id,   bo["id"]   | "", sizeof(b.id));
-        b.trigger   = (TriggerType)(bo["trigger"]   | (int)(bo["event"] | 0));
-        b.sensor_id = (uint8_t)(bo["sensor_id"] | 0);
-        strlcpy(b.name, bo["name"] | "", sizeof(b.name));
-        b.consequence_count = 0;
-        for (JsonObject co : bo["consequences"].as<JsonArray>()) {
-            if (b.consequence_count >= MAX_CONSEQUENCES) break;
-            Consequence& q = b.consequences[b.consequence_count++];
-            q.type     = (ConsequenceType)(co["type"] | 0);
-            strlcpy(q.action_id, co["action_id"] | "", sizeof(q.action_id));
-            strlcpy(q.text,      co["text"]      | "", sizeof(q.text));
-            q.snapshot = co["snapshot"] | false;
-            q.reaction_count = 0;
-            for (JsonVariant rv : co["reactions"].as<JsonArray>()) {
-                if (q.reaction_count >= MAX_REACTIONS) break;
-                strlcpy(q.reactions[q.reaction_count++], rv.as<const char*>() ? rv.as<const char*>() : "", 32);
+
+    if (migrateFromOld) {
+        // vecchio formato: {"personality":{...}, "behaviors":[...]}
+        Personality& p = gPersonalities[0];
+        buildDefaultPersonality(p);
+        if (doc["personality"].is<JsonObject>()) {
+            strlcpy(p.prompt,   doc["personality"]["prompt"]   | p.prompt,   sizeof(p.prompt));
+            strlcpy(p.voice_id, doc["personality"]["voice_id"] | p.voice_id, sizeof(p.voice_id));
+        }
+        p.behavior_count = 0;
+        for (JsonObject bo : doc["behaviors"].as<JsonArray>()) {
+            if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
+            deserializeBehavior(p.behaviors[p.behavior_count++], bo);
+        }
+        gPersonalityCount  = 1;
+        gActivePersonality = 0;
+        savePersonalities();
+    } else {
+        gActivePersonality = doc["active"] | 0;
+        for (JsonObject po : doc["personalities"].as<JsonArray>()) {
+            if (gPersonalityCount >= MAX_PERSONALITIES) break;
+            Personality& p = gPersonalities[gPersonalityCount++];
+            memset(&p, 0, sizeof(p));
+            strlcpy(p.id,       po["id"]       | "", sizeof(p.id));
+            strlcpy(p.name,     po["name"]      | "", sizeof(p.name));
+            strlcpy(p.prompt,   po["prompt"]    | "", sizeof(p.prompt));
+            strlcpy(p.voice_id, po["voice_id"]  | "", sizeof(p.voice_id));
+            p.behavior_count = 0;
+            for (JsonObject bo : po["behaviors"].as<JsonArray>()) {
+                if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
+                deserializeBehavior(p.behaviors[p.behavior_count++], bo);
             }
         }
     }
+
+    if (gPersonalityCount == 0) {
+        buildDefaultPersonality(gPersonalities[0]);
+        gPersonalityCount = 1;
+    }
+    if (gActivePersonality >= gPersonalityCount) gActivePersonality = 0;
+    applyActivePersonality();
 }
 
+void applyActivePersonality() {
+    if (gPersonalityCount == 0) return;
+    Personality& p = gPersonalities[gActivePersonality];
+    gPersonalityPrompt  = String(p.prompt);
+    gPersonalityVoiceId = String(p.voice_id);
+    gEventBehaviorCount = p.behavior_count;
+    for (int i = 0; i < p.behavior_count; i++)
+        gEventBehaviors[i] = p.behaviors[i];
+}
+
+// ── Legacy compat ─────────────────────────────────────────────────────────────
+void saveEventBehaviors() {
+    if (gPersonalityCount == 0) return;
+    Personality& p = gPersonalities[gActivePersonality];
+    strlcpy(p.prompt,   gPersonalityPrompt.c_str(),  sizeof(p.prompt));
+    strlcpy(p.voice_id, gPersonalityVoiceId.c_str(), sizeof(p.voice_id));
+    p.behavior_count = gEventBehaviorCount;
+    for (int i = 0; i < gEventBehaviorCount; i++)
+        p.behaviors[i] = gEventBehaviors[i];
+    savePersonalities();
+}
+
+void loadEventBehaviors() {
+    loadPersonalities();
+}
+
+// ── Lookup azione ─────────────────────────────────────────────────────────────
 const FurbyActionDef* findFurbyAction(const char* id) {
     for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
         if (strcmp(FURBY_ACTIONS[i].id, id) == 0) return &FURBY_ACTIONS[i];
@@ -97,6 +201,7 @@ void speakText(const String& text) {
     else             streamAndPlayTTS_RAM(text);
 }
 
+// ── Esecuzione conseguenza ────────────────────────────────────────────────────
 void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText) {
     Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
     switch (csq.type) {
@@ -118,19 +223,16 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             if (t.length() > 0) speakText(t);
             break;
         }
-        case CSQ_PROMPT_FIXED: {
-            String img = csq.snapshot ? base64Img : "";
-            String userMsg = sttText.length() > 0
-                ? "L'utente ha detto: \"" + sttText + "\". " + String(csq.text)
-                : String(csq.text);
-            String answer = callLLM(img, gPersonalityPrompt, userMsg);
-            if (answer.length() > 0) speakText(answer);
-            else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
-            break;
-        }
+        case CSQ_PROMPT_FIXED:
         case CSQ_PROMPT_LLM: {
             String img = csq.snapshot ? base64Img : "";
-            String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
+            String userMsg;
+            if (csq.type == CSQ_PROMPT_LLM)
+                userMsg = sttText.length() > 0 ? sttText : String(csq.text);
+            else
+                userMsg = sttText.length() > 0
+                    ? "L'utente ha detto: \"" + sttText + "\". " + String(csq.text)
+                    : String(csq.text);
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
                 if (answer.length() > 0) speakText(answer);
@@ -158,10 +260,34 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 if (speechBefore.length() > 0 && speechBefore != "null") speakText(speechBefore);
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
-                    if (act) { furbyWrite(act->cmd, act->len); delay(1500); }
-                    else Serial.printf("[CSQ] ERRORE: azione \"%s\" non trovata\n", actionId.c_str());
+                    if (act) {
+                        if (gDryRun) Serial.printf("[CSQ] DRY RUN — azione Furby: %s\n", act->label);
+                        else { furbyWrite(act->cmd, act->len); delay(1500); }
+                    }
                 }
                 if (speechAfter.length() > 0 && speechAfter != "null") speakText(speechAfter);
+            }
+            break;
+        }
+        case CSQ_PROMPT_AUTO: {
+            // LLM sceglie UNA azione dalla lista completa FURBY_ACTIONS
+            String img = csq.snapshot ? base64Img : "";
+            String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
+            if (userMsg.length() == 0) userMsg = "Reagisci allo stimolo ricevuto.";
+            String actionList;
+            for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
+                actionList += String(FURBY_ACTIONS[i].id) + ": " + FURBY_ACTIONS[i].label + "\n";
+            String sys = gPersonalityPrompt +
+                " Scegli UNA SOLA azione da questo elenco e rispondi con SOLO il suo id, nient'altro:\n" + actionList;
+            String answer = callLLM(img, sys, userMsg);
+            answer.trim();
+            const FurbyActionDef* act = findFurbyAction(answer.c_str());
+            if (act) {
+                Serial.printf("[CSQ] PROMPT_AUTO → azione scelta: %s (%s)\n", act->id, act->label);
+                if (gDryRun) Serial.printf("[CSQ] DRY RUN — azione Furby SKIPPATA: %s\n", act->label);
+                else { furbyWrite(act->cmd, act->len); delay(1500); }
+            } else {
+                Serial.printf("[CSQ] PROMPT_AUTO — azione LLM non valida: \"%s\"\n", answer.c_str());
             }
             break;
         }
@@ -171,12 +297,33 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
     }
 }
 
-String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText) {
+// ── Simulazione (debug, dry-run opzionale, skip LLM opzionale) ───────────────
+String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText, bool skipLlm, int personalityIdx) {
     String log;
     auto L = [&](const String& s){ log += s + "\n"; Serial.println(s); };
 
     bool prevDry = gDryRun;
     gDryRun = true;
+
+    // personalità da debuggare (può differire da quella attiva)
+    String savedPrompt  = gPersonalityPrompt;
+    String savedVoiceId = gPersonalityVoiceId;
+    int    savedBehCount = gEventBehaviorCount;
+    EventBehavior savedBehaviors[MAX_EVENT_BEHAVIORS];
+    for (int i = 0; i < gEventBehaviorCount; i++) savedBehaviors[i] = gEventBehaviors[i];
+
+    if (personalityIdx >= 0 && personalityIdx < gPersonalityCount && personalityIdx != gActivePersonality) {
+        Personality& dp = gPersonalities[personalityIdx];
+        gPersonalityPrompt  = String(dp.prompt);
+        gPersonalityVoiceId = String(dp.voice_id);
+        gEventBehaviorCount = dp.behavior_count;
+        for (int i = 0; i < dp.behavior_count; i++) gEventBehaviors[i] = dp.behaviors[i];
+        L("[SIM] personalità debug: \"" + String(dp.name) + "\"");
+    } else {
+        L("[SIM] personalità: \"" + String(gPersonalities[gActivePersonality].name) + "\" (attiva)");
+    }
+
+    if (skipLlm) L("[SIM] modalità skip-LLM attiva — chiamate LLM simulate");
 
     L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
       + " behaviors=" + String(gEventBehaviorCount));
@@ -211,20 +358,30 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
 
     if (!beh) {
         L("[SIM] nessun comportamento specifico — uso processStimulusDefault");
-        processStimulusDefault(base64Img);
-        gDryRun = prevDry;
-        return log;
+        if (!skipLlm) processStimulusDefault(base64Img);
+        else L("[SIM] processStimulusDefault SKIPPATO (skip-LLM)");
+    } else {
+        for (int c = 0; c < beh->consequence_count; c++) {
+            const Consequence& csq = beh->consequences[c];
+            bool isLlm = (csq.type == CSQ_PROMPT_LLM || csq.type == CSQ_PROMPT_FIXED || csq.type == CSQ_PROMPT_AUTO);
+            L("[SIM] conseguenza " + String(c+1) + "/" + String(beh->consequence_count)
+              + " tipo=" + String(csq.type)
+              + (csq.action_id[0] ? String(" action=") + csq.action_id : "")
+              + (csq.text[0]      ? String(" testo=\"") + csq.text + "\"" : "")
+              + (csq.snapshot     ? " [📷snapshot]" : ""));
+            if (isLlm && skipLlm) {
+                L("[SIM] → LLM SKIPPATO — prompt sarebbe: \"" + String(csq.text) + "\"");
+            } else {
+                executeConsequence(csq, base64Img, sttText);
+            }
+        }
     }
 
-    for (int c = 0; c < beh->consequence_count; c++) {
-        const Consequence& csq = beh->consequences[c];
-        L("[SIM] conseguenza " + String(c+1) + "/" + String(beh->consequence_count)
-          + " tipo=" + String(csq.type)
-          + (csq.text[0] ? String(" testo=\"") + csq.text + "\"" : "")
-          + (csq.action_id[0] ? String(" action=") + csq.action_id : ""));
-        executeConsequence(csq, base64Img, sttText);
-    }
-
+    // ripristina stato
+    gPersonalityPrompt  = savedPrompt;
+    gPersonalityVoiceId = savedVoiceId;
+    gEventBehaviorCount = savedBehCount;
+    for (int i = 0; i < savedBehCount; i++) gEventBehaviors[i] = savedBehaviors[i];
     gDryRun = prevDry;
     return log;
 }
@@ -252,7 +409,6 @@ void processStimulusDefault(const String& base64Img) {
 }
 
 void processStimulus(TriggerType trg, uint8_t sensorId) {
-    // senza Furby connesso e senza dry run non ha senso reagire
     if (!connected && !gDryRun) {
         Serial.println("[STIMULUS] skip — Furby non connesso e dry run disattivo");
         return;

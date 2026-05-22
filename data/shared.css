@@ -120,10 +120,6 @@ body { background: var(--fb-bg); }
 .fm-editor { width:100%; height:220px; font-family:monospace; font-size:.72rem; background:var(--fb-navy); color:#8fb3e8; border:1.5px solid #2d3f6e; border-radius:8px; padding:8px; resize:vertical; }
 @media(min-width:900px){ .fm-editor{height:480px;font-size:.88rem;} .fm-name{font-size:.82rem;} }
 
-/* log (debug) */
-.fb-log { background:var(--fb-navy); border-radius:8px; padding:10px 12px; font-family:monospace; font-size:.75rem; color:#8fb3e8; height:130px; overflow-y:auto; }
-@media(min-width:900px){ .fb-log{height:200px;font-size:.85rem;} }
-
 /* dimensione minima bottoni — circa 15 caratteri a .95rem */
 .btn:not(.btn-sm) { min-width: 9rem; }
 .btn-group .btn:not(.btn-sm) { min-width: 0; }

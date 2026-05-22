@@ -452,106 +452,167 @@ static void handleVadSave() {
         ",\"vad_threshold\":"           + String(vad_threshold) + "}");
 }
 
-static void handleCfgList() {
+// ── /personalities/* ─────────────────────────────────────────────────────────
+
+static void handlePersonalitiesList() {
     JsonDocument doc;
-    doc["active"] = activeBehaviorConfig;
-    JsonArray cfgs = doc["configs"].to<JsonArray>();
-    for (int i = 0; i < behaviorConfigCount; i++) {
-        JsonObject c = cfgs.add<JsonObject>();
-        c["idx"]  = i;
-        c["name"] = behaviorConfigs[i].name;
-        JsonArray rules = c["rules"].to<JsonArray>();
-        for (int r = 0; r < MAX_CFG_RULES; r++) {
-            BehaviorRule& rule = behaviorConfigs[i].rules[r];
-            if (rule.sensorId == SEN_NONE) continue;
-            JsonObject ro = rules.add<JsonObject>();
-            ro["slot"]       = r;
-            ro["sensorId"]   = rule.sensorId;
-            ro["sensorName"] = SENSOR_NAMES[rule.sensorId];
-            ro["len"]        = rule.len;
-            JsonArray ba = ro["bytes"].to<JsonArray>();
-            for (int b = 0; b < rule.len; b++) ba.add(rule.bytes[b]);
+    doc["active"] = gActivePersonality;
+    JsonArray arr = doc["personalities"].to<JsonArray>();
+    for (int i = 0; i < gPersonalityCount; i++) {
+        Personality& p = gPersonalities[i];
+        JsonObject po = arr.add<JsonObject>();
+        po["idx"]      = i;
+        po["id"]       = p.id;
+        po["name"]     = p.name;
+        po["prompt"]   = p.prompt;
+        po["voice_id"] = p.voice_id;
+        JsonArray ba = po["behaviors"].to<JsonArray>();
+        for (int b = 0; b < p.behavior_count; b++) {
+            JsonObject bo = ba.add<JsonObject>();
+            bo["id"]        = p.behaviors[b].id;
+            bo["trigger"]   = (int)p.behaviors[b].trigger;
+            bo["sensor_id"] = (int)p.behaviors[b].sensor_id;
+            bo["name"]      = p.behaviors[b].name;
+            JsonArray cs = bo["consequences"].to<JsonArray>();
+            for (int c = 0; c < p.behaviors[b].consequence_count; c++) {
+                const Consequence& q = p.behaviors[b].consequences[c];
+                JsonObject co = cs.add<JsonObject>();
+                co["type"]      = (int)q.type;
+                co["action_id"] = q.action_id;
+                co["text"]      = q.text;
+                co["snapshot"]  = q.snapshot;
+            }
         }
     }
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }
 
-static void handleCfgActivate() {
+static void handlePersonalitiesActivate() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= behaviorConfigCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    activeBehaviorConfig = idx;
-    saveBehaviorConfigs();
+    if (idx < 0 || idx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
+    gActivePersonality = idx;
+    applyActivePersonality();
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
+}
+
+static void handlePersonalitiesNew() {
+    HTTP_LOG();
+    if (gPersonalityCount >= MAX_PERSONALITIES) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"max personalities\"}"); return; }
+    String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Nuova";
+    Personality& p = gPersonalities[gPersonalityCount];
+    memset(&p, 0, sizeof(p));
+    String id = "p" + String(millis());
+    strlcpy(p.id,   id.c_str(),  sizeof(p.id));
+    strlcpy(p.name, nm.c_str(),  sizeof(p.name));
+    strlcpy(p.prompt, gPersonalityPrompt.c_str(), sizeof(p.prompt));
+    strlcpy(p.voice_id, gPersonalityVoiceId.c_str(), sizeof(p.voice_id));
+    p.behavior_count = 0;
+    gPersonalityCount++;
+    savePersonalities();
+    server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(gPersonalityCount-1) + "}");
+}
+
+static void handlePersonalitiesDel() {
+    HTTP_LOG();
+    int idx = server.arg("idx").toInt();
+    if (idx < 0 || idx >= gPersonalityCount || gPersonalityCount <= 1) { server.send(400, "application/json", "{\"ok\":false}"); return; }
+    for (int i = idx; i < gPersonalityCount - 1; i++) gPersonalities[i] = gPersonalities[i+1];
+    gPersonalityCount--;
+    if (gActivePersonality >= gPersonalityCount) gActivePersonality = gPersonalityCount - 1;
+    applyActivePersonality();
+    savePersonalities();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+static void handlePersonalitiesSave() {
+    HTTP_LOG();
+    String body = server.arg("plain");
+    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
+    JsonDocument doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
+    }
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(body); f.close();
+    loadPersonalities();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+static void handlePersonalitiesExport() {
+    HTTP_LOG();
+    if (!SPIFFS.exists("/personalities.json")) savePersonalities();
+    File f = SPIFFS.open("/personalities.json", "r");
+    if (!f) { server.send(404, "text/plain", "not found"); return; }
+    server.sendHeader("Content-Disposition", "attachment; filename=personalities.json");
+    server.streamFile(f, "application/json"); f.close();
+}
+
+static void handlePersonalitiesImport() {
+    HTTP_LOG();
+    String body = server.arg("plain");
+    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
+    JsonDocument doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
+    }
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(body); f.close();
+    loadPersonalities();
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// sensori disponibili
+static void handleSensorsList() {
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+    for (int i = 1; i < SEN_COUNT; i++) {
+        JsonObject o = arr.add<JsonObject>();
+        o["id"]   = i;
+        o["name"] = SENSOR_NAMES[i];
+    }
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+// ── /cfg/* — mantenuti per compatibilità, delegano alle nuove funzioni ────────
+static void handleCfgList() {
+    // rimanda a personalities list per non rompere client esistenti
+    handlePersonalitiesList();
+}
+
+static void handleCfgActivate() {
+    handlePersonalitiesActivate();
 }
 
 static void handleCfgRename() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= behaviorConfigCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    String nm = server.arg("name");
-    nm.trim(); if (nm.length() == 0) nm = "Config";
-    strncpy(behaviorConfigs[idx].name, nm.c_str(), 23);
-    behaviorConfigs[idx].name[23] = 0;
-    saveBehaviorConfigs();
+    if (idx < 0 || idx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false}"); return; }
+    String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Config";
+    strlcpy(gPersonalities[idx].name, nm.c_str(), sizeof(gPersonalities[idx].name));
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handleCfgNew() {
-    HTTP_LOG();
-    if (behaviorConfigCount >= MAX_CONFIGS) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"max configs\"}"); return; }
-    String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Config";
-    BehaviorConfig& cfg = behaviorConfigs[behaviorConfigCount];
-    strncpy(cfg.name, nm.c_str(), 23); cfg.name[23] = 0;
-    memset(cfg.rules, 0, sizeof(cfg.rules));
-    behaviorConfigCount++;
-    saveBehaviorConfigs();
-    server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(behaviorConfigCount-1) + "}");
+    handlePersonalitiesNew();
 }
 
 static void handleCfgDel() {
-    HTTP_LOG();
-    int idx = server.arg("idx").toInt();
-    if (idx < 0 || idx >= behaviorConfigCount || behaviorConfigCount <= 1) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    for (int i = idx; i < behaviorConfigCount - 1; i++) behaviorConfigs[i] = behaviorConfigs[i+1];
-    behaviorConfigCount--;
-    if (activeBehaviorConfig >= behaviorConfigCount) activeBehaviorConfig = behaviorConfigCount - 1;
-    saveBehaviorConfigs();
-    server.send(200, "application/json", "{\"ok\":true}");
+    handlePersonalitiesDel();
 }
 
 static void handleCfgRuleSet() {
-    HTTP_LOG();
-    int cfgIdx  = server.arg("idx").toInt();
-    int slot    = server.arg("slot").toInt();
-    int senId   = server.arg("sensorId").toInt();
-    String bytesStr = server.arg("bytes");
-    if (cfgIdx < 0 || cfgIdx >= behaviorConfigCount || slot < 0 || slot >= MAX_CFG_RULES ||
-        senId < 0 || senId >= SEN_COUNT) {
-        server.send(400, "application/json", "{\"ok\":false,\"error\":\"parametri invalidi\"}"); return;
-    }
-    BehaviorRule& rule = behaviorConfigs[cfgIdx].rules[slot];
-    rule.sensorId = (uint8_t)senId;
-    if (senId == SEN_NONE || bytesStr.length() == 0) {
-        rule.len = 0; memset(rule.bytes, 0, 6);
-    } else {
-        JsonDocument doc; deserializeJson(doc, bytesStr);
-        rule.len = 0;
-        for (int v : doc.as<JsonArray>()) { if (rule.len < 6) rule.bytes[rule.len++] = (uint8_t)v; }
-    }
-    saveBehaviorConfigs();
-    server.send(200, "application/json", "{\"ok\":true}");
+    server.send(410, "application/json", "{\"ok\":false,\"error\":\"usa /personalities/save\"}");
 }
 
 static void handleCfgRuleDel() {
-    HTTP_LOG();
-    int cfgIdx = server.arg("idx").toInt();
-    int slot   = server.arg("slot").toInt();
-    if (cfgIdx < 0 || cfgIdx >= behaviorConfigCount || slot < 0 || slot >= MAX_CFG_RULES) { server.send(400, "application/json", "{\"ok\":false}"); return; }
-    behaviorConfigs[cfgIdx].rules[slot] = { SEN_NONE, {0,0,0,0,0,0}, 0 };
-    saveBehaviorConfigs();
-    server.send(200, "application/json", "{\"ok\":true}");
+    server.send(410, "application/json", "{\"ok\":false,\"error\":\"usa /personalities/save\"}");
 }
 
 static void handleBleScan() {
@@ -758,6 +819,8 @@ static void handlePersonalityGet() {
     JsonDocument doc;
     doc["prompt"]   = gPersonalityPrompt;
     doc["voice_id"] = gPersonalityVoiceId;
+    doc["active"]   = gActivePersonality;
+    doc["count"]    = gPersonalityCount;
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }
@@ -946,17 +1009,22 @@ static void handleTestSimulate() {
     if (isProcessing || isSpeaking) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
     }
-    int trg = server.arg("trigger").toInt();
-    int sid = server.arg("sensor_id").toInt();
+    int trg      = server.arg("trigger").toInt();
+    int sid      = server.arg("sensor_id").toInt();
+    int persIdx  = server.hasArg("personality") ? server.arg("personality").toInt() : -1;
+    bool skipLlm = server.arg("skip_llm") == "1";
     String vadText = server.arg("vad_text");
     if (trg < 0 || trg > 2) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger non valido\"}"); return;
     }
     isProcessing = true;
-    String simLog = processStimulusSimulated((TriggerType)trg, (uint8_t)sid, vadText);
+    String simLog = processStimulusSimulated((TriggerType)trg, (uint8_t)sid, vadText, skipLlm, persIdx);
     isProcessing = false;
-    simLog.replace("\\", "\\\\"); simLog.replace("\"", "\\\""); simLog.replace("\n", "\\n");
-    server.send(200, "application/json", "{\"ok\":true,\"log\":\"" + simLog + "\"}");
+    JsonDocument doc;
+    doc["ok"]  = true;
+    doc["log"] = simLog;
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
 }
 
 static void handleDebugPage() {
@@ -1008,12 +1076,19 @@ static void handleFsPut() {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"nessun file ricevuto\"}");
 }
 
+static bool fsReadOnly(const String& path) {
+    return path.endsWith(".html") || path.endsWith(".htm")
+        || path.endsWith(".css")  || path.endsWith(".js")
+        || path.endsWith(".woff2")|| path.endsWith(".png");
+}
+
 static void handleFsUpload() {
     HTTP_LOG();
     HTTPUpload& up = server.upload();
     if (up.status == UPLOAD_FILE_START) {
         _uploadPath = server.arg("path");
         if (_uploadPath.length() == 0 || _uploadPath[0] != '/') _uploadPath = "/" + _uploadPath;
+        if (fsReadOnly(_uploadPath)) { server.send(403, "application/json", "{\"ok\":false,\"error\":\"file protetto\"}"); return; }
         if (_uploadFile) _uploadFile.close();
         _uploadFile = SPIFFS.open(_uploadPath, "w");
     } else if (up.status == UPLOAD_FILE_WRITE) {
@@ -1029,6 +1104,7 @@ static void handleFsDel() {
     String path = server.arg("path");
     if (path.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"path mancante\"}"); return; }
     if (path[0] != '/') path = "/" + path;
+    if (fsReadOnly(path)) { server.send(403, "application/json", "{\"ok\":false,\"error\":\"file protetto\"}"); return; }
     if (!SPIFFS.exists(path)) { server.send(404, "application/json", "{\"ok\":false,\"error\":\"non trovato\"}"); return; }
     SPIFFS.remove(path);
     server.send(200, "application/json", "{\"ok\":true}");
@@ -1368,6 +1444,14 @@ void startWebServer() {
     server.on("/behaviors/export",    HTTP_GET,  handleBehaviorsExport);
     server.on("/behaviors/import",    HTTP_POST, handleBehaviorsImport);
     server.on("/behaviors/actions",   HTTP_GET,  handleBehaviorsActions);
+    server.on("/personalities",          HTTP_GET,  handlePersonalitiesList);
+    server.on("/personalities/activate", HTTP_POST, handlePersonalitiesActivate);
+    server.on("/personalities/new",      HTTP_POST, handlePersonalitiesNew);
+    server.on("/personalities/del",      HTTP_POST, handlePersonalitiesDel);
+    server.on("/personalities/save",     HTTP_POST, handlePersonalitiesSave);
+    server.on("/personalities/export",   HTTP_GET,  handlePersonalitiesExport);
+    server.on("/personalities/import",   HTTP_POST, handlePersonalitiesImport);
+    server.on("/sensors",                HTTP_GET,  handleSensorsList);
     server.on("/test/llm",            HTTP_POST, handleTestLlm);
     server.on("/test/tts",            HTTP_POST, handleTestTts);
     server.on("/test/voices",         HTTP_GET,  handleTestVoices);

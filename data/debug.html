@@ -64,7 +64,7 @@ var TRANSLATIONS={
     'fm.upload_file':'File da PC','fm.upload_btn':'<i class="bi bi-upload"></i> Carica',
     'fm.upload_missing':'Inserisci percorso e seleziona file.',
     'fm.upload_ok':'Caricato in ','fm.saving':'Salvo...',
-    'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete',
+    'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete','fm.protected':'File protetto — non modificabile dalla UI',
     'fm.del_confirm':'Eliminare',
     'cfg.title':'Configurazioni comportamento',
     'cfg.new_placeholder':'Nome nuova configurazione',
@@ -191,7 +191,7 @@ var TRANSLATIONS={
     'fm.upload_file':'File from PC','fm.upload_btn':'<i class="bi bi-upload"></i> Upload',
     'fm.upload_missing':'Enter path and select file.',
     'fm.upload_ok':'Uploaded to ','fm.saving':'Saving...',
-    'fm.load_err':'Load error','fm.net_err2':'Network error',
+    'fm.load_err':'Load error','fm.net_err2':'Network error','fm.protected':'Protected file — cannot be modified from UI',
     'fm.del_confirm':'Delete',
     'cfg.title':'Behavior configurations',
     'cfg.new_placeholder':'New configuration name',
@@ -456,25 +456,18 @@ function setLang(l){
       <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
       <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
     </div>
-    <div id="dlc-log" class="fb-log" style="display:none;max-height:120px"></div>
+    <div id="dlc-log" class="bg-dark text-light rounded p-2 small" style="display:none;max-height:120px;overflow-y:auto"></div>
   </div></div>
 </div>
 
 <!-- TAB: Configurazioni -->
 <div class="tab-pane fade" id="t-configs">
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="cfg.title">Configurazioni comportamento</h6>
-    <div id="cfg-list"></div>
-    <div class="d-flex gap-2 mt-2">
-      <input type="text" class="form-control form-control-sm flex-fill" id="new-cfg-name" data-i18n-attr="placeholder" data-i18n="cfg.new_placeholder" placeholder="Nome nuova configurazione">
-      <button class="btn btn-success px-3" onclick="cfgNew()" data-i18n="cfg.new_btn"><i class="bi bi-plus-lg"></i> Nuova</button>
-    </div>
-  </div></div>
-  <div class="card shadow-sm mb-3" id="cfg-editor" style="display:none"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="cfg.rules_label">Regole — </span><span id="cfg-editor-name"></span></h6>
-    <div id="cfg-rules"></div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-success px-3" onclick="cfgRuleAdd()" data-i18n="cfg.rule_add"><i class="bi bi-plus-lg"></i> Aggiungi regola</button>
+    <h6 class="text-uppercase text-muted fw-bold small mb-3">Personalità salvate</h6>
+    <div id="pl-list" class="mb-3"></div>
+    <div class="d-flex gap-2">
+      <input type="text" class="form-control form-control-sm flex-fill" id="pl-new-name" placeholder="Nome nuova personalità">
+      <button class="btn btn-success px-3" onclick="plNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
     </div>
   </div></div>
 </div>
@@ -556,7 +549,7 @@ function setLang(l){
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.log">Log</h6>
-    <div class="fb-log" id="log"></div>
+    <div class="bg-dark text-light rounded p-2 small" id="log" style="max-height:200px;overflow-y:auto"></div>
   </div></div>
 </div>
 
@@ -604,109 +597,135 @@ function setLang(l){
   </div></div>
 </div>
 
-<!-- TAB: Personalità -->
+<!-- TAB: Personalità (editor unificato + debug) -->
 <div class="tab-pane fade" id="t-persona">
+
+  <!-- ── Selezione/editing personalità ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="persona.base_title">Personalità base</h6>
-    <p class="text-muted small mb-2" data-i18n="persona.base_desc">System prompt LLM</p>
-    <textarea class="form-control form-control-sm font-monospace mb-3" id="pers-prompt" rows="4" placeholder="Sei un giocattolo cinico..."></textarea>
-    <label class="form-label small" data-i18n="persona.voice_label">Voce ElevenLabs</label>
-    <div class="d-flex gap-2 mb-2">
-      <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">— carica voci —</option></select>
-      <button class="btn btn-outline-secondary px-3" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i> Carica</button>
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+      <h6 class="text-uppercase text-muted fw-bold small mb-0 me-auto">Personalità</h6>
+      <select class="form-select form-select-sm" id="pers-sel" style="max-width:220px" onchange="persSelChange()"></select>
+      <span id="pers-active-badge" class="badge bg-success" style="display:none">Attiva</span>
+      <button class="btn btn-outline-secondary px-3" onclick="persActivate()"><i class="bi bi-check-circle"></i> Imposta attiva</button>
+      <button class="btn btn-outline-danger px-3" onclick="persDel()"><i class="bi bi-trash3"></i></button>
     </div>
-    <div id="voice-load-msg" class="small text-muted mb-2"></div>
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-sm-5">
+        <label class="form-label small">Nome</label>
+        <input type="text" class="form-control form-control-sm" id="pers-name" placeholder="Nome personalità">
+      </div>
+      <div class="col-12 col-sm-7">
+        <label class="form-label small">Voce ElevenLabs</label>
+        <div class="d-flex gap-1">
+          <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">— carica voci —</option></select>
+          <button class="btn btn-outline-secondary px-3" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+        <div id="voice-load-msg" class="small text-muted mt-1"></div>
+      </div>
+    </div>
+    <label class="form-label small">System prompt</label>
+    <textarea class="form-control form-control-sm font-monospace mb-2" id="pers-prompt" rows="3" placeholder="Sei un giocattolo cinico..."></textarea>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-success px-3" onclick="persSave()" data-i18n="persona.save_btn"><i class="bi bi-floppy"></i> Salva personalità</button>
+      <button class="btn btn-outline-success px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
+      <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
     </div>
     <div id="pers-msg" class="small mt-1 text-muted"></div>
   </div></div>
 
+  <!-- ── Lista regole (stile HA) ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="persona.beh_title">Comportamenti</h6>
-    <p class="text-muted small mb-3" data-i18n="persona.beh_desc">Ogni comportamento mappa un evento su 1-3 conseguenze.</p>
-    <div id="beh-list"></div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-success px-3" onclick="behAdd()" data-i18n="persona.beh_add"><i class="bi bi-plus-lg"></i> Aggiungi</button>
-      <button class="btn btn-primary px-3" onclick="behExport()" data-i18n="persona.beh_export"><i class="bi bi-download"></i> Esporta JSON</button>
-      <label class="btn btn-warning px-3 mb-0"><span data-i18n="persona.beh_import"><i class="bi bi-upload"></i> Importa JSON</span><input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+      <h6 class="text-uppercase text-muted fw-bold small mb-0 me-auto">Regole — quando → allora</h6>
+      <button class="btn btn-success px-3" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+      <button class="btn btn-primary px-3" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button>
+      <label class="btn btn-warning px-3 mb-0"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
     </div>
+    <div id="beh-list"></div>
     <div id="beh-msg" class="small mt-2 text-muted"></div>
   </div></div>
 
-  <!-- Editor comportamento inline -->
-  <div class="card shadow-sm mb-3" id="beh-editor" style="display:none"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" id="beh-editor-title" data-i18n="beh.new_title">Nuovo comportamento</h6>
-    <div class="row g-2 mb-3">
-      <div class="col">
-        <label class="form-label small" data-i18n="beh.trigger_label">Trigger</label>
+  <!-- ── Editor regola inline ── -->
+  <div class="card shadow-sm mb-3 border-primary" id="beh-editor" style="display:none"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" id="beh-editor-title">Nuova regola</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-sm-4">
+        <label class="form-label small fw-semibold">Quando</label>
         <select class="form-select form-select-sm" id="beh-trg" onchange="behTrgChange()">
-          <option value="0" data-i18n="beh.trg.vad">VAD (parlato)</option>
-          <option value="1" data-i18n="beh.trg.button">Pulsante ESP32</option>
-          <option value="2" data-i18n="beh.trg.sensor">Sensore Furby</option>
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
         </select>
       </div>
-      <div class="col" id="beh-sensor-wrap" style="display:none">
-        <label class="form-label small" data-i18n="beh.sensor_label">Sensore</label>
+      <div class="col-12 col-sm-4" id="beh-sensor-wrap" style="display:none">
+        <label class="form-label small">Sensore</label>
         <select class="form-select form-select-sm" id="beh-sensor"></select>
       </div>
-      <div class="col">
-        <label class="form-label small" data-i18n="beh.name_label">Nome</label>
-        <input type="text" class="form-control form-control-sm" id="beh-name" data-i18n-attr="placeholder" data-i18n="beh.name_placeholder" placeholder="es. Tocco testa">
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Nome regola</label>
+        <input type="text" class="form-control form-control-sm" id="beh-name" placeholder="es. Tocco testa">
       </div>
     </div>
-    <div id="csq-list"></div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2" id="csq-add-btn-wrap">
-      <button class="btn btn-success px-3" id="csq-add-btn" onclick="csqAdd()" data-i18n="beh.add_csq"><i class="bi bi-plus-lg"></i> Conseguenza</button>
+    <label class="form-label small fw-semibold mt-1">Allora (1–3 conseguenze in sequenza):</label>
+    <div id="csq-list" class="mb-2"></div>
+    <div id="csq-add-btn-wrap">
+      <button class="btn btn-outline-success px-3 mb-3" id="csq-add-btn" onclick="csqAdd()"><i class="bi bi-plus-lg"></i> Aggiungi conseguenza</button>
     </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-3">
-      <button class="btn btn-primary px-3" onclick="behSave()" data-i18n="beh.save"><i class="bi bi-floppy"></i> Salva</button>
-      <button class="btn btn-outline-secondary px-3" onclick="behEditorClose()" data-i18n="beh.cancel"><i class="bi bi-x-lg"></i> Annulla</button>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-outline-secondary px-3" onclick="behEditorClose()"><i class="bi bi-x-lg"></i> Annulla</button>
+      <button class="btn btn-primary px-3" onclick="behSave()"><i class="bi bi-floppy"></i> Salva regola</button>
     </div>
   </div></div>
 
-  <!-- Simulatore eventi -->
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="sim.title"><i class="bi bi-lightning-charge"></i> Simulatore eventi</h6>
-    <p class="text-muted small mb-3" data-i18n="sim.desc">Simula un trigger e vedi la catena di conseguenze eseguita. Il dry run skippa le azioni BLE fisiche ma esegue LLM e TTS normalmente.</p>
+  <!-- ── Pannello debug ── -->
+  <div class="card shadow-sm mb-3 border-warning"><div class="card-body">
+    <h6 class="text-uppercase fw-bold small mb-1 text-warning"><i class="bi bi-lightning-charge-fill"></i> Debug — simulatore eventi</h6>
+    <p class="text-muted small mb-3">Simula stimoli senza Furby fisico. BLE loggato ma non inviato. TTS e LLM funzionano normalmente (o li skippa con la checkbox).</p>
     <div class="row g-2 mb-2">
-      <div class="col">
-        <label class="form-label small" data-i18n="sim.trigger">Trigger</label>
-        <select class="form-select form-select-sm" id="sim-trg" onchange="simTrgChange()">
-          <option value="0" data-i18n="beh.trg.vad">VAD (parlato)</option>
-          <option value="1" data-i18n="beh.trg.button">Pulsante ESP32</option>
-          <option value="2" data-i18n="beh.trg.sensor">Sensore Furby</option>
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Personalità da testare</label>
+        <select class="form-select form-select-sm" id="dbg-pers-sel" onchange="dbgPersChange()"></select>
+      </div>
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Trigger</label>
+        <select class="form-select form-select-sm" id="dbg-trg" onchange="dbgTrgChange()">
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
         </select>
       </div>
-      <div class="col" id="sim-sensor-wrap" style="display:none">
-        <label class="form-label small" data-i18n="beh.sensor_label">Sensore</label>
-        <select class="form-select form-select-sm" id="sim-sensor"></select>
+      <div class="col-12 col-sm-4" id="dbg-sensor-wrap" style="display:none">
+        <label class="form-label small">Sensore</label>
+        <select class="form-select form-select-sm" id="dbg-sensor" onchange="dbgUpdateHint()"></select>
       </div>
     </div>
-    <div id="sim-vad-wrap" class="mb-2">
-      <label class="form-label small" data-i18n="sim.vad_text">Testo VAD simulato <span class="text-muted">(opzionale)</span></label>
-      <input type="text" class="form-control form-control-sm" id="sim-vad-text" placeholder="es. Ciao Furby, come stai?">
+    <div id="dbg-vad-wrap" class="mb-2">
+      <label class="form-label small">Testo VAD simulato <span class="text-muted">(opzionale)</span></label>
+      <input type="text" class="form-control form-control-sm" id="dbg-vad-text" placeholder="es. Ciao Furby, come stai?">
     </div>
-    <div class="d-flex align-items-center gap-3 mb-3">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="sim-dry" checked>
-        <label class="form-check-label small" for="sim-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
-      </div>
+    <div id="dbg-rule-hint" class="small text-info mb-2"></div>
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="dbg-skip-llm">
+      <label class="form-check-label small" for="dbg-skip-llm">Salta chiamate LLM <span class="text-muted">(mostra prompt, risparmia token)</span></label>
     </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-warning px-3" onclick="simRun()" id="btn-sim-run" data-i18n="sim.run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    <!-- Pulsanti rapidi per stimoli configurati -->
+    <div class="mb-3">
+      <div class="small text-muted mb-1">Stimoli rapidi per questa personalità:</div>
+      <div id="dbg-quick-btns" class="d-flex flex-wrap gap-2"></div>
     </div>
-    <div id="sim-msg" class="small mt-2 text-muted"></div>
-    <div id="sim-log" class="fb-log mt-2" style="display:none"></div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-warning px-3" onclick="dbgRun()" id="btn-dbg-run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    </div>
+    <div id="dbg-msg" class="small mt-2 text-muted"></div>
+    <pre id="dbg-log" class="bg-dark text-light rounded p-2 mt-2 small" style="display:none;max-height:300px;overflow-y:auto"></pre>
   </div></div>
 
-  <!-- Test LLM -->
+  <!-- Test LLM diretto -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.llm_title">Test LLM</h6>
-    <p class="text-muted small mb-2" data-i18n="test.llm_desc">Invia un messaggio al modello con il personality prompt corrente</p>
-    <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.llm_placeholder" placeholder="Cosa pensi del meteo oggi?"></textarea>
+    <h6 class="text-uppercase text-muted fw-bold small mb-1">Test LLM diretto</h6>
+    <p class="text-muted small mb-2">Invia un messaggio al modello con il prompt della personalità attiva (senza foto)</p>
+    <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" placeholder="Cosa pensi del meteo oggi?"></textarea>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-primary px-3" onclick="testLlmSend()" data-i18n="test.llm_send"><i class="bi bi-send"></i> Invia</button>
+      <button class="btn btn-primary px-3" onclick="testLlmSend()"><i class="bi bi-send"></i> Invia</button>
     </div>
     <div id="test-llm-resp" class="mt-2 p-3 rounded border bg-light small font-monospace" style="display:none;white-space:pre-wrap"></div>
     <div id="test-llm-msg" class="small mt-1 text-muted"></div>
@@ -714,9 +733,8 @@ function setLang(l){
 
   <!-- Test TTS -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="test.tts_title">Test TTS</h6>
-    <p class="text-muted small mb-2" data-i18n="test.tts_desc">Sintetizza testo e riproduci</p>
-    <textarea class="form-control form-control-sm font-monospace mb-3" id="test-tts-text" rows="2" data-i18n-attr="placeholder" data-i18n="test.tts_placeholder" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <h6 class="text-uppercase text-muted fw-bold small mb-1">Test TTS</h6>
+    <textarea class="form-control form-control-sm font-monospace mb-3" id="test-tts-text" rows="2" placeholder="Ciao, sono un Furby cinico."></textarea>
     <div class="d-flex align-items-center gap-3 flex-wrap">
       <div class="btn-group" role="group">
         <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-browser" value="browser" checked onchange="ttsPanelDestChange()">
@@ -724,8 +742,8 @@ function setLang(l){
         <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-board" value="board" onchange="ttsPanelDestChange()">
         <label class="btn btn-outline-primary px-3" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
       </div>
-      <span id="tts-panel-hint" class="text-muted small" data-i18n="tts_browser_hint">Web Speech API</span>
-      <button class="btn btn-success px-3 ms-auto" onclick="testTtsSend()" data-i18n="test.tts_play"><i class="bi bi-play-fill"></i> Riproduci</button>
+      <span id="tts-panel-hint" class="text-muted small">Web Speech API</span>
+      <button class="btn btn-success px-3 ms-auto" onclick="testTtsSend()"><i class="bi bi-play-fill"></i> Riproduci</button>
     </div>
     <div id="test-tts-msg" class="small mt-2 text-muted"></div>
   </div></div>
@@ -739,192 +757,337 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
     var id=e.target.getAttribute('href').replace('#','');
     if(id==='t-audio'){startMicPoll();ampLoad();}else stopMicPoll();
     if(id==='t-files')fmLoad();
-    if(id==='t-configs')cfgLoad();
+    if(id==='t-configs')plLoad();
     if(id==='t-persona')persLoad();
   });
 });
-var gBehaviors=[],gActions=[],gEditIdx=-1,gCurrentVoiceId='';
+// ── Globals ───────────────────────────────────────────────────────────────────
+var gPersonalities=[],gActivePerIdx=0,gEditPerIdx=0;
+var gBehaviors=[],gActions=[],gEditIdx=-1;
+var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro','Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua','Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
+var CSQ_LABELS={1:'Azione Furby',2:'TTS fisso',3:'Prompt fisso→LLM',4:'LLM risponde',5:'LLM sceglie azione'};
+var CSQ_COLORS={1:'info',2:'success',3:'warning',4:'primary',5:'danger'};
 
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function sMsg(id,txt,cls){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='small mt-1 text-'+(cls||'muted');if(txt)setTimeout(function(){el.textContent='';el.className='small mt-1 text-muted';},3000);}
+
+// ── Voci ElevenLabs ───────────────────────────────────────────────────────────
 function voiceLoad(){
   var btn=document.getElementById('btn-voice-load'),msg=document.getElementById('voice-load-msg'),sel=document.getElementById('pers-voice');
-  btn.disabled=true;btn.textContent='...';msg.textContent='';
+  btn.disabled=true;msg.textContent='...';
   fetch('/test/voices').then(function(r){return r.json();}).then(function(d){
-    btn.disabled=false;btn.innerHTML='<i class="bi bi-arrow-clockwise"></i> Carica';
-    if(!d.ok){msg.className='small mt-1 text-danger';msg.textContent='Errore: '+(d.error||'?');return;}
-    if(!d.voices||!d.voices.length){msg.textContent=t('test.voices_none');return;}
-    var prev=sel.value||gCurrentVoiceId;
-    sel.innerHTML='';
-    d.voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name+(v.category?' ('+v.category+')':'');sel.appendChild(o);});
+    btn.disabled=false;
+    if(!d.ok||!d.voices||!d.voices.length){sMsg('voice-load-msg','Nessuna voce','warning');return;}
+    var prev=sel.value;sel.innerHTML='';
+    d.voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name;sel.appendChild(o);});
     if(prev)sel.value=prev;
-    msg.className='small mt-1 text-success';msg.textContent=d.voices.length+t('voices_loaded');
-    setTimeout(function(){msg.textContent='';},2500);
-  }).catch(function(){btn.disabled=false;btn.innerHTML='<i class="bi bi-arrow-clockwise"></i> Carica';msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
+    sMsg('voice-load-msg',d.voices.length+' voci','success');
+  }).catch(function(){btn.disabled=false;sMsg('voice-load-msg','Errore connessione','danger');});
 }
 
+// ── Personalità multi-profilo ─────────────────────────────────────────────────
 function persLoad(){
-  fetch('/personality').then(r=>r.json()).then(d=>{
-    document.getElementById('pers-prompt').value=d.prompt||'';
-    gCurrentVoiceId=d.voice_id||'';
-    voiceLoad();
-  });
-  fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
-  behLoad();
-}
-function persSave(){
-  var fd=new FormData();fd.append('prompt',document.getElementById('pers-prompt').value);fd.append('voice_id',document.getElementById('pers-voice').value);
-  fetch('/personality/save',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    document.getElementById('pers-msg').textContent=d.ok?t('saved'):t('error');
-    setTimeout(()=>{document.getElementById('pers-msg').textContent='';},2500);
+  fetch('/behaviors/actions').then(r=>r.json()).then(function(d){gActions=d;});
+  fetch('/personalities').then(r=>r.json()).then(function(d){
+    gPersonalities=d.personalities||[];
+    gActivePerIdx=d.active||0;
+    gEditPerIdx=gActivePerIdx;
+    persRenderSel();
+    persRenderEditPanel();
+    dbgRenderSel();
+    dbgUpdateQuickBtns();
   });
 }
-function behLoad(){
-  fetch('/behaviors').then(r=>r.json()).then(d=>{
-    gBehaviors=d.behaviors||[];
-    if(d.personality){var pp=document.getElementById('pers-prompt');if(pp&&!pp.value)pp.value=d.personality.prompt||'';}
-    behRender();
-  });
-}
-var SENSOR_KEYS=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l','pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
-function getSensorName(i){if(i<1||i>SENSOR_KEYS.length)return String(i);return t('beh.sensor.'+SENSOR_KEYS[i-1]);}
-function getTrgName(n){return t(['beh.trg.vad','beh.trg.button','beh.trg.sensor'][n]||'?');}
-function getCsqName(n){return t(['','csq.furby_action','csq.tts_fixed','csq.prompt_fixed','csq.llm_decide'][n]||'?');}
-var SENSOR_NAMES=['—','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro','Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua','Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
-var CSQ_COLORS={1:'#7c3aed',2:'#0f766e',3:'#d97706',4:'#3a5298'};
-function trgLabel(b){if(b.trigger===2)return t('beh.trg.sensor')+': '+getSensorName(b.sensor_id);return getTrgName(b.trigger)||'?';}
-function behTrgChange(){
-  var trg=parseInt(document.getElementById('beh-trg').value),wrap=document.getElementById('beh-sensor-wrap');
-  wrap.style.display=(trg===2)?'block':'none';
-  if(trg===2){var sel=document.getElementById('beh-sensor'),prev=sel.value;sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});if(prev)sel.value=prev;}
-}
-function behRender(){
-  var el=document.getElementById('beh-list');
-  if(!gBehaviors.length){el.innerHTML='<div class="text-muted small py-2">'+t('no_behaviors')+'</div>';return;}
-  el.innerHTML=gBehaviors.map(function(b,i){
-    var csqHtml=b.consequences.map(function(c){
-      var col=CSQ_COLORS[c.type]||'#8a9ab5',lbl=getCsqName(c.type),det='';
-      if(c.type==1&&c.action_id){var act=gActions.find(function(a){return a.id==c.action_id;});det=act?act.label:c.action_id;}
-      else if((c.type==2||c.type==3)&&c.text)det=c.text.substring(0,40)+(c.text.length>40?'…':'');
-      else if(c.type==4){det=c.snapshot?'📷 ':'';det+=c.reaction_count?c.reaction_count+' reactions':'text only';}
-      return '<span style="background:'+col+'18;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 7px;font-size:.65rem;font-weight:700;margin:2px;display:inline-flex;align-items:center;gap:3px">'+lbl+(det?': <em>'+det+'</em>':'')+'</span>';
-    }).join('<span style="color:#8a9ab5;margin:0 2px">→</span>');
-    return '<div class="cfg-item flex-column align-items-start gap-2">'
-      +'<div class="d-flex w-100 align-items-center gap-2">'
-      +'<span class="badge bg-secondary text-white" style="font-size:.6rem">'+trgLabel(b)+'</span>'
-      +'<span class="cfg-name">'+b.name+'</span>'
-      +'<button class="btn btn-outline-secondary btn-sm ms-auto py-0" onclick="behEdit('+i+')"><i class="bi bi-pencil"></i> '+t('modify')+'</button>'
-      +'<button class="btn btn-danger btn-sm py-0" onclick="behDel('+i+')"><i class="bi bi-trash3"></i></button>'
-      +'</div><div>'+csqHtml+'</div></div>';
+function persRenderSel(){
+  var sel=document.getElementById('pers-sel');
+  sel.innerHTML=gPersonalities.map(function(p,i){
+    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name||'Senza nome')+'</option>';
   }).join('');
 }
-function behEdit(i){
-  gEditIdx=i;var b=gBehaviors[i];
-  document.getElementById('beh-editor-title').textContent=t('modify')+': '+b.name;
-  var trg=b.trigger!==undefined?b.trigger:0;
-  document.getElementById('beh-trg').value=trg;behTrgChange();
-  if(trg===2)document.getElementById('beh-sensor').value=b.sensor_id||1;
-  document.getElementById('beh-name').value=b.name||'';
-  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));csqRender();
-  document.getElementById('beh-editor').style.display='block';
-  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+function persSelChange(){
+  gEditPerIdx=parseInt(document.getElementById('pers-sel').value);
+  persRenderEditPanel();
 }
-function behAdd(){
-  gEditIdx=-1;document.getElementById('beh-editor-title').textContent=t('beh.new_title');
-  document.getElementById('beh-trg').value=0;behTrgChange();
-  document.getElementById('beh-name').value='';gEditCsqs=[];csqRender();
-  document.getElementById('beh-editor').style.display='block';
-  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+function persRenderEditPanel(){
+  if(gPersonalities.length===0)return;
+  var p=gPersonalities[gEditPerIdx];
+  document.getElementById('pers-name').value=p.name||'';
+  document.getElementById('pers-prompt').value=p.prompt||'';
+  var badge=document.getElementById('pers-active-badge');
+  badge.style.display=(gEditPerIdx===gActivePerIdx)?'':'none';
+  gBehaviors=p.behaviors||[];
+  behRender();
+  // imposta voce nel select
+  var sel=document.getElementById('pers-voice');
+  if(sel.options.length<=1)voiceLoad();
+  else if(p.voice_id)sel.value=p.voice_id;
 }
-function behEditorClose(){document.getElementById('beh-editor').style.display='none';gEditIdx=-1;gEditCsqs=[];}
-function behDel(i){if(!confirm(t('beh.del_confirm')+' "'+gBehaviors[i].name+'"?'))return;gBehaviors.splice(i,1);behSaveAll();}
-function behSave(){
-  var trg=parseInt(document.getElementById('beh-trg').value),sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
-  var name=document.getElementById('beh-name').value.trim()||t('no_name');
-  csqCollect();var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs};
-  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}else gBehaviors.push(b);
-  behSaveAll();behEditorClose();
-}
-function behSaveAll(){
-  fetch('/behaviors').then(r=>r.json()).then(d=>{
-    d.behaviors=gBehaviors;
-    return fetch('/behaviors/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-  }).then(r=>r.json()).then(d=>{
-    document.getElementById('beh-msg').textContent=d.ok?t('saved'):t('error');
-    setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);behLoad();
+function persNew(){
+  var nm=prompt('Nome nuova personalità:');if(!nm||!nm.trim())return;
+  var fd=new FormData();fd.append('name',nm.trim());
+  fetch('/personalities/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gEditPerIdx=d.idx;persLoad();}else sMsg('pers-msg','Errore','danger');
   });
 }
-function behExport(){window.location='/behaviors/export';}
+function persSave(){
+  if(gPersonalities.length===0)return;
+  csqCollect();
+  var p=gPersonalities[gEditPerIdx];
+  p.name=document.getElementById('pers-name').value.trim()||p.name;
+  p.prompt=document.getElementById('pers-prompt').value;
+  p.voice_id=document.getElementById('pers-voice').value;
+  p.behaviors=gBehaviors;
+  var payload={active:gActivePerIdx,personalities:gPersonalities};
+  fetch('/personalities/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).then(function(d){
+    sMsg('pers-msg',d.ok?'Salvato.':'Errore.',d.ok?'success':'danger');
+    if(d.ok)persLoad();
+  });
+}
+function persActivate(){
+  var fd=new FormData();fd.append('idx',gEditPerIdx);
+  fetch('/personalities/activate',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gActivePerIdx=gEditPerIdx;persRenderEditPanel();sMsg('pers-msg','Personalità attiva impostata.','success');}
+  });
+}
+function persDel(){
+  if(gPersonalities.length<=1){sMsg('pers-msg','Impossibile eliminare l\'unica personalità.','warning');return;}
+  if(!confirm('Eliminare "'+gPersonalities[gEditPerIdx].name+'"?'))return;
+  var fd=new FormData();fd.append('idx',gEditPerIdx);
+  fetch('/personalities/del',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gEditPerIdx=0;persLoad();}
+  });
+}
+function behExport(){
+  if(gPersonalities.length===0)return;
+  var blob=new Blob([JSON.stringify(gPersonalities[gEditPerIdx],null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='personality_'+gEditPerIdx+'.json';a.click();
+}
 function behImport(inp){
   var f=inp.files[0];if(!f)return;
   var rd=new FileReader();rd.onload=function(e){
-    fetch('/behaviors/import',{method:'POST',headers:{'Content-Type':'application/json'},body:e.target.result}).then(r=>r.json()).then(d=>{
-      document.getElementById('beh-msg').textContent=d.ok?t('imported'):t('error')+' '+(d.error||'?');
-      setTimeout(()=>{document.getElementById('beh-msg').textContent='';},2500);if(d.ok)persLoad();
-    });
+    try{var p=JSON.parse(e.target.result);gPersonalities[gEditPerIdx]=p;gBehaviors=p.behaviors||[];behRender();persSave();}
+    catch(ex){sMsg('beh-msg','JSON non valido','danger');}
   };rd.readAsText(f);
 }
 
+// ── Lista comportamenti ───────────────────────────────────────────────────────
+function trgLabel(b){
+  if(b.trigger===2)return 'Sensore: '+(SENSOR_NAMES[b.sensor_id]||b.sensor_id);
+  return ['VAD','Pulsante','Sensore'][b.trigger]||'?';
+}
+function behRender(){
+  var el=document.getElementById('beh-list');
+  if(!gBehaviors||!gBehaviors.length){el.innerHTML='<div class="text-muted small py-2">Nessun comportamento configurato.</div>';return;}
+  el.innerHTML=gBehaviors.map(function(b,i){
+    var csqBadges=(b.consequences||[]).map(function(c,ci){
+      var col=CSQ_COLORS[c.type]||'secondary',lbl=CSQ_LABELS[c.type]||'?',det='';
+      if(c.type===1&&c.action_id){var act=gActions.find(function(a){return a.id===c.action_id;});det=act?act.label:c.action_id;}
+      else if((c.type===2||c.type===3||c.type===4)&&c.text)det=c.text.substring(0,30)+(c.text.length>30?'…':'');
+      else if(c.type===5)det=c.snapshot?'📷':'';
+      var snap=((c.type===3||c.type===4||c.type===5)&&c.snapshot)?'<i class="bi bi-camera ms-1"></i>':'';
+      return '<span class="badge text-bg-'+col+' me-1">'+lbl+(det?': '+det:'')+snap+'</span>';
+    }).join('<i class="bi bi-arrow-right text-muted mx-1"></i>');
+    return '<div class="d-flex align-items-start gap-2 py-2 border-bottom flex-wrap">'
+      +'<div class="flex-fill">'
+      +'<span class="badge bg-dark me-2">'+trgLabel(b)+'</span>'
+      +'<span class="fw-semibold small">'+esc(b.name)+'</span>'
+      +'<div class="mt-1">'+csqBadges+'</div>'
+      +'</div>'
+      +'<div class="d-flex gap-1 flex-shrink-0">'
+      +'<button class="btn btn-outline-secondary btn-sm" onclick="behEdit('+i+')"><i class="bi bi-pencil"></i></button>'
+      +'<button class="btn btn-danger btn-sm" onclick="behDel('+i+')"><i class="bi bi-trash3"></i></button>'
+      +'</div></div>';
+  }).join('');
+}
+
+// ── Editor comportamento ──────────────────────────────────────────────────────
 var gEditCsqs=[];
+function behTrgChange(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var wrap=document.getElementById('beh-sensor-wrap');
+  wrap.style.display=(trg===2)?'':'none';
+  if(trg===2){
+    var sel=document.getElementById('beh-sensor'),prev=sel.value;sel.innerHTML='';
+    SENSOR_NAMES.forEach(function(n,i){if(i===0)return;var o=document.createElement('option');o.value=i;o.textContent=n;sel.appendChild(o);});
+    if(prev)sel.value=prev;
+  }
+}
+function behAdd(){
+  gEditIdx=-1;document.getElementById('beh-editor-title').textContent='Nuova regola';
+  document.getElementById('beh-trg').value=0;behTrgChange();
+  document.getElementById('beh-name').value='';gEditCsqs=[];csqRender();
+  document.getElementById('beh-editor').style.display='';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+function behEdit(i){
+  gEditIdx=i;var b=gBehaviors[i];
+  document.getElementById('beh-editor-title').textContent='Modifica: '+b.name;
+  document.getElementById('beh-trg').value=b.trigger||0;behTrgChange();
+  if(b.trigger===2)document.getElementById('beh-sensor').value=b.sensor_id||1;
+  document.getElementById('beh-name').value=b.name||'';
+  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));csqRender();
+  document.getElementById('beh-editor').style.display='';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+function behEditorClose(){document.getElementById('beh-editor').style.display='none';gEditIdx=-1;gEditCsqs=[];}
+function behDel(i){if(!confirm('Eliminare "'+gBehaviors[i].name+'"?'))return;gBehaviors.splice(i,1);behRender();}
+function behSave(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
+  var name=document.getElementById('beh-name').value.trim()||'Senza nome';
+  csqCollect();
+  var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs,consequence_count:gEditCsqs.length};
+  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}else gBehaviors.push(b);
+  behRender();behEditorClose();dbgUpdateQuickBtns();
+  sMsg('beh-msg','Regola aggiunta. Salva la personalità per renderla permanente.','warning');
+}
+
+// ── Editor conseguenze ────────────────────────────────────────────────────────
 function csqRender(){
   var el=document.getElementById('csq-list');el.innerHTML='';
   gEditCsqs.forEach(function(c,i){el.appendChild(csqCard(c,i));});
   document.getElementById('csq-add-btn-wrap').style.display=gEditCsqs.length>=3?'none':'';
 }
 function csqCard(c,i){
-  var wrap=document.createElement('div');wrap.className='border rounded p-2 mb-2 bg-light';
-  var typeSel='<select class="form-select form-select-sm" onchange="csqTypeChange('+i+',this.value)">'
-    +'<option value="1"'+(c.type==1?' selected':'')+'>'+t('csq.furby_action')+'</option>'
-    +'<option value="2"'+(c.type==2?' selected':'')+'>'+t('csq.tts_fixed')+'</option>'
-    +'<option value="3"'+(c.type==3?' selected':'')+'>'+t('csq.prompt_fixed')+'</option>'
-    +'<option value="4"'+(c.type==4?' selected':'')+'>'+t('csq.llm_decide')+'</option>'
-    +'</select>';
-  var del='<button class="btn btn-danger px-3 ms-auto" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i> '+t('delete_btn')+'</button>';
-  var hdr='<div class="d-flex align-items-center gap-2 mb-2">'+typeSel+del+'</div>';
-  var ta='form-control form-control-sm font-monospace';var body='';
-  if(c.type==1){
-    var opts=gActions.map(function(a){return '<option value="'+a.id+'"'+(c.action_id==a.id?' selected':'')+'>'+a.label+'</option>';}).join('');
-    body='<select class="form-select form-select-sm" id="csq-act-'+i+'"><option value="">'+t('csq.action_placeholder')+'</option>'+opts+'</select>';
-  } else if(c.type==2){
-    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.tts_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>';
-  } else if(c.type==3){
-    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.prompt_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>'
-      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'">'+t('csq.snapshot')+'</label></div>';
-  } else if(c.type==4){
-    var checked=c.reactions||[];
-    var allAct=gActions.map(function(a){
-      return '<div class="form-check"><input class="form-check-input" type="checkbox" name="csq-ract-'+i+'" value="'+a.id+'"'+(checked.indexOf(a.id)>=0?' checked':'')+' onchange="limitReact('+i+')">'
-        +'<label class="form-check-label small">'+a.label+'</label></div>';
-    }).join('');
-    body='<textarea class="'+ta+'" id="csq-txt-'+i+'" placeholder="'+t('csq.llm_placeholder')+'" rows="2">'+esc(c.text||'')+'</textarea>'
-      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'">'+t('csq.snapshot')+'</label></div>'
-      +'<div class="small text-muted mt-2 mb-1">'+t('csq.reactions_label')+'</div>'
-      +'<div id="csq-ract-'+i+'" class="border rounded p-2 bg-white" style="max-height:150px;overflow-y:auto">'+allAct+'</div>';
+  var wrap=document.createElement('div');wrap.className='card mb-2';
+  var typeOpts=[
+    [1,'Azione Furby'],[2,'TTS fisso'],[3,'Prompt fisso → LLM'],[4,'LLM risponde'],[5,'LLM sceglie azione']
+  ].map(function(o){return '<option value="'+o[0]+'"'+(c.type===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  var typeSel='<select class="form-select form-select-sm w-auto" onchange="csqTypeChange('+i+',this.value)">'+typeOpts+'</select>';
+  var idx='<span class="badge bg-secondary">'+( i+1)+'</span>';
+  var del='<button class="btn btn-outline-danger btn-sm ms-auto" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i></button>';
+  var body='';
+  if(c.type===1){
+    var opts=gActions.map(function(a){return '<option value="'+a.id+'"'+(c.action_id===a.id?' selected':'')+'>'+a.label+'</option>';}).join('');
+    body='<select class="form-select form-select-sm mt-2" id="csq-act-'+i+'"><option value="">-- scegli azione --</option>'+opts+'</select>';
+  } else if(c.type===2){
+    body='<textarea class="form-control form-control-sm font-monospace mt-2" id="csq-txt-'+i+'" placeholder="Testo da pronunciare" rows="2">'+esc(c.text||'')+'</textarea>';
+  } else if(c.type===3||c.type===4){
+    body='<textarea class="form-control form-control-sm font-monospace mt-2" id="csq-txt-'+i+'" placeholder="Prompt / contesto evento" rows="2">'+esc(c.text||'')+'</textarea>'
+      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'"><i class="bi bi-camera"></i> Includi snapshot fotocamera</label></div>';
+  } else if(c.type===5){
+    body='<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'"><i class="bi bi-camera"></i> Includi snapshot fotocamera</label></div>'
+      +'<div class="text-muted small mt-1">LLM sceglierà autonomamente un\'azione dalla lista completa.</div>';
   }
-  wrap.innerHTML=hdr+body;return wrap;
+  wrap.innerHTML='<div class="card-body py-2"><div class="d-flex align-items-center gap-2">'+idx+typeSel+del+'</div>'+body+'</div>';
+  return wrap;
 }
-function limitReact(i){var checks=document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked');if(checks.length>3)event.target.checked=false;}
 function csqTypeChange(i,v){gEditCsqs[i]={type:parseInt(v),action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0};csqRender();}
 function csqDel(i){gEditCsqs.splice(i,1);csqRender();}
 function csqAdd(){if(gEditCsqs.length>=3)return;gEditCsqs.push({type:1,action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0});csqRender();}
 function csqCollect(){
   gEditCsqs.forEach(function(c,i){
-    if(c.type==1){var s=document.getElementById('csq-act-'+i);if(s)c.action_id=s.value;}
-    else if(c.type==2||c.type==3||c.type==4){var tt=document.getElementById('csq-txt-'+i);if(tt)c.text=tt.value;}
-    if(c.type==3||c.type==4){var sn=document.getElementById('csq-snap-'+i);if(sn)c.snapshot=sn.checked;}
-    if(c.type==4){var racts=[];document.querySelectorAll('input[name="csq-ract-'+i+'"]:checked').forEach(function(cb){racts.push(cb.value);});c.reactions=racts;c.reaction_count=racts.length;}
+    if(c.type===1){var s=document.getElementById('csq-act-'+i);if(s)c.action_id=s.value;}
+    if(c.type===2||c.type===3||c.type===4){var tt=document.getElementById('csq-txt-'+i);if(tt)c.text=tt.value;}
+    if(c.type===3||c.type===4||c.type===5){var sn=document.getElementById('csq-snap-'+i);if(sn)c.snapshot=sn.checked;}
+    c.consequence_count=1;
   });
 }
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// ── Pannello lista personalità (tab Configurazioni) ───────────────────────────
+function plLoad(){
+  fetch('/personalities').then(r=>r.json()).then(function(d){
+    gPersonalities=d.personalities||[];gActivePerIdx=d.active||0;
+    var el=document.getElementById('pl-list');el.innerHTML='';
+    gPersonalities.forEach(function(p,i){
+      var div=document.createElement('div');div.className='d-flex align-items-center gap-2 py-2 border-bottom flex-wrap';
+      div.innerHTML='<span class="fw-semibold flex-fill small">'+esc(p.name)+(i===gActivePerIdx?' <span class="badge bg-success">Attiva</span>':'')+'</span>'
+        +'<span class="text-muted small">'+(p.behaviors||[]).length+' regole</span>'
+        +'<button class="btn btn-outline-success btn-sm" onclick="plActivate('+i+')"><i class="bi bi-check-circle"></i> Attiva</button>'
+        +'<button class="btn btn-outline-secondary btn-sm" onclick="plEdit('+i+')"><i class="bi bi-pencil"></i></button>'
+        +(gPersonalities.length>1?'<button class="btn btn-danger btn-sm" onclick="plDel('+i+')"><i class="bi bi-trash3"></i></button>':'');
+      el.appendChild(div);
+    });
+  });
+}
+function plNew(){
+  var nm=document.getElementById('pl-new-name').value.trim();if(!nm)return;
+  var fd=new FormData();fd.append('name',nm);
+  fetch('/personalities/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    document.getElementById('pl-new-name').value='';plLoad();
+  });
+}
+function plActivate(idx){var fd=new FormData();fd.append('idx',idx);fetch('/personalities/activate',{method:'POST',body:fd}).then(plLoad);}
+function plEdit(idx){gEditPerIdx=idx;var tab=document.querySelector('a[href="#t-persona"]');if(tab)tab.click();persLoad();}
+function plDel(idx){
+  if(!confirm('Eliminare?'))return;
+  var fd=new FormData();fd.append('idx',idx);fetch('/personalities/del',{method:'POST',body:fd}).then(plLoad);
+}
+
+// ── Debug panel ───────────────────────────────────────────────────────────────
+function dbgRenderSel(){
+  var sel=document.getElementById('dbg-pers-sel');
+  sel.innerHTML=gPersonalities.map(function(p,i){
+    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name)+(i===gActivePerIdx?' ★':'')+' </option>';
+  }).join('');
+}
+function dbgPersChange(){dbgUpdateQuickBtns();}
+function dbgTrgChange(){
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  document.getElementById('dbg-sensor-wrap').style.display=(trg===2)?'':'none';
+  document.getElementById('dbg-vad-wrap').style.display=(trg===0)?'':'none';
+  if(trg===2){
+    var sel=document.getElementById('dbg-sensor');sel.innerHTML='';
+    SENSOR_NAMES.forEach(function(n,i){if(i===0)return;var o=document.createElement('option');o.value=i;o.textContent=n;sel.appendChild(o);});
+  }
+  dbgUpdateHint();
+}
+function dbgUpdateHint(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('dbg-sensor').value||'0'):0;
+  var p=gPersonalities[pi];if(!p)return;
+  var found=null;(p.behaviors||[]).forEach(function(b){if(b.trigger===trg&&(trg!==2||b.sensor_id===sid))found=b;});
+  var el=document.getElementById('dbg-rule-hint');
+  if(found)el.innerHTML='<i class="bi bi-check-circle-fill text-success"></i> Regola trovata: <strong>'+esc(found.name)+'</strong> ('+found.consequence_count+' cons.)';
+  else el.innerHTML='<i class="bi bi-exclamation-circle text-warning"></i> Nessuna regola — verrà usato il comportamento default';
+}
+function dbgUpdateQuickBtns(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var p=gPersonalities[pi];if(!p){document.getElementById('dbg-quick-btns').innerHTML='';return;}
+  var el=document.getElementById('dbg-quick-btns');el.innerHTML='';
+  (p.behaviors||[]).forEach(function(b,bi){
+    var btn=document.createElement('button');
+    btn.className='btn btn-outline-warning btn-sm';
+    var icon=b.trigger===0?'bi-mic':b.trigger===1?'bi-toggles':'bi-hand-index';
+    btn.innerHTML='<i class="bi '+icon+'"></i> '+esc(b.name);
+    btn.onclick=function(){
+      document.getElementById('dbg-pers-sel').value=pi;
+      document.getElementById('dbg-trg').value=b.trigger;dbgTrgChange();
+      if(b.trigger===2)document.getElementById('dbg-sensor').value=b.sensor_id;
+      dbgUpdateHint();dbgRun();
+    };
+    el.appendChild(btn);
+  });
+}
+function dbgRun(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('dbg-sensor').value||'0'):0;
+  var vadText=trg===0?document.getElementById('dbg-vad-text').value:'';
+  var skipLlm=document.getElementById('dbg-skip-llm').checked;
+  var msg=document.getElementById('dbg-msg'),logEl=document.getElementById('dbg-log'),btn=document.getElementById('btn-dbg-run');
+  msg.className='small mt-2 text-muted';msg.textContent='Simulazione in corso...';logEl.style.display='none';logEl.textContent='';btn.disabled=true;
+  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('vad_text',vadText);fd.append('skip_llm',skipLlm?'1':'0');fd.append('personality',pi);
+  fetch('/test/simulate',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;
+    if(d.ok){
+      msg.className='small mt-2 text-success';msg.textContent='Simulazione completata.';
+      logEl.style.display='block';logEl.textContent=d.log||'(nessun log)';logEl.scrollTop=logEl.scrollHeight;
+    } else {msg.className='small mt-2 text-danger';msg.textContent='Errore: '+(d.error||'?');}
+  }).catch(function(){btn.disabled=false;msg.className='small mt-2 text-danger';msg.textContent='Errore connessione.';});
+}
+
+// ── Test LLM / TTS ────────────────────────────────────────────────────────────
 function testLlmSend(){
   var text=document.getElementById('test-llm-text').value.trim();if(!text)return;
   var msg=document.getElementById('test-llm-msg'),resp=document.getElementById('test-llm-resp');
-  msg.textContent=t('sending');resp.style.display='none';
+  sMsg('test-llm-msg','Invio...');resp.style.display='none';
   var fd=new FormData();fd.append('text',text);
   fetch('/test/llm',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    msg.textContent='';
-    if(d.ok){resp.style.display='block';resp.textContent=d.response;}
-    else{msg.textContent=t('error')+' '+(d.error||'?');}
-  }).catch(function(){msg.textContent=t('error_conn');});
+    if(d.ok){resp.style.display='block';resp.textContent=d.response;sMsg('test-llm-msg','','muted');}
+    else sMsg('test-llm-msg','Errore: '+(d.error||'?'),'danger');
+  }).catch(function(){sMsg('test-llm-msg','Errore connessione.','danger');});
 }
 function ttsPanelDestChange(){
   var v=document.querySelector('input[name=tts-panel-dest]:checked').value;
@@ -934,27 +1097,30 @@ function testTtsSend(){
   var text=document.getElementById('test-tts-text').value.trim();if(!text)return;
   var msg=document.getElementById('test-tts-msg'),dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
   if(dest==='browser'){
-    msg.style.color='#5a6a8a';msg.textContent=t('aud.loading');
+    sMsg('test-tts-msg','Carico config...','muted');
     fetch('/sys/info').then(function(r){return r.json();}).then(function(cfg){
       var key=cfg.el_key||'',vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
-      if(!key){msg.className='small mt-1 text-danger';msg.textContent=t('aud.el_nokey');return;}
-      msg.style.color='#5a6a8a';msg.textContent=t('aud.el_synth');
+      if(!key){sMsg('test-tts-msg','API key ElevenLabs non configurata.','danger');return;}
+      sMsg('test-tts-msg','Sintesi in corso...','muted');
       fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid+'?output_format=mp3_22050_32',{
         method:'POST',headers:{'Content-Type':'application/json','xi-api-key':key},
         body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2'})
-      }).then(function(r){if(!r.ok){return r.json().then(function(e){throw new Error(JSON.stringify(e));});}return r.arrayBuffer();})
+      }).then(function(r){if(!r.ok)throw new Error('EL HTTP '+r.status);return r.arrayBuffer();})
       .then(function(buf){
         var ctx=new(window.AudioContext||window.webkitAudioContext)();
-        ctx.decodeAudioData(buf,function(decoded){var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);msg.className='small mt-1 text-success';msg.innerHTML=t('aud.el_playing');src.onended=function(){msg.innerHTML='';ctx.close();};});
-      }).catch(function(e){msg.className='small mt-1 text-danger';msg.textContent='Errore ElevenLabs: '+e.message;});
-    }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent='Errore connessione ESP32.';});
+        ctx.decodeAudioData(buf,function(decoded){
+          var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);
+          sMsg('test-tts-msg','In riproduzione...','success');
+          src.onended=function(){sMsg('test-tts-msg','','muted');ctx.close();};
+        });
+      }).catch(function(e){sMsg('test-tts-msg','Errore ElevenLabs: '+e.message,'danger');});
+    }).catch(function(){sMsg('test-tts-msg','Errore connessione ESP32.','danger');});
   } else {
-    msg.style.color='#5a6a8a';msg.textContent=t('sending_tts');
+    sMsg('test-tts-msg','Invio a ElevenLabs...','muted');
     var fd=new FormData();fd.append('text',text);
     fetch('/test/tts',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-      msg.style.color=d.ok?'#16a34a':'#dc2626';msg.textContent=d.ok?t('playing'):t('error')+' '+(d.error||'?');
-      setTimeout(function(){msg.textContent='';},3500);
-    }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
+      sMsg('test-tts-msg',d.ok?'In riproduzione sull\'ESP32.':'Errore: '+(d.error||'?'),d.ok?'success':'danger');
+    }).catch(function(){sMsg('test-tts-msg','Errore connessione.','danger');});
   }
 }
 
@@ -1221,7 +1387,7 @@ function fmLoad(){
     var rows='';
     d.files.forEach(function(f){
       var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-      var ro=f.name.endsWith('.html');
+      var ro=/\.(html|htm|css|js|woff2|png)$/.test(f.name);
       rows+='<tr><td class="fm-name">'+n+(ro?' <span class="badge bg-secondary" style="font-size:.55rem">RO</span>':'')+'</td>'
         +'<td class="fm-size">'+fmFmtSize(f.size)+'</td>'
         +'<td>'+(ro?'':'<button class="btn btn-outline-secondary btn-sm py-0" onclick="fmEdit(\''+n+'\')"><i class="bi bi-pencil"></i></button>')+'</td>'
@@ -1254,6 +1420,7 @@ function fmUpload(){
   var path=document.getElementById('fm-up-path').value.trim(),file=document.getElementById('fm-up-file').files[0],msg=document.getElementById('fm-up-msg');
   if(!path||!file){msg.textContent=t('fm.upload_missing');return;}
   if(path[0]!=='/')path='/'+path;
+  if(/\.(html|htm|css|js|woff2|png)$/.test(path)){msg.textContent=t('fm.protected');return;}
   var fd=new FormData();fd.append('path',path);fd.append('content',file,file.name);
   msg.textContent=t('fm.loading');
   fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
@@ -1262,7 +1429,8 @@ function fmUpload(){
   }).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 
-cfgLoad();setInterval(pollSensors,500);pollSensors();
+fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
+setInterval(pollSensors,500);pollSensors();
 setLang(gLang);
 </script>
 </body></html>

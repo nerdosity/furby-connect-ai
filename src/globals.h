@@ -173,7 +173,7 @@ struct FurbyDevice {
 struct FurbyActionDef { const char* id; const char* label; uint8_t cmd[6]; uint8_t len; };
 
 enum ConsequenceType : uint8_t {
-    CSQ_NONE = 0, CSQ_FURBY_ACTION, CSQ_TTS_FIXED, CSQ_PROMPT_FIXED, CSQ_PROMPT_LLM
+    CSQ_NONE = 0, CSQ_FURBY_ACTION, CSQ_TTS_FIXED, CSQ_PROMPT_FIXED, CSQ_PROMPT_LLM, CSQ_PROMPT_AUTO
 };
 enum TriggerType : uint8_t { TRG_VAD=0, TRG_BUTTON=1, TRG_SENSOR=2 };
 enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
@@ -183,6 +183,7 @@ enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
 #define MAX_EVENT_BEHAVIORS  16
 #define MAX_FURBY_SCAN       8
 #define STT_BUF_MAX_SAMPLES  128000
+#define MAX_PERSONALITIES    8
 
 struct Consequence {
     ConsequenceType type         = CSQ_NONE;
@@ -200,6 +201,15 @@ struct EventBehavior {
     char        name[48]         = {};
     Consequence consequences[MAX_CONSEQUENCES] = {};
     uint8_t     consequence_count = 0;
+};
+
+struct Personality {
+    char         id[32]                        = {};
+    char         name[48]                      = {};
+    char         prompt[512]                   = {};
+    char         voice_id[64]                  = {};
+    EventBehavior behaviors[MAX_EVENT_BEHAVIORS] = {};
+    int          behavior_count                = 0;
 };
 
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
@@ -269,6 +279,11 @@ extern String        gPersonalityVoiceId;
 extern String        gCamDescPrompt;
 extern EventBehavior gEventBehaviors[MAX_EVENT_BEHAVIORS];
 extern int           gEventBehaviorCount;
+
+extern Personality   gPersonalities[MAX_PERSONALITIES];
+extern int           gPersonalityCount;
+extern int           gActivePersonality;
+extern int           gDebugPersonality;
 
 extern volatile TriggerType pendingTrigger;
 extern volatile uint8_t     pendingSensorId;
