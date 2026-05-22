@@ -662,26 +662,25 @@ function elUpdateVoiceState(key, curVid){
     if(hint)hint.textContent=T('el.voice_no_key');
     return;
   }
-  sel.disabled=true;
+  _elSetLoading(true);
   if(hint)hint.textContent=T('el.voice_loading');
   fetch('/api/voices').then(function(r){return r.json();}).then(function(voices){
     if(!voices||!voices.length){
-      // nessuna voce — mantieni l'id corrente senza sovrascrivere
       sel.innerHTML='<option value="'+(curVid||'')+'">'+((curVid&&curVid.length>8?curVid.substring(0,8)+'…':curVid)||'—')+'</option>';
-      sel.disabled=false;
       if(hint)hint.textContent=T('el.voice_empty');
+      _elSetLoading(false);
       return;
     }
     sel.innerHTML='';
     var found=false;
     voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name;if(v.id===curVid){o.selected=true;found=true;}sel.appendChild(o);});
     if(!found&&curVid){var o=document.createElement('option');o.value=curVid;o.textContent=curVid;o.selected=true;sel.insertBefore(o,sel.firstChild);}
-    sel.disabled=false;
     if(hint)hint.textContent='';
+    _elSetLoading(false);
   }).catch(function(){
     sel.innerHTML='<option value="'+(curVid||'')+'">'+(curVid||'—')+'</option>';
-    sel.disabled=false;
     if(hint)hint.textContent=T('el.voice_err');
+    _elSetLoading(false);
   });
 }
 
