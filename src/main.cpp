@@ -104,15 +104,14 @@ void setup() {
     if (i2cFound == 0) Serial.println("  I2C: nessun device trovato!");
     else Serial.printf("  I2C scan: %d device(s)\n", i2cFound);
 
-    // sequenza identica allo sketch Waveshare 04_SDMMC_Test / 05_audio_out_tf:
+    // sequenza da sample Waveshare 05_audio_out_tf:
     // IO_EXTENSION_Init → IO2=1 → IO6=1 → SD_MMC.begin() → IO4=1
-    ch32Init();          // mode=0xFF, port=0x00, IO6=HIGH
-    ch32SetBit(2, true); // IO2 HIGH (backlight — presente nello sketch originale)
-    delay(50);           // attendi stabilizzazione alimentazione SD
+    ch32Init();          // mode=0xFF, IO4=HIGH (SD CS)
+    ch32SetBit(2, true); // IO2 HIGH (backlight)
+    delay(50);
 
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true);
-    ch32SetBit(4, true); // IO4 HIGH dopo SD init — esattamente come lo sketch
 
     if (sdAvailable) {
         uint8_t t = SD_MMC.cardType();

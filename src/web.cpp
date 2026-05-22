@@ -1374,8 +1374,6 @@ static void handleDebugTone() {
     int16_t buf[BUF_SAMP];
     int totalSamples = (RATE * ms) / 1000;
     int phase = 0;
-    setAmplifier(true);
-    delay(50);
     isSpeaking = true;
     for (int s = 0; s < totalSamples; s += BUF_SAMP) {
         int chunk = min(BUF_SAMP, totalSamples - s);
@@ -1387,9 +1385,7 @@ static void handleDebugTone() {
     }
     memset(buf, 0, sizeof(buf));
     i2s_write_mono(buf, BUF_SAMP);
-    delay(50);
     i2s_zero_dma_buffer(I2S_NUM);
-    setAmplifier(false);
     isSpeaking = false;
     server.send(200, "application/json", "{\"ok\":true,\"freq\":" + String(freq) + ",\"ms\":" + String(ms) + "}");
 }
@@ -1410,7 +1406,6 @@ static void micRecordTask(void*) {
         totalRead += bytesRead;
     }
     micTestActive = false;
-    setAmplifier(true);
     isSpeaking = true;
     const int OUT_CHUNK = 256;
     int16_t outBuf[OUT_CHUNK];
@@ -1424,7 +1419,6 @@ static void micRecordTask(void*) {
         i2s_write_mono(outBuf, chunk);
     }
     i2s_zero_dma_buffer(I2S_NUM);
-    setAmplifier(false);
     isSpeaking = false;
     free(recBuf);
     vTaskDelete(NULL);

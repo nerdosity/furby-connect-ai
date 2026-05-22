@@ -82,7 +82,7 @@ String elOutputFormat() {
 
 class AudioOutputI2SDirect : public AudioOutput {
 public:
-    bool begin() override { setAmplifier(true); isSpeaking = true; return true; }
+    bool begin() override { isSpeaking = true; return true; }
 
     // chiamato dal decoder quando cambia sample rate (es. MP3 a 22050 Hz)
     bool SetRate(int hz) override {
@@ -100,7 +100,7 @@ public:
         i2s_zero_dma_buffer(I2S_NUM);
         isSpeaking = false; currentAmplitude = 0;
         i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
-        setAmplifier(false); return true;
+        return true;
     }
 };
 
@@ -161,7 +161,7 @@ void playAudioSD(String filename) {
         out->stop();
         delete mp3; delete src; delete out; free(buf);
     } else {
-        setAmplifier(true); isSpeaking = true;
+        isSpeaking = true;
         size_t bytesRead;
         uint8_t buffer[1024];
         while (file.available()) {
@@ -175,7 +175,6 @@ void playAudioSD(String filename) {
         file.close();
         i2s_zero_dma_buffer(I2S_NUM);
         isSpeaking = false; currentAmplitude = 0;
-        setAmplifier(false);
     }
 }
 
@@ -255,7 +254,7 @@ void streamAndPlayTTS_RAM(String text) {
             playMp3FromStream(stream, http);
         } else {
             uint8_t buffer[1024];
-            setAmplifier(true); isSpeaking = true;
+            isSpeaking = true;
             int totalBytes = 0;
             while (http.connected() || stream->available()) {
                 if (stream->available()) {
@@ -272,7 +271,6 @@ void streamAndPlayTTS_RAM(String text) {
             Serial.printf("[TTS-RAM] fine, %d byte PCM\n", totalBytes);
             i2s_zero_dma_buffer(I2S_NUM);
             isSpeaking = false; currentAmplitude = 0;
-            setAmplifier(false);
         }
     } else {
         Serial.printf("[TTS-RAM] ERRORE HTTP %d: %s\n", code, http.getString().substring(0, 200).c_str());

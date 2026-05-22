@@ -81,12 +81,34 @@ void startCaptivePortal() {
 }
 
 // ── IO expander CH32 ─────────────────────────────────────────────────────────
+static void i2cBusRecover() {
+    // SCL clock stretch recovery: 9 impulsi manuali per sbloccare slave bloccati
+    Wire.end();
+    pinMode(I2C_SCL_PIN, OUTPUT);
+    for (int i = 0; i < 9; i++) {
+        digitalWrite(I2C_SCL_PIN, HIGH); delayMicroseconds(10);
+        digitalWrite(I2C_SCL_PIN, LOW);  delayMicroseconds(10);
+    }
+    digitalWrite(I2C_SCL_PIN, HIGH);
+    pinMode(I2C_SCL_PIN, INPUT);
+    delayMicroseconds(10);
+    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN, 100000);
+    delay(10);
+}
+
 void ch32WritePort(uint8_t value) {
     uint8_t data[2] = {0x03, value};
     Wire.beginTransmission(CH32_ADDR);
-    uint8_t written = Wire.write(data, 2);
+    Wire.write(data, 2);
     uint8_t err = Wire.endTransmission();
-    Serial.printf("IO exp write: port=0x%02X written=%d err=%d\n", value, written, err);
+    if (err) {
+        Serial.printf("IO exp err=%d port=0x%02X — tentativo recovery I2C\n", err, value);
+        i2cBusRecover();
+        Wire.beginTransmission(CH32_ADDR);
+        Wire.write(data, 2);
+        err = Wire.endTransmission();
+        if (err) Serial.printf("IO exp: recovery fallito err=%d\n", err);
+    }
 }
 
 void ch32SetBit(uint8_t bit, bool val) {
@@ -98,19 +120,19 @@ void ch32SetBit(uint8_t bit, bool val) {
 void ch32Init() {
     uint8_t modeData[2] = {0x02, 0xFF};
     Wire.beginTransmission(CH32_ADDR);
-    uint8_t written = Wire.write(modeData, 2);
+    Wire.write(modeData, 2);
     uint8_t err = Wire.endTransmission();
-    Serial.printf("IO exp init mode: written=%d err=%d\n", written, err);
+    if (err) Serial.printf("IO exp init mode err=%d\n", err);
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
-    ch32SetBit(6, true);
-    Serial.println("IO expander: init OK, IO6=1");
+    ch32SetBit(4, true); // IO4 HIGH — SD card CS
+    ch32SetBit(6, true); // IO6 HIGH — amplificatore sempre ON
+    Serial.println("IO expander: init OK, amp ON");
 }
 
 void setAmplifier(bool enable) {
-    Serial.printf("setAmplifier(%s) port sarà 0x%02X\n", enable?"ON":"OFF",
-        enable ? (ch32PortState | (1<<4)) : (ch32PortState & ~(1<<4)));
-    ch32SetBit(4, enable);
+    // IO6 = amplificatore NS4150 (come da sample Waveshare 05_audio_out_tf)
+    ch32SetBit(6, enable);
 }
 
 int readBatteryMv() {
