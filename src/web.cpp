@@ -1620,6 +1620,8 @@ void startWebServer() {
         if (server.hasArg("stream_size")) {
             camStreamSize = strToFramesize(server.arg("stream_size"));
             Preferences p; p.begin("furby", false); p.putInt("cam_sts", (int)camStreamSize); p.end();
+            camDeinit();
+            camInit();
             camApplySettings(camStreamSize, camStreamQuality);
             changed = true;
         }

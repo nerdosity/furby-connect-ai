@@ -141,7 +141,11 @@ function onQualitySlider(v){
 }
 function onStreamSize(v){
   var fd=new FormData();fd.append('stream_size',v);
-  fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
+  var img=document.getElementById('camimg');
+  img.src='';
+  fetch('/camera/settings',{method:'POST',body:fd}).then(function(){
+    if(running)setTimeout(function(){img.src='/camera/stream?t='+Date.now();},300);
+  }).catch(function(){});
 }
 function onSnapQuality(v){
   document.getElementById('snap-q-label').textContent=v;
