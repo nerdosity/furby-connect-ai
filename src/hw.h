@@ -16,6 +16,10 @@ void initI2S();
 bool camInit();
 void camDeinit();
 
+bool sdMount();
+void sdUnmount();
+bool sdCheck();
+
 void saveWifiNets();
 void loadWifiNets();
 void upsertWifiNet(const String& ssid, const String& pass, int priority);

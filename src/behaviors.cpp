@@ -258,6 +258,7 @@ const FurbyActionDef* findFurbyAction(const char* id) {
 }
 
 void speakText(const String& text) {
+    sdCheck();
     Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
     if (sdAvailable) generateAndPlayTTS_SD(text);
     else             streamAndPlayTTS_RAM(text);
@@ -467,6 +468,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
 }
 
 void processStimulusDefault(const String& base64Img) {
+    sdCheck();
     String sysPrompt, userText;
     if (sdAvailable) {
         String cacheJSON = getCacheSummaryJSON();

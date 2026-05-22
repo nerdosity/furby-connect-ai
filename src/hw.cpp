@@ -230,6 +230,49 @@ void initI2S() {
     i2s_set_clk(I2S_NUM, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
 }
 
+// ── SD card mount/unmount/hotplug ─────────────────────────────────────────────
+
+bool sdMount() {
+    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
+    bool ok = SD_MMC.begin("/sdcard", true, false, 20000);
+    if (!ok) {
+        SD_MMC.end();
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+        ok = SD_MMC.begin("/sdcard", true, false, 4000);
+    }
+    sdAvailable = ok;
+    if (ok) {
+        uint8_t t = SD_MMC.cardType();
+        const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNK";
+        Serial.printf("SD: montata  tipo=%s  %lluMB tot  %lluMB usati\n",
+            ts, SD_MMC.totalBytes()/(1024*1024), SD_MMC.usedBytes()/(1024*1024));
+    } else {
+        Serial.println("SD: mount fallito");
+    }
+    return ok;
+}
+
+void sdUnmount() {
+    if (!sdAvailable) return;
+    SD_MMC.end();
+    sdAvailable = false;
+    Serial.println("SD: smontata");
+}
+
+// Chiamata prima di ogni accesso SD e al caricamento di /sys/info.
+// Se montata e card non risponde → unmount. Se non montata → prova mount.
+bool sdCheck() {
+    if (sdAvailable) {
+        if (SD_MMC.cardType() == CARD_NONE) {
+            Serial.println("SD: rimossa — modalita RAM streaming");
+            sdUnmount();
+        }
+    } else {
+        sdMount();
+    }
+    return sdAvailable;
+}
+
 // ── Camera ────────────────────────────────────────────────────────────────────
 bool camInit() {
     if (camActive) return true;

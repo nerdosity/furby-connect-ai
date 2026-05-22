@@ -727,7 +727,7 @@ static void handleBleSave() {
 // svuota solo file .pcm e index.json (cache audio)
 static void handleSdFormat() {
     HTTP_LOG();
-    if (!sdAvailable) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"SD non disponibile\"}"); return; }
+    if (!sdCheck()) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"SD non disponibile\"}"); return; }
     File root = SD_MMC.open("/");
     File file = root.openNextFile();
     while (file) {
@@ -742,32 +742,28 @@ static void handleSdFormat() {
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
-// tenta di rimontare la SD senza riavvio — prova 20MHz poi 4MHz
 static void handleSdReinit() {
     HTTP_LOG();
-    SD_MMC.end(); delay(100);
-    SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
-    sdAvailable = SD_MMC.begin("/sdcard", true, false, 20000);
-    if (!sdAvailable) {
-        SD_MMC.end(); delay(50);
-        sdAvailable = SD_MMC.begin("/sdcard", true, false, 4000);
-    }
-    if (sdAvailable) {
+    sdUnmount();
+    delay(200);
+    bool ok = sdMount();
+    if (ok) {
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
         String msg = String("{\"ok\":true,\"type\":\"") + ts
             + "\",\"total_mb\":" + String((int)(SD_MMC.totalBytes()/(1024*1024)))
-            + ",\"used_mb\":"  + String((int)(SD_MMC.usedBytes()/(1024*1024))) + "}";
+            + ",\"used_mb\":"    + String((int)(SD_MMC.usedBytes()/(1024*1024))) + "}";
         server.send(200, "application/json", msg);
     } else {
-        server.send(200, "application/json", "{\"ok\":false,\"error\":\"card non riconosciuta (0x107 timeout)\"}");
+        server.send(200, "application/json", "{\"ok\":false,\"error\":\"card non riconosciuta\"}");
     }
 }
 
-// formatta la SD in FAT32 (distrugge tutti i dati)
+// formatta la SD in FAT32 (distrugge tutti i dati) — bloccante per design
 static void handleSdFormatFAT() {
     HTTP_LOG();
-    SD_MMC.end(); delay(100);
+    sdUnmount();
+    vTaskDelay(200 / portTICK_PERIOD_MS);
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true, true, 4000);
     if (sdAvailable) {
@@ -848,6 +844,7 @@ static void handleSysInfo() {
 }
 
 static void handleApiHome() {
+    sdCheck();
     bool wifiOk = (WiFi.status() == WL_CONNECTED);
     JsonDocument doc;
     doc["wifi_connected"] = wifiOk;
@@ -987,6 +984,7 @@ static void handleTestTts() {
     xTaskCreatePinnedToCore([](void* p) {
         String* t = (String*)p;
         isSpeaking = true;
+        sdCheck();
         if (sdAvailable) generateAndPlayTTS_SD(*t);
         else             streamAndPlayTTS_RAM(*t);
         isSpeaking = false;

@@ -102,6 +102,7 @@ void setup() {
     // IO_EXTENSION_Init → IO2=1 → IO6=1 → SD_MMC.begin() → IO4=1
     ch32Init();          // mode=0xFF, port=0x00, IO6=HIGH
     ch32SetBit(2, true); // IO2 HIGH (backlight — presente nello sketch originale)
+    delay(50);           // attendi stabilizzazione alimentazione SD
 
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
     sdAvailable = SD_MMC.begin("/sdcard", true);
