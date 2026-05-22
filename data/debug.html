@@ -380,34 +380,12 @@ function setLang(l){
       <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
     </div>
   </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-1" data-i18n="act.test_title"><i class="bi bi-lightning"></i> Test behavior</h6>
-    <p class="text-muted small mb-3" data-i18n="act.test_desc">Simula un trigger ed esegue LLM + TTS.</p>
-    <div class="row g-2 mb-3">
-      <div class="col">
-        <label class="form-label small" data-i18n="act.test_trigger">Trigger</label>
-        <select class="form-select form-select-sm" id="tbeh-trg" onchange="tbehTrgChange()">
-          <option value="0" data-i18n="tbeh.trg.0">VAD (parlato)</option>
-          <option value="1" data-i18n="tbeh.trg.1">Pulsante ESP32</option>
-          <option value="2" data-i18n="tbeh.trg.2">Sensore Furby</option>
-        </select>
-      </div>
-      <div class="col" id="tbeh-sensor-wrap" style="display:none">
-        <label class="form-label small" data-i18n="act.test_sensor">Sensore</label>
-        <select class="form-select form-select-sm" id="tbeh-sensor"></select>
-      </div>
+  <div class="card shadow-sm mb-3 border-warning"><div class="card-body">
+    <h6 class="text-uppercase fw-bold small mb-1 text-warning"><i class="bi bi-lightning"></i> Simulatore rapido</h6>
+    <p class="text-muted small mb-2">Shortcut verso il pannello debug completo nel tab Personalità.</p>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-warning px-3" onclick="document.querySelector('a[href=\'#t-persona\']').click()"><i class="bi bi-arrow-right-circle"></i> Vai al simulatore</button>
     </div>
-    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="tbeh-dry" checked>
-        <label class="form-check-label small" for="tbeh-dry"><span data-i18n="act.test_dry">Dry run</span> <span class="text-muted" data-i18n="act.test_dry_sub">(skippa BLE)</span></label>
-      </div>
-      <div id="tbeh-behavior-label" class="text-muted small ms-auto"></div>
-    </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-success px-3" onclick="tbehRun()" data-i18n="act.test_run"><i class="bi bi-play-fill"></i> Simula trigger</button>
-    </div>
-    <div id="tbeh-msg" class="small mt-2 text-muted"></div>
   </div></div>
 </div>
 
@@ -1189,54 +1167,6 @@ function buildActGrid(id,actions){
 buildActGrid('act-grid-direct',ACTIONS_DIRECT);buildActGrid('act-grid-notes',ACTIONS_NOTES);buildActGrid('act-grid-world',ACTIONS_WORLD);
 function sendCustomAction(){wbCmd('custom',[0x13,0x00,+document.getElementById('ap-in').value,+document.getElementById('ap-ix').value,+document.getElementById('ap-sx').value,+document.getElementById('ap-sp').value]);}
 
-function tbehTrgChange(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value),wrap=document.getElementById('tbeh-sensor-wrap');
-  wrap.style.display=(trg===2)?'block':'none';
-  if(trg===2){var sel=document.getElementById('tbeh-sensor'),prev=sel.value;sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});if(prev)sel.value=prev;}
-  tbehUpdateLabel();
-}
-function tbehUpdateLabel(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value),sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0,lbl='';
-  if(typeof gEventBehaviors!=='undefined'){for(var i=0;i<gEventBehaviors.length;i++){var b=gEventBehaviors[i];if(b.trigger!==trg)continue;if(trg===2&&b.sensor_id!==sid)continue;lbl='→ "'+b.name+'" ('+b.consequence_count+' cons.)';break;}}
-  if(!lbl)lbl=t('act.no_behavior');document.getElementById('tbeh-behavior-label').textContent=lbl;
-}
-function tbehRun(){
-  var trg=parseInt(document.getElementById('tbeh-trg').value),sid=(trg===2)?parseInt(document.getElementById('tbeh-sensor').value):0;
-  var dry=document.getElementById('tbeh-dry').checked,msg=document.getElementById('tbeh-msg');
-  msg.style.color='#5a6a8a';msg.textContent=t('act.trigger_sending');
-  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('dry_run',dry?'1':'0');
-  fetch('/test/behavior',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){msg.className='small mt-1 text-success';msg.textContent=dry?t('act.trigger_sent_dry'):t('act.trigger_sent');}
-    else{msg.className='small mt-1 text-danger';msg.textContent=t('act.trigger_err')+(d.error||'?');}
-  }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
-}
-function simTrgChange(){
-  var trg=parseInt(document.getElementById('sim-trg').value);
-  document.getElementById('sim-sensor-wrap').style.display=(trg===2)?'block':'none';
-  document.getElementById('sim-vad-wrap').style.display=(trg===0)?'block':'none';
-  if(trg===2){var sel=document.getElementById('sim-sensor');sel.innerHTML='';SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});}
-}
-function simRun(){
-  var trg=parseInt(document.getElementById('sim-trg').value);
-  var sid=(trg===2)?parseInt(document.getElementById('sim-sensor').value||'0'):0;
-  var vadText=(trg===0)?document.getElementById('sim-vad-text').value:'';
-  var dry=document.getElementById('sim-dry').checked;
-  var msg=document.getElementById('sim-msg'),logEl=document.getElementById('sim-log'),btn=document.getElementById('btn-sim-run');
-  msg.className='small mt-2 text-muted';msg.textContent=t('sim.running');logEl.style.display='none';logEl.textContent='';btn.disabled=true;
-  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('vad_text',vadText);fd.append('dry_run',dry?'1':'0');
-  fetch('/test/simulate',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
-    btn.disabled=false;
-    if(d.ok){
-      msg.className='small mt-2 text-success';msg.textContent=t('sim.done');
-      logEl.style.display='block';logEl.textContent=d.log||'(nessun log)';logEl.scrollTop=logEl.scrollHeight;
-    } else {msg.className='small mt-2 text-danger';msg.textContent=t('sim.err')+(d.error||'?');}
-  }).catch(function(){btn.disabled=false;msg.className='small mt-2 text-danger';msg.textContent=t('error_conn');});
-}
-(function(){
-  var sel=document.getElementById('tbeh-sensor');
-  if(sel)SENSOR_KEYS.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);sel.appendChild(o);});
-  var ss=document.getElementById('tbeh-sensor');if(ss)ss.addEventListener('change',tbehUpdateLabel);
-})();
 
 function syncColorPicker(){} // color picker is source of truth
 function sendRgb(){var hex=document.getElementById('rgb-picker').value;var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);wbCmd('antenna',[0x14,r,g,b]);}
