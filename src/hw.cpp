@@ -302,9 +302,19 @@ void camApplyExposure(int gainCeiling, int brightness, int agc) {
     if (!camActive) return;
     sensor_t* s = esp_camera_sensor_get();
     if (!s) return;
-    s->set_gainceiling(s, (gainceiling_t)constrain(gainCeiling, 0, 6));
     s->set_brightness(s, constrain(brightness, -2, 2));
-    s->set_gain_ctrl(s, agc ? 1 : 0);
+    if (agc) {
+        // auto: limita il ceiling per evitare sovraesposizione
+        s->set_gain_ctrl(s, 1);
+        s->set_aec2(s, 1);
+        s->set_gainceiling(s, (gainceiling_t)constrain(gainCeiling, 0, 6));
+    } else {
+        // manuale: disabilita AGC/AEC e imposta gain fisso proporzionale al ceiling scelto
+        s->set_gain_ctrl(s, 0);
+        s->set_aec2(s, 0);
+        s->set_agc_gain(s, gainCeiling * 5); // 0-30, scala su 0-6
+        s->set_aec_value(s, 300);            // esposizione manuale moderata
+    }
 }
 
 bool camInit() {

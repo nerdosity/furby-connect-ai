@@ -85,7 +85,7 @@
     <div class="card-body">
       <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-brightness-high"></i> Esposizione</h6>
       <div class="mb-2">
-        <label class="form-label small text-muted">Gain ceiling (2X → 128X)</label>
+        <label class="form-label small text-muted" id="gc-label-title">Gain max (AGC) — 2X → 128X</label>
         <div class="d-flex align-items-center gap-2">
           <span class="text-muted small">2X</span>
           <input type="range" class="form-range flex-fill" id="gc-slider" min="0" max="6" step="1" value="0" oninput="onGcSlider(this.value)">
@@ -205,7 +205,9 @@ function onFlicker(v){
 var GC_LABELS=['2X','4X','8X','16X','32X','64X','128X'];
 function onGcSlider(v){document.getElementById('gc-label').textContent=GC_LABELS[parseInt(v)]||v;}
 function onBrSlider(v){document.getElementById('br-label').textContent=(v>0?'+':'')+v;}
-function onAgcSwitch(checked){}
+function onAgcSwitch(checked){
+  document.getElementById('gc-label-title').textContent=checked?'Gain max (AGC) — 2X → 128X':'Gain manuale — 0 → 30';
+}
 function saveExposure(){
   var fd=new FormData();
   fd.append('gain_ceiling',document.getElementById('gc-slider').value);
@@ -226,7 +228,7 @@ fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
   _selSet('flicker-sel',String(d.flicker!=null?d.flicker:0));
   if(d.gain_ceiling!=null){document.getElementById('gc-slider').value=d.gain_ceiling;document.getElementById('gc-label').textContent=GC_LABELS[d.gain_ceiling]||d.gain_ceiling;}
   if(d.brightness!=null){var br=d.brightness;document.getElementById('br-slider').value=br;document.getElementById('br-label').textContent=(br>0?'+':'')+br;}
-  if(d.agc!=null){document.getElementById('agc-switch').checked=!!d.agc;}
+  if(d.agc!=null){var agcOn=!!d.agc;document.getElementById('agc-switch').checked=agcOn;onAgcSwitch(agcOn);}
 }).catch(function(){});
 
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){
