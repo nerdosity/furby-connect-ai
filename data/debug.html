@@ -740,6 +740,7 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
   el.addEventListener('shown.bs.tab',function(e){
     var id=e.target.getAttribute('href').replace('#','');
     if(id==='t-audio'){startMicPoll();dbgVadLoad();}else stopMicPoll();
+    if(id==='t-sensors')startSensorsSse();else stopSensorsSse();
     if(id==='t-files')fmLoad();
     if(id==='t-configs')plLoad();
     if(id==='t-persona')persLoad();
@@ -1391,12 +1392,12 @@ function fmUpload(){
 }
 
 fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
-startSensorsSse();
 setLang(gLang);
 fetch('/api/home').then(r=>r.json()).then(function(d){
   var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
   llmMaskApply(hasLlm,!!(d.el_key&&d.el_key.length>0));
   if(!hasLlm){document.getElementById('dbg-skip-llm').checked=true;}
-}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;});
+}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;})
+.finally(function(){startSensorsSse();});
 </script>
 </body></html>
