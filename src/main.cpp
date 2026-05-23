@@ -197,4 +197,5 @@ void loop() {
             }, "Stimulus", 16384, (void*)arg, 1, NULL, 1);
         }
     }
+    vTaskDelay(1); // cede lo scheduler, evita busy-loop al 100%
 }

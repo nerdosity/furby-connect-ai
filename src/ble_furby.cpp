@@ -231,7 +231,7 @@ void lipSyncTask(void* pvParameters) {
         if (isSpeaking && connected)
             furbyWrite(currentAmplitude > 500 ? open_ : closed_,
                        currentAmplitude > 500 ? sizeof(open_) : sizeof(closed_));
-        vTaskDelay(isSpeaking && connected ? 80 : 100 / portTICK_PERIOD_MS);
+        vTaskDelay((isSpeaking && connected ? 80 : 100) / portTICK_PERIOD_MS);
     }
 }
 
