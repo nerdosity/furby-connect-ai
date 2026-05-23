@@ -1574,7 +1574,6 @@ static void handleCamDescribe() {
 
 static void handleCameraPage() {
     HTTP_LOG();
-    if (!camActive) camInit();
     File f = SPIFFS.open("/camera.html", "r");
     if (f) { server.sendHeader("Cache-Control", "no-cache, must-revalidate"); server.streamFile(f, "text/html; charset=utf-8"); f.close(); return; }
     server.send(200, "text/html", F("<!DOCTYPE html><html><body>"
