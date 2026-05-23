@@ -6,7 +6,7 @@
   --fb-mid:  #2d3f6e;
   --fb-bg:   #f0f4f8;
 }
-body { background: var(--fb-bg); }
+body { background: var(--fb-bg); overflow-x: hidden; }
 
 /* ── page loader (fixed overlay + spinner - non ha equivalente Bootstrap) ── */
 #fb-loader {
