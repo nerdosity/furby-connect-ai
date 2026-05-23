@@ -172,6 +172,22 @@ void setup() {
     }
 }
 
+// ── CPU frequency throttling ──────────────────────────────────────────────────
+static void cpuThrottle() {
+    static uint8_t curMhz = 240;
+    static uint32_t idleSince = 0;
+    bool busy = isProcessing || isSpeaking || bleConnecting || isConfigMode;
+    if (busy) {
+        idleSince = millis();
+        if (curMhz != 240) { setCpuFrequencyMhz(240); curMhz = 240; }
+    } else {
+        // scende a 80MHz solo dopo 10s di idle
+        if (curMhz == 240 && millis() - idleSince > 10000) {
+            setCpuFrequencyMhz(80); curMhz = 80;
+        }
+    }
+}
+
 void loop() {
     if (isConfigMode) dnsServer.processNextRequest();
     server.handleClient();
@@ -197,5 +213,6 @@ void loop() {
             }, "Stimulus", 16384, (void*)arg, 1, NULL, 1);
         }
     }
-    vTaskDelay(1); // cede lo scheduler, evita busy-loop al 100%
+    cpuThrottle();
+    vTaskDelay(1);
 }
