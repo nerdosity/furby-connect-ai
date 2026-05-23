@@ -93,9 +93,6 @@ body { background: var(--fb-bg); overflow-x: hidden; }
 .fm-editor { width: 100%; height: 220px; font-family: monospace; font-size: .72rem; background: var(--fb-navy); color: #8fb3e8; border: 1.5px solid #2d3f6e; border-radius: 8px; padding: 8px; resize: vertical; }
 @media(min-width:900px) { .fm-editor { height: 480px; font-size: .88rem; } }
 
-/* ── min-width bottoni (evita bottoni troppo stretti su desktop) ── */
-.btn:not(.btn-sm) { min-width: 9rem; }
-.btn-group .btn:not(.btn-sm) { min-width: 0; }
 
 /* ── progress bar altezza ridotta (Bootstrap non ha progress-sm) ── */
 .progress-sm { height: 8px; }

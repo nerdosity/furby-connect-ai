@@ -42,11 +42,11 @@ function renderNav(active){
   });
 
   var langSel=isDebug
-    ? '<select class="fb-lang" id="lang-sel" onchange="setLang(this.value)"><option value="it">IT</option><option value="en">EN</option></select>'
-    : '<select class="fb-lang" id="lang-sel-shared" onchange="setSharedLang(this.value)"><option value="it">IT</option><option value="en">EN</option></select>';
+    ? '<select class="fb-lang ms-auto" id="lang-sel" onchange="setLang(this.value)"><option value="it">IT</option><option value="en">EN</option></select>'
+    : '<select class="fb-lang ms-auto" id="lang-sel-shared" onchange="setSharedLang(this.value)"><option value="it">IT</option><option value="en">EN</option></select>';
 
   var html=
-    '<div class="offcanvas offcanvas-end fb-offcanvas" tabindex="-1" id="nav-offcanvas">'+
+    '<div class="offcanvas offcanvas-end fb-offcanvas" tabindex="-1" id="nav-offcanvas" style="--bs-offcanvas-width:100%">'+
       '<div class="offcanvas-header">'+
         '<h5 class="offcanvas-title">Menu</h5>'+
         '<button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>'+
