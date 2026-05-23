@@ -29,8 +29,8 @@
       <tbody id="wifi-rows"><tr><td colspan="4" class="text-muted" data-i18n="sys.loading">carico...</td></tr></tbody>
     </table>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-primary px-3" onclick="wifiConnect()" data-i18n="wifi.btn_connect"><i class="bi bi-wifi"></i> Connetti ora</button>
-      <button type="button" class="btn btn-outline-secondary px-3" onclick="wifiScan()" data-i18n="wifi.btn_scan"><i class="bi bi-search"></i> Scansiona</button>
+      <button type="button" class="btn btn-primary px-3 w-50" onclick="wifiConnect()" data-i18n="wifi.btn_connect"><i class="bi bi-wifi"></i> Connetti ora</button>
+      <button type="button" class="btn btn-outline-secondary px-3 w-50" onclick="wifiScan()" data-i18n="wifi.btn_scan"><i class="bi bi-search"></i> Scansiona</button>
     </div>
     <div id="wifi-scan-results"></div>
     <hr class="my-3">
@@ -57,7 +57,7 @@
       <div class="input-group">
         <span class="input-group-text text-muted"><i class="bi bi-router"></i></span>
         <input type="text" class="form-control form-control-sm" id="wifi-hostname-inp" maxlength="32" placeholder="furby">
-        <button class="btn btn-primary px-3" type="button" onclick="wifiHostnameSave()" data-i18n="wifi.btn_hostname"><i class="bi bi-floppy"></i> Salva hostname</button>
+        <button class="btn btn-primary px-3" type="button" onclick="wifiHostnameSave()"><i class="bi bi-floppy"></i> Salva</button>
       </div>
       <div class="form-text" data-i18n="wifi.hostname_hint">Raggiungibile su <code>furby.local</code> via mDNS</div>
     </div>
@@ -139,8 +139,11 @@
         <input type="text" class="form-control form-control-sm" name="el_key" id="el-key" oninput="elKeyChange()" onblur="elKeyBlur()">
       </div>
       <div class="mb-2">
-        <label class="form-label d-flex align-items-center gap-2"><span data-i18n="el.label_voice">Voce</span><button type="button" class="btn btn-sm btn-outline-secondary ms-auto px-2 py-0" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button></label>
-        <select class="form-select form-select-sm" name="el_vid" id="el-voice-sel" disabled></select>
+        <label class="form-label" data-i18n="el.label_voice">Voce</label>
+        <div class="d-flex gap-1">
+          <select class="form-select form-select-sm flex-fill" name="el_vid" id="el-voice-sel" disabled></select>
+          <button type="button" class="btn btn-outline-secondary px-2" onclick="elUpdateVoiceState(document.getElementById('el-key').value.trim(),document.getElementById('el-voice-sel').value)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
         <div id="el-voice-hint" class="form-text text-warning"></div>
       </div>
       <div class="mb-2">
@@ -247,9 +250,9 @@
         <label class="form-label" data-i18n="ble.label_char">Characteristic UUID TX</label>
         <input type="text" class="form-control form-control-sm font-monospace" name="char_uuid" id="ble-char-uuid">
       </div>
-      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-        <button type="button" class="btn btn-outline-secondary px-3" onclick="bleUuidReset()" data-i18n="ble.btn_reset"><i class="bi bi-arrow-counterclockwise"></i> Ripristina default</button>
-        <button type="submit" class="btn btn-primary px-3" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva UUID</button>
+      <div class="row g-2 mt-2">
+        <div class="col-6"><button type="button" class="btn btn-outline-secondary px-3 w-100" onclick="bleUuidReset()" data-i18n="ble.btn_reset"><i class="bi bi-arrow-counterclockwise"></i> Ripristina</button></div>
+        <div class="col-6"><button type="submit" class="btn btn-primary px-3 w-100" data-i18n="ble.btn_save"><i class="bi bi-floppy"></i> Salva</button></div>
       </div>
     </form>
   </div>

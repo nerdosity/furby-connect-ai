@@ -24,33 +24,33 @@
         <span class="text-muted small flex-fill" id="cam-status" data-i18n="cam.streaming">Streaming MJPEG attivo</span>
         <button class="btn btn-outline-secondary px-3" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause"><i class="bi bi-pause-fill"></i> Pausa</button>
       </div>
-      <div class="row g-2 mt-1 align-items-center">
-        <div class="col-auto"><label class="form-label mb-0 small text-muted" data-i18n="cam.stream_quality">qualità</label></div>
-        <div class="col">
-          <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">1</span>
-            <input type="range" class="form-range flex-fill" id="q-slider" min="1" max="10" step="1" value="6" oninput="onQualitySlider(this.value)">
-            <span class="text-muted small">10</span>
-            <span class="badge bg-secondary" id="q-label" style="min-width:2rem">6</span>
+      <div class="mt-2">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <label class="form-label mb-0 small text-muted" data-i18n="cam.stream_quality">qualità stream</label>
+          <span class="text-muted small">1</span>
+          <input type="range" class="form-range flex-fill" id="q-slider" min="1" max="10" step="1" value="6" oninput="onQualitySlider(this.value)">
+          <span class="text-muted small">10</span>
+          <span class="badge bg-secondary" id="q-label" style="min-width:2rem">6</span>
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <select class="form-select form-select-sm" id="stream-size-sel" onchange="onStreamSize(this.value)">
+              <option value="QQVGA">QQVGA 160×120</option>
+              <option value="QVGA" selected>QVGA 320×240</option>
+              <option value="VGA">VGA 640×480</option>
+              <option value="SVGA">SVGA 800×600</option>
+              <option value="XGA">XGA 1024×768</option>
+              <option value="SXGA">SXGA 1280×1024</option>
+              <option value="UXGA">UXGA 1600×1200</option>
+            </select>
           </div>
-        </div>
-        <div class="col-auto">
-          <select class="form-select form-select-sm" id="stream-size-sel" onchange="onStreamSize(this.value)">
-            <option value="QQVGA">QQVGA 160×120</option>
-            <option value="QVGA" selected>QVGA 320×240</option>
-            <option value="VGA">VGA 640×480</option>
-            <option value="SVGA">SVGA 800×600</option>
-            <option value="XGA">XGA 1024×768</option>
-            <option value="SXGA">SXGA 1280×1024</option>
-            <option value="UXGA">UXGA 1600×1200</option>
-          </select>
-        </div>
-        <div class="col-auto">
-          <select class="form-select form-select-sm" id="flicker-sel" onchange="onFlicker(this.value)">
-            <option value="0" selected data-i18n="cam.flicker_none">nessuno</option>
-            <option value="50" data-i18n="cam.flicker_50">50 Hz</option>
-            <option value="60" data-i18n="cam.flicker_60">60 Hz</option>
-          </select>
+          <div class="col-6">
+            <select class="form-select form-select-sm" id="flicker-sel" onchange="onFlicker(this.value)">
+              <option value="0" selected data-i18n="cam.flicker_none">nessuno</option>
+              <option value="50" data-i18n="cam.flicker_50">50 Hz</option>
+              <option value="60" data-i18n="cam.flicker_60">60 Hz</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -60,29 +60,56 @@
   <div class="card shadow-sm mb-3">
     <div class="card-body">
       <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-camera"></i> <span data-i18n="cam.snap_title">impostazioni snapshot LLM</span></h6>
-      <div class="row g-2 align-items-center">
-        <div class="col-auto"><label class="form-label mb-0 small text-muted" data-i18n="cam.snap_quality">qualità</label></div>
-        <div class="col">
-          <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">1</span>
-            <input type="range" class="form-range flex-fill" id="snap-q-slider" min="1" max="10" step="1" value="8" oninput="onSnapQuality(this.value)">
-            <span class="text-muted small">10</span>
-            <span class="badge bg-secondary" id="snap-q-label" style="min-width:2rem">8</span>
-          </div>
-        </div>
-        <div class="col-auto">
-          <select class="form-select form-select-sm" id="snap-size-sel" onchange="onSnapSize(this.value)">
-            <option value="QQVGA">QQVGA 160×120</option>
-            <option value="QVGA">QVGA 320×240</option>
-            <option value="VGA" selected>VGA 640×480</option>
-            <option value="SVGA">SVGA 800×600</option>
-            <option value="XGA">XGA 1024×768</option>
-            <option value="SXGA">SXGA 1280×1024</option>
-            <option value="UXGA">UXGA 1600×1200</option>
-          </select>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <label class="form-label mb-0 small text-muted" data-i18n="cam.snap_quality">qualità snapshot</label>
+        <span class="text-muted small">1</span>
+        <input type="range" class="form-range flex-fill" id="snap-q-slider" min="1" max="10" step="1" value="8" oninput="onSnapQuality(this.value)">
+        <span class="text-muted small">10</span>
+        <span class="badge bg-secondary" id="snap-q-label" style="min-width:2rem">8</span>
+      </div>
+      <select class="form-select form-select-sm" id="snap-size-sel" onchange="onSnapSize(this.value)">
+        <option value="QQVGA">QQVGA 160×120</option>
+        <option value="QVGA">QVGA 320×240</option>
+        <option value="VGA" selected>VGA 640×480</option>
+        <option value="SVGA">SVGA 800×600</option>
+        <option value="XGA">XGA 1024×768</option>
+        <option value="SXGA">SXGA 1280×1024</option>
+        <option value="UXGA">UXGA 1600×1200</option>
+      </select>
+      <p class="text-muted small mb-0 mt-1" data-i18n="cam.snap_hint">Risoluzione e qualità usate per catturare il frame inviato all'LLM. Indipendenti dallo stream.</p>
+    </div>
+  </div>
+
+  <!-- esposizione camera -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-brightness-high"></i> Esposizione</h6>
+      <div class="mb-2">
+        <label class="form-label small text-muted">Gain ceiling (2X → 128X)</label>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small">2X</span>
+          <input type="range" class="form-range flex-fill" id="gc-slider" min="0" max="6" step="1" value="0" oninput="onGcSlider(this.value)">
+          <span class="text-muted small">128X</span>
+          <span class="badge bg-secondary" id="gc-label" style="min-width:3rem">2X</span>
         </div>
       </div>
-      <p class="text-muted small mb-0 mt-1" data-i18n="cam.snap_hint">Risoluzione e qualità usate per catturare il frame inviato all'LLM. Indipendenti dallo stream.</p>
+      <div class="mb-2">
+        <label class="form-label small text-muted">Luminosità</label>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small">-2</span>
+          <input type="range" class="form-range flex-fill" id="br-slider" min="-2" max="2" step="1" value="0" oninput="onBrSlider(this.value)">
+          <span class="text-muted small">+2</span>
+          <span class="badge bg-secondary" id="br-label" style="min-width:2rem">0</span>
+        </div>
+      </div>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="agc-switch" onchange="onAgcSwitch(this.checked)" checked>
+        <label class="form-check-label small" for="agc-switch">AGC automatico</label>
+      </div>
+      <div class="row g-2">
+        <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="saveExposure()"><i class="bi bi-floppy"></i> Salva</button></div>
+        <div id="exp-msg" class="col-6 d-flex align-items-center small text-muted"></div>
+      </div>
     </div>
   </div>
 
@@ -175,6 +202,20 @@ function onFlicker(v){
   var fd=new FormData();fd.append('flicker',v);
   fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
 }
+var GC_LABELS=['2X','4X','8X','16X','32X','64X','128X'];
+function onGcSlider(v){document.getElementById('gc-label').textContent=GC_LABELS[parseInt(v)]||v;}
+function onBrSlider(v){document.getElementById('br-label').textContent=(v>0?'+':'')+v;}
+function onAgcSwitch(checked){}
+function saveExposure(){
+  var fd=new FormData();
+  fd.append('gain_ceiling',document.getElementById('gc-slider').value);
+  fd.append('brightness',document.getElementById('br-slider').value);
+  fd.append('agc',document.getElementById('agc-switch').checked?'1':'0');
+  var msg=document.getElementById('exp-msg');
+  fetch('/camera/settings',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    msg.textContent=d.ok?'Salvato.':'Errore.';setTimeout(function(){msg.textContent='';},2000);
+  }).catch(function(){msg.textContent='Errore.';});
+}
 function jpegToQual(q){return Math.round(10-(q-4)*(10-1)/(40-4));}
 function _selSet(id,val){if(val==null)return;var s=document.getElementById(id);for(var i=0;i<s.options.length;i++){if(s.options[i].value===String(val)){s.selectedIndex=i;return;}}}
 fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
@@ -183,6 +224,9 @@ fetch('/camera/settings').then(function(r){return r.json();}).then(function(d){
   if(d.snap_quality!=null){var nq=jpegToQual(d.snap_quality);document.getElementById('snap-q-slider').value=nq;document.getElementById('snap-q-label').textContent=nq;}
   _selSet('snap-size-sel',d.snap_size);
   _selSet('flicker-sel',String(d.flicker!=null?d.flicker:0));
+  if(d.gain_ceiling!=null){document.getElementById('gc-slider').value=d.gain_ceiling;document.getElementById('gc-label').textContent=GC_LABELS[d.gain_ceiling]||d.gain_ceiling;}
+  if(d.brightness!=null){var br=d.brightness;document.getElementById('br-slider').value=br;document.getElementById('br-label').textContent=(br>0?'+':'')+br;}
+  if(d.agc!=null){document.getElementById('agc-switch').checked=!!d.agc;}
 }).catch(function(){});
 
 fetch('/camera/describe/prompt').then(function(r){return r.json();}).then(function(d){

@@ -44,7 +44,7 @@ var TRANSLATIONS={
     'aud.tone_freq':'Frequenza personalizzata (Hz)',
     'aud.tone_play':'<i class="bi bi-play-fill"></i> Play',
     'aud.mic':'Microfoni live','aud.mic_desc':'RMS live - L=MIC1, R=MIC2',
-    'vad.label_thresh':'Soglia sensibilità (RMS 0-32767, default 800)',
+    'vad.label_thresh':'Soglia VAD (RMS 0-32767, default 800)',
     'aud.vad_speech':'Parlato rilevato','aud.vad_noise':'Rumore','aud.vad_silence':'Silenzio',
     'aud.rec':'Registra e riproduci (3 secondi)',
     'aud.rec_desc':'Parla per 3 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
@@ -321,14 +321,14 @@ function setLang(l){
 
 <!-- tabs -->
 <ul class="nav nav-tabs flex-nowrap" id="debugTabs" style="overflow-x:auto;overflow-y:hidden">
-  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-configs" data-i18n="tab.configs">Configurazioni</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#t-persona" data-i18n="tab.persona">Personalità</a></li>
+  <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-configs" data-i18n="tab.configs">Configurazioni</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-persona" data-i18n="tab.persona">Personalità</a></li>
 </ul>
 <div class="tab-content">
 
@@ -423,23 +423,25 @@ function setLang(l){
   <!-- Sistema + DLC -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
-    <div class="d-flex gap-2 flex-wrap mb-3">
-      <button class="btn btn-outline-secondary px-3" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button>
-      <button class="btn btn-outline-secondary px-3" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button>
-      <button class="btn btn-outline-secondary px-3" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button>
+    <div class="row g-2 mb-3">
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button></div>
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button></div>
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button></div>
     </div>
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
-    <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+    <div class="d-flex gap-2 align-items-center mb-2">
       <div class="input-group w-auto">
         <span class="input-group-text">Slot</span>
         <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0">
       </div>
-      <button class="btn btn-outline-primary px-3" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
-      <button class="btn btn-outline-success px-3" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button>
-      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button>
-      <button class="btn btn-outline-danger px-3" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button>
-      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button>
-      <button class="btn btn-outline-secondary px-3" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button>
+      <button class="btn btn-outline-primary px-3 flex-fill" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
+    </div>
+    <div class="row g-2 mb-2">
+      <div class="col-6"><button class="btn btn-outline-success px-3 w-100" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button></div>
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button></div>
+      <div class="col-6"><button class="btn btn-outline-danger px-3 w-100" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button></div>
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button></div>
+      <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button></div>
     </div>
     <div id="dlc-log" class="bg-dark text-light rounded p-2 small scroll-box-sm" style="display:none"></div>
   </div></div>
@@ -465,13 +467,13 @@ function setLang(l){
       <label class="form-label small" data-i18n="aud.tone_dur">Durata (ms)</label>
       <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
     </div>
-    <div class="d-flex gap-2 flex-wrap mb-3">
-      <button class="btn btn-success px-3" onclick="tonePlay(220)"><i class="bi bi-music-note"></i> 220 Hz</button>
-      <button class="btn btn-success px-3" onclick="tonePlay(440)"><i class="bi bi-music-note"></i> 440 Hz (La)</button>
-      <button class="btn btn-primary px-3" onclick="tonePlay(880)"><i class="bi bi-music-note"></i> 880 Hz</button>
-      <button class="btn btn-primary px-3" onclick="tonePlay(1000)"><i class="bi bi-music-note"></i> 1 kHz</button>
-      <button class="btn btn-primary px-3" onclick="tonePlay(1760)"><i class="bi bi-music-note"></i> 1760 Hz</button>
-      <button class="btn btn-primary px-3" onclick="tonePlay(4000)"><i class="bi bi-music-note"></i> 4 kHz</button>
+    <div class="row g-2 mb-3">
+      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="tonePlay(220)"><i class="bi bi-music-note"></i> 220 Hz</button></div>
+      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="tonePlay(440)"><i class="bi bi-music-note"></i> 440 Hz (La)</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(880)"><i class="bi bi-music-note"></i> 880 Hz</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(1000)"><i class="bi bi-music-note"></i> 1 kHz</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(1760)"><i class="bi bi-music-note"></i> 1760 Hz</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(4000)"><i class="bi bi-music-note"></i> 4 kHz</button></div>
     </div>
     <div class="d-flex gap-2 align-items-end">
       <div class="flex-fill">
@@ -497,17 +499,17 @@ function setLang(l){
         <div id="rms-val-r" class="small text-muted mt-1">0</div>
       </div>
     </div>
-    <span id="vad-badge" class="badge bg-secondary">Silenzio</span>
     <hr class="my-3">
-    <label class="form-label small fw-semibold" data-i18n="vad.label_thresh">Soglia sensibilità (RMS 0-32767, default 800)</label>
-    <div class="d-flex align-items-center gap-2 mt-1">
+    <label class="form-label small fw-semibold" data-i18n="vad.label_thresh">Soglia VAD (RMS 0-32767, default 800)</label>
+    <div class="d-flex align-items-center gap-2 mt-1 mb-2">
       <span class="text-muted small">0</span>
       <input type="range" class="form-range flex-fill" id="dbg-vad-slider" min="0" max="32767" step="50" value="800" oninput="dbgVadSliderInput(this.value)">
       <span class="text-muted small">32767</span>
       <input type="number" class="form-control form-control-sm" id="dbg-vad-num" min="0" max="32767" value="800" style="width:90px" oninput="dbgVadNumInput(this.value)">
     </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-primary px-3" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva soglia</button>
+    <div class="row g-2">
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva</button></div>
+      <div class="col-6 d-flex align-items-center"><span id="vad-badge" class="badge bg-secondary">Silenzio</span></div>
     </div>
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
@@ -586,12 +588,14 @@ function setLang(l){
 
   <!-- ── Selezione/editing personalità ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
       <h6 class="text-uppercase text-muted fw-bold small mb-0 me-auto">Personalità</h6>
       <select class="form-select form-select-sm" id="pers-sel" style="max-width:220px" onchange="persSelChange()"></select>
       <span id="pers-active-badge" class="badge bg-success" style="display:none">Attiva</span>
-      <button class="btn btn-outline-secondary px-3" onclick="persActivate()"><i class="bi bi-check-circle"></i> Imposta attiva</button>
-      <button class="btn btn-outline-danger px-3" onclick="persDel()"><i class="bi bi-trash3"></i></button>
+    </div>
+    <div class="row g-2 mb-3">
+      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="persActivate()"><i class="bi bi-check-circle"></i> Imposta attiva</button></div>
+      <div class="col-6"><button class="btn btn-outline-danger px-3 w-100" onclick="persDel()"><i class="bi bi-trash3"></i> Elimina</button></div>
     </div>
     <div class="row g-2 mb-2">
       <div class="col-12 col-sm-5">
@@ -618,11 +622,11 @@ function setLang(l){
 
   <!-- ── Lista regole (stile HA) ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-      <h6 class="text-uppercase text-muted fw-bold small mb-0 me-auto">Regole - quando → allora</h6>
-      <button class="btn btn-success px-3" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
-      <button class="btn btn-primary px-3" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button>
-      <label class="btn btn-warning px-3 mb-0"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+    <h6 class="text-uppercase text-muted fw-bold small mb-2">Regole - quando → allora</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-12"><button class="btn btn-success px-3 w-100" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button></div>
+      <div class="col-6"><label class="btn btn-warning px-3 mb-0 w-100 text-center"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label></div>
     </div>
     <div id="beh-list"></div>
     <div id="beh-msg" class="small mt-2 text-muted"></div>

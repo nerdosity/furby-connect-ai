@@ -305,6 +305,9 @@ extern framesize_t   camStreamSize;      // risoluzione stream
 extern int           camSnapQuality;     // JPEG quality snapshot LLM (4-63)
 extern framesize_t   camSnapSize;        // risoluzione snapshot LLM
 extern int           camFlicker;         // 0=nessuno, 50=50Hz, 60=60Hz
+extern int           camGainCeiling;     // 0-6 (GAINCEILING_2X..GAINCEILING_128X)
+extern int           camBrightness;      // -2..+2
+extern int           camAgc;            // 1=auto, 0=manual
 // Array in PSRAM - allocato in setup() via gEventBehaviorsInit()
 extern EventBehavior* gEventBehaviors;
 extern int            gEventBehaviorCount;

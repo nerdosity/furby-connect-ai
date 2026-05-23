@@ -107,7 +107,10 @@ int          camStreamQuality = 12;
 framesize_t  camStreamSize    = FRAMESIZE_QVGA;
 int          camSnapQuality   = 8;
 framesize_t  camSnapSize      = FRAMESIZE_VGA;
-int          camFlicker       = 0; // 0=nessuno, 50=50Hz, 60=60Hz
+int          camFlicker       = 0;
+int          camGainCeiling   = 0; // 0=2X default conservativo
+int          camBrightness    = 0; // -2..+2
+int          camAgc           = 1; // 1=auto AGC con ceiling limitato
 EventBehavior* gEventBehaviors     = nullptr;  // allocato in PSRAM da setup()
 int            gEventBehaviorCount = 0;
 

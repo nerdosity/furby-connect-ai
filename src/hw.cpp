@@ -298,6 +298,15 @@ bool sdCheck() {
 }
 
 // ── Camera ────────────────────────────────────────────────────────────────────
+void camApplyExposure(int gainCeiling, int brightness, int agc) {
+    if (!camActive) return;
+    sensor_t* s = esp_camera_sensor_get();
+    if (!s) return;
+    s->set_gainceiling(s, (gainceiling_t)constrain(gainCeiling, 0, 6));
+    s->set_brightness(s, constrain(brightness, -2, 2));
+    s->set_gain_ctrl(s, agc ? 1 : 0);
+}
+
 bool camInit() {
     if (camActive) return true;
     camera_config_t cam;
@@ -320,6 +329,7 @@ bool camInit() {
     else              { cam.frame_size = FRAMESIZE_QQVGA; cam.jpeg_quality = 12;                cam.fb_count = 1; cam.fb_location = CAMERA_FB_IN_DRAM; }
     camActive = (esp_camera_init(&cam) == ESP_OK);
     Serial.println(camActive ? "CAM: init OK" : "CAM: init FALLITA");
+    if (camActive) camApplyExposure(camGainCeiling, camBrightness, camAgc);
     return camActive;
 }
 

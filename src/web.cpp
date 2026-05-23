@@ -1719,6 +1719,9 @@ void startWebServer() {
         d["snap_quality"]   = camSnapQuality;
         d["snap_size"]      = framesizeToStr(camSnapSize);
         d["flicker"]        = camFlicker;
+        d["gain_ceiling"]   = camGainCeiling;
+        d["brightness"]     = camBrightness;
+        d["agc"]            = camAgc;
         String out; serializeJson(d, out);
         server.send(200, "application/json", out);
     });
@@ -1763,6 +1766,22 @@ void startWebServer() {
                 camApplyFlicker(hz);
                 changed = true;
             }
+        }
+        if (server.hasArg("gain_ceiling") || server.hasArg("brightness") || server.hasArg("agc")) {
+            if (server.hasArg("gain_ceiling")) {
+                camGainCeiling = constrain(server.arg("gain_ceiling").toInt(), 0, 6);
+                Preferences p; p.begin("furby", false); p.putInt("cam_gc", camGainCeiling); p.end();
+            }
+            if (server.hasArg("brightness")) {
+                camBrightness = constrain(server.arg("brightness").toInt(), -2, 2);
+                Preferences p; p.begin("furby", false); p.putInt("cam_br", camBrightness); p.end();
+            }
+            if (server.hasArg("agc")) {
+                camAgc = server.arg("agc").toInt() ? 1 : 0;
+                Preferences p; p.begin("furby", false); p.putInt("cam_agc", camAgc); p.end();
+            }
+            camApplyExposure(camGainCeiling, camBrightness, camAgc);
+            changed = true;
         }
         server.send(200, "application/json", "{\"ok\":true}");
     });

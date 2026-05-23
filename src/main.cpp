@@ -68,6 +68,9 @@ void setup() {
     camSnapQuality   = preferences.getInt("cam_snq", 8);
     camSnapSize      = (framesize_t)preferences.getInt("cam_sns", (int)FRAMESIZE_VGA);
     camFlicker       = preferences.getInt("cam_flk", 0);
+    camGainCeiling   = preferences.getInt("cam_gc",  0);
+    camBrightness    = preferences.getInt("cam_br",  0);
+    camAgc           = preferences.getInt("cam_agc", 1);
     preferences.end(); // chiude handle globale - da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),

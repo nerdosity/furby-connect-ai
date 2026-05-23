@@ -16,6 +16,7 @@ bool camInit();
 void camDeinit();
 void camApplySettings(framesize_t size, int quality);
 void camApplyFlicker(int hz);
+void camApplyExposure(int gainCeiling, int brightness, int agc);
 
 bool sdMount();
 void sdUnmount();
