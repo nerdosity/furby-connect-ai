@@ -1391,9 +1391,10 @@ static void handleDebugMicSse() {
         bool vad = micVadActive;
         unsigned long now = millis();
         if (r1 != prev1 || r2 != prev2 || vad != prevVad || now - tLast >= 2000) {
-            // formato compatto: [rms1,rms2,vad_bool]
-            client.print("data:[" + String(r1) + "," + String(r2) +
-                         "," + String(vad ? "1" : "0") + "]\n\n");
+            client.print("data:{\"rms1\":" + String(r1) +
+                         ",\"rms2\":" + String(r2) +
+                         ",\"vad\":" + String(vad ? "true" : "false") +
+                         ",\"threshold\":" + String(vad_threshold) + "}\n\n");
             prev1 = r1; prev2 = r2; prevVad = vad; tLast = now;
         }
         delay(40);
@@ -1448,7 +1449,7 @@ static void handleDebugSensorsSse() {
             prevB1 = b1; prevB2 = b2; prevB3 = b3; prevB4 = b4;
             prevConn = conn; tLast = now;
         }
-        delay(80);
+        delay(40);
     }
 }
 
@@ -1472,26 +1473,24 @@ static void handleBleStatusSse() {
         unsigned int interval = (scan || cnng) ? 800 : 5000;
         if (conn != prevConn || scan != prevScan || cnng != prevConnecting ||
             bat != prevBat || now - tLast >= interval) {
-            JsonDocument d;
-            d["connected"]  = conn;
-            d["scanning"]   = scan;
-            d["connecting"] = cnng;
-            d["name"]       = ble_last_name;
-            d["battery"]    = bat;
-            d["uptime"]     = now / 1000;
-            d["ble_uptime"] = conn ? (now - bleConnectedMs) / 1000 : 0;
-            JsonArray devs = d["devices"].to<JsonArray>();
+            String j = "{\"connected\":" + String(conn?"true":"false") +
+                       ",\"scanning\":"   + String(scan?"true":"false") +
+                       ",\"connecting\":" + String(cnng?"true":"false") +
+                       ",\"name\":\""     + ble_last_name + "\"" +
+                       ",\"battery\":"    + String(bat) +
+                       ",\"uptime\":"     + String(now/1000) +
+                       ",\"ble_uptime\":" + String(conn?(now-bleConnectedMs)/1000:0) +
+                       ",\"devices\":[";
             for (int i = 0; i < furbyListCount; i++) {
-                JsonObject o = devs.add<JsonObject>();
-                o["name"] = furbyList[i].name;
-                o["addr"] = furbyList[i].addr;
+                if (i) j += ",";
+                j += "{\"name\":\"" + furbyList[i].name + "\",\"addr\":\"" + furbyList[i].addr + "\"}";
             }
-            String j; serializeJson(d, j);
+            j += "]}";
             client.print("data:" + j + "\n\n");
             prevConn = conn; prevScan = scan; prevConnecting = cnng;
             prevBat = bat; tLast = now;
         }
-        delay(80);
+        delay(40);
     }
 }
 
@@ -1505,20 +1504,21 @@ static void handleSysInfoSse() {
     client.println();
 
     unsigned long tLast = 0;
+    bool first = true;
 
     while (client.connected()) {
         unsigned long now = millis();
-        if (now - tLast >= 60000) {
-            auto kb = [](size_t b) -> size_t { return b / 1024; };
+        if (first || now - tLast >= 60000) {
+            first = false;
             JsonDocument d;
             d["cpu_mhz"]      = getCpuFrequencyMhz();
-            d["heap_free"]    = kb(heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            d["heap_total"]   = kb(heap_caps_get_total_size(MALLOC_CAP_INTERNAL));
-            d["psram_free"]   = psramFound() ? kb(heap_caps_get_free_size(MALLOC_CAP_SPIRAM))  : 0;
-            d["psram_total"]  = psramFound() ? kb(heap_caps_get_total_size(MALLOC_CAP_SPIRAM)) : 0;
-            d["spiffs_used"]  = kb(SPIFFS.usedBytes());
-            d["spiffs_total"] = kb(SPIFFS.totalBytes());
-            d["sketch_used"]  = kb(ESP.getSketchSize());
+            d["heap_free"]    = heap_caps_get_free_size(MALLOC_CAP_INTERNAL)   / 1024;
+            d["heap_total"]   = heap_caps_get_total_size(MALLOC_CAP_INTERNAL)  / 1024;
+            d["psram_free"]   = psramFound() ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM)  / 1024 : 0;
+            d["psram_total"]  = psramFound() ? heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / 1024 : 0;
+            d["spiffs_used"]  = SPIFFS.usedBytes()  / 1024;
+            d["spiffs_total"] = SPIFFS.totalBytes() / 1024;
+            d["sketch_used"]  = ESP.getSketchSize() / 1024;
             d["sketch_total"] = 0x400000 / 1024;
             d["flash_mb"]     = ESP.getFlashChipSize() / (1024*1024);
             d["uptime_s"]     = now / 1000;
@@ -1533,7 +1533,7 @@ static void handleSysInfoSse() {
             client.print("data:" + j + "\n\n");
             tLast = now;
         }
-        delay(200);
+        delay(40);
     }
 }
 
