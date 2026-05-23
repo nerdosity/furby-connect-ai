@@ -43,7 +43,7 @@ static void httpLog() {
     // skippa polling frequente e risorse statiche
     if (uri == "/sys/info" || uri == "/debug/mic/rms" || uri == "/debug/sensors" ||
         uri == "/ble/status" || uri == "/debug/mic/sse" || uri == "/debug/sensors/sse" ||
-        uri == "/ble/status/sse" || uri == "/sys/info/sse" || uri.endsWith(".map")) return;
+        uri.endsWith(".map")) return;
     String args;
     for (int i = 0; i < server.args(); i++) {
         const String& n = server.argName(i);
@@ -1453,90 +1453,6 @@ static void handleDebugSensorsSse() {
     }
 }
 
-static void handleBleStatusSse() {
-    WiFiClient client = server.client();
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/event-stream");
-    client.println("Cache-Control: no-cache");
-    client.println("Connection: keep-alive");
-    client.println("Access-Control-Allow-Origin: *");
-    client.println();
-
-    bool prevConn = false, prevScan = false, prevConnecting = false;
-    int  prevBat = -2;
-    unsigned long tLast = 0;
-
-    while (client.connected()) {
-        bool conn = connected, scan = bleScanning, cnng = bleConnecting;
-        int  bat  = ble_battery_pct;
-        unsigned long now = millis();
-        unsigned int interval = (scan || cnng) ? 800 : 5000;
-        if (conn != prevConn || scan != prevScan || cnng != prevConnecting ||
-            bat != prevBat || now - tLast >= interval) {
-            String j = "{\"connected\":" + String(conn?"true":"false") +
-                       ",\"scanning\":"   + String(scan?"true":"false") +
-                       ",\"connecting\":" + String(cnng?"true":"false") +
-                       ",\"name\":\""     + ble_last_name + "\"" +
-                       ",\"battery\":"    + String(bat) +
-                       ",\"uptime\":"     + String(now/1000) +
-                       ",\"ble_uptime\":" + String(conn?(now-bleConnectedMs)/1000:0) +
-                       ",\"devices\":[";
-            for (int i = 0; i < furbyListCount; i++) {
-                if (i) j += ",";
-                j += "{\"name\":\"" + furbyList[i].name + "\",\"addr\":\"" + furbyList[i].addr + "\"}";
-            }
-            j += "]}";
-            client.print("data:" + j + "\n\n");
-            prevConn = conn; prevScan = scan; prevConnecting = cnng;
-            prevBat = bat; tLast = now;
-        }
-        delay(40);
-    }
-}
-
-static void handleSysInfoSse() {
-    WiFiClient client = server.client();
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/event-stream");
-    client.println("Cache-Control: no-cache");
-    client.println("Connection: keep-alive");
-    client.println("Access-Control-Allow-Origin: *");
-    client.println();
-
-    unsigned long tLast = 0;
-    bool first = true;
-
-    while (client.connected()) {
-        unsigned long now = millis();
-        if (first || now - tLast >= 60000) {
-            first = false;
-            JsonDocument d;
-            d["cpu_mhz"]      = getCpuFrequencyMhz();
-            d["heap_free"]    = heap_caps_get_free_size(MALLOC_CAP_INTERNAL)   / 1024;
-            d["heap_total"]   = heap_caps_get_total_size(MALLOC_CAP_INTERNAL)  / 1024;
-            d["psram_free"]   = psramFound() ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM)  / 1024 : 0;
-            d["psram_total"]  = psramFound() ? heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / 1024 : 0;
-            d["spiffs_used"]  = SPIFFS.usedBytes()  / 1024;
-            d["spiffs_total"] = SPIFFS.totalBytes() / 1024;
-            d["sketch_used"]  = ESP.getSketchSize() / 1024;
-            d["sketch_total"] = 0x400000 / 1024;
-            d["flash_mb"]     = ESP.getFlashChipSize() / (1024*1024);
-            d["uptime_s"]     = now / 1000;
-            d["bat_mv"]       = readBatteryMv();
-            d["chip_temp_c"]  = (int)temperatureRead();
-            d["fw_version"]   = spiffsVersion();
-            if (sdAvailable) {
-                d["sd_used_mb"]  = (int)(SD_MMC.usedBytes()  / (1024*1024));
-                d["sd_total_mb"] = (int)(SD_MMC.totalBytes() / (1024*1024));
-            }
-            String j; serializeJson(d, j);
-            client.print("data:" + j + "\n\n");
-            tLast = now;
-        }
-        delay(40);
-    }
-}
-
 static void handleDebugAmp() {
     HTTP_LOG();
     server.send(200, "application/json", "{\"ok\":true,\"on\":true}");
@@ -1763,14 +1679,12 @@ void startWebServer() {
     server.on("/ble/scan",       HTTP_POST, handleBleScan);
     server.on("/ble/scan/stop",  HTTP_POST, handleBleScanStop);
     server.on("/ble/status",     HTTP_GET,  handleBleStatus);
-    server.on("/ble/status/sse", HTTP_GET,  handleBleStatusSse);
     server.on("/ble/connect",    HTTP_POST, handleBleConnect);
     server.on("/ble/disconnect", HTTP_POST, handleBleDisconnect);
     server.on("/ble/abort",      HTTP_POST, handleBleAbort);
     server.on("/ble/reset",      HTTP_POST, handleBleReset);
     server.on("/ble/save",       HTTP_POST, handleBleSave);
     server.on("/sys/info",        HTTP_GET,  handleSysInfo);
-    server.on("/sys/info/sse",    HTTP_GET,  handleSysInfoSse);
     server.on("/api/home",        HTTP_GET,  handleApiHome);
     server.on("/sys/reboot",      HTTP_POST, handleSysReboot);
     server.on("/wifi/hostname",   HTTP_POST, handleWifiHostname);
