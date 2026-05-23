@@ -740,7 +740,6 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
   el.addEventListener('shown.bs.tab',function(e){
     var id=e.target.getAttribute('href').replace('#','');
     if(id==='t-audio'){startMicPoll();dbgVadLoad();}else stopMicPoll();
-    if(id==='t-sensors')startSensorsSse();else stopSensorsSse();
     if(id==='t-files')fmLoad();
     if(id==='t-configs')plLoad();
     if(id==='t-persona')persLoad();
@@ -1191,6 +1190,7 @@ function dbBleApply(d){
   var lst=document.getElementById('db-ble-list');
   _bleConnected=!!d.connected;
   bleMaskApply(_bleConnected);
+  if(_bleConnected)startSensorsSse();else stopSensorsSse();
   if(d.uptime!==undefined){_bootRefSet(Date.now(),d.uptime);_uptimeTick();}
   var bu=document.getElementById('ble-uptime');
   if(bu){if(d.connected&&d.ble_uptime){bu.textContent='(conn. '+fmtSec(d.ble_uptime)+')';bu.style.display='';}else{bu.textContent='';bu.style.display='none';}}
@@ -1397,7 +1397,6 @@ fetch('/api/home').then(r=>r.json()).then(function(d){
   var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
   llmMaskApply(hasLlm,!!(d.el_key&&d.el_key.length>0));
   if(!hasLlm){document.getElementById('dbg-skip-llm').checked=true;}
-}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;})
-.finally(function(){startSensorsSse();});
+}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;});
 </script>
 </body></html>

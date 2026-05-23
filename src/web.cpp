@@ -1373,19 +1373,12 @@ static void handleDebugMicPoll() {
 }
 
 // SSE: stream continuo mic RMS, manda evento ogni volta che i valori cambiano
-static void handleDebugMicSse() {
-    WiFiClient client = server.client();
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/event-stream");
-    client.println("Cache-Control: no-cache");
-    client.println("Connection: keep-alive");
-    client.println("Access-Control-Allow-Origin: *");
-    client.println();
-
+static void sseMicTask(void* arg) {
+    WiFiClient client = *reinterpret_cast<WiFiClient*>(arg);
+    delete reinterpret_cast<WiFiClient*>(arg);
     int prev1 = -1, prev2 = -1;
     bool prevVad = false;
     unsigned long tLast = 0;
-
     while (client.connected()) {
         int r1 = micRmsLive, r2 = micRmsLive2;
         bool vad = micVadActive;
@@ -1397,24 +1390,30 @@ static void handleDebugMicSse() {
                          ",\"threshold\":" + String(vad_threshold) + "}\n\n");
             prev1 = r1; prev2 = r2; prevVad = vad; tLast = now;
         }
-        delay(40);
+        vTaskDelay(40 / portTICK_PERIOD_MS);
     }
+    client.stop();
+    vTaskDelete(NULL);
 }
 
-static void handleDebugSensorsSse() {
-    WiFiClient client = server.client();
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/event-stream");
-    client.println("Cache-Control: no-cache");
-    client.println("Connection: keep-alive");
-    client.println("Access-Control-Allow-Origin: *");
-    client.println();
+static void handleDebugMicSse() {
+    WiFiClient* client = new WiFiClient(server.client());
+    client->println("HTTP/1.1 200 OK");
+    client->println("Content-Type: text/event-stream");
+    client->println("Cache-Control: no-cache");
+    client->println("Connection: keep-alive");
+    client->println("Access-Control-Allow-Origin: *");
+    client->println();
+    xTaskCreatePinnedToCore(sseMicTask, "sseMic", 4096, client, 1, NULL, 1);
+}
 
+static void sseSensorsTask(void* arg) {
+    WiFiClient client = *reinterpret_cast<WiFiClient*>(arg);
+    delete reinterpret_cast<WiFiClient*>(arg);
     uint8_t prevB1 = 255, prevB2 = 255, prevB3 = 255, prevB4 = 255;
     bool prevConn = false;
     unsigned long tLast = 0;
-
-    while (client.connected()) {
+    while (client.connected() && connected) {
         bool conn = connected;
         uint8_t b1 = furbyState.rawB1, b2 = furbyState.rawB2,
                 b3 = furbyState.rawB3, b4 = furbyState.rawB4;
@@ -1449,8 +1448,21 @@ static void handleDebugSensorsSse() {
             prevB1 = b1; prevB2 = b2; prevB3 = b3; prevB4 = b4;
             prevConn = conn; tLast = now;
         }
-        delay(40);
+        vTaskDelay(80 / portTICK_PERIOD_MS);
     }
+    client.stop();
+    vTaskDelete(NULL);
+}
+
+static void handleDebugSensorsSse() {
+    WiFiClient* client = new WiFiClient(server.client());
+    client->println("HTTP/1.1 200 OK");
+    client->println("Content-Type: text/event-stream");
+    client->println("Cache-Control: no-cache");
+    client->println("Connection: keep-alive");
+    client->println("Access-Control-Allow-Origin: *");
+    client->println();
+    xTaskCreatePinnedToCore(sseSensorsTask, "sseSensors", 4096, client, 1, NULL, 1);
 }
 
 static void handleDebugAmp() {
