@@ -18,11 +18,11 @@
   <div class="card shadow-sm mb-3">
     <div class="card-body p-2">
       <div class="ratio ratio-4x3 bg-black rounded overflow-hidden">
-        <img id="camimg" src="/camera/stream" alt="camera" style="object-fit:contain">
+        <img id="camimg" src="" alt="camera" style="object-fit:contain">
       </div>
       <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-        <span class="text-muted small flex-fill" id="cam-status" data-i18n="cam.streaming">Streaming MJPEG attivo</span>
-        <button class="btn btn-outline-secondary px-3" id="btn-tog" onclick="toggleStream()" data-i18n="cam.pause"><i class="bi bi-pause-fill"></i> Pausa</button>
+        <span class="text-muted small flex-fill" id="cam-status" data-i18n="cam.paused">Stream spento</span>
+        <button class="btn btn-outline-secondary px-3" id="btn-tog" onclick="toggleStream()" data-i18n="cam.resume"><i class="bi bi-play-fill"></i> Avvia</button>
       </div>
       <div class="mt-2">
         <div class="d-flex align-items-center gap-2 mb-2">
@@ -154,7 +154,7 @@
 
 <script src="/bootstrap.bundle.min.js"></script>
 <script>
-var running=true;
+var running=false;
 function toggleStream(){
   running=!running;
   var img=document.getElementById('camimg');
@@ -305,6 +305,11 @@ fetch('/api/home').then(function(r){return r.json();}).then(function(d){
 window.addEventListener('beforeunload',function(){
   document.getElementById('camimg').src='';
   navigator.sendBeacon('/camera/off');
+});
+document.addEventListener('visibilitychange',function(){
+  var img=document.getElementById('camimg');
+  if(document.hidden){img.src='';}
+  else if(running){img.src='/camera/stream?t='+Date.now();}
 });
 (function(){var sel=document.getElementById('lang-sel-shared');if(sel)sel.value=localStorage.getItem('furby_lang')||'it';})();
 </script>

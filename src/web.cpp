@@ -1608,7 +1608,7 @@ static void mjpegTask(void* arg) {
         client.write(fb->buf, fb->len);
         client.print("\r\n");
         esp_camera_fb_return(fb);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(66 / portTICK_PERIOD_MS); // ~15 fps
     }
     client.stop();
     mjpegTaskHandle = NULL;
