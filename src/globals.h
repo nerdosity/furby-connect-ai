@@ -308,6 +308,8 @@ extern int           camFlicker;         // 0=nessuno, 50=50Hz, 60=60Hz
 extern int           camGainCeiling;     // 0-6 (GAINCEILING_2X..GAINCEILING_128X)
 extern int           camBrightness;      // -2..+2
 extern int           camAgc;            // 1=auto, 0=manual
+extern volatile uint32_t camLastUsed;
+void camTouch();
 // Array in PSRAM - allocato in setup() via gEventBehaviorsInit()
 extern EventBehavior* gEventBehaviors;
 extern int            gEventBehaviorCount;

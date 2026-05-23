@@ -1559,6 +1559,7 @@ static void handleCamDescribe() {
     if (!camActive && !camInit()) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"camera non disponibile\"}"); return;
     }
+    camTouch();
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"frame non disponibile\"}"); return;
@@ -1584,6 +1585,7 @@ static void handleCameraPage() {
 static void handleCameraFrame() {
     HTTP_LOG();
     if (!camActive && !camInit()) { server.send(503, "text/plain", "camera non disponibile"); return; }
+    camTouch();
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) { server.send(503, "text/plain", "frame non disponibile"); return; }
     server.sendHeader("Cache-Control", "no-store");
@@ -1608,6 +1610,7 @@ static void mjpegTask(void* arg) {
         client.write(fb->buf, fb->len);
         client.print("\r\n");
         esp_camera_fb_return(fb);
+        camTouch();
         vTaskDelay(66 / portTICK_PERIOD_MS); // ~15 fps
     }
     client.stop();

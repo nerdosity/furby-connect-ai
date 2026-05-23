@@ -339,7 +339,11 @@ bool camInit() {
     else              { cam.frame_size = FRAMESIZE_QQVGA; cam.jpeg_quality = 12;                cam.fb_count = 1; cam.fb_location = CAMERA_FB_IN_DRAM; }
     camActive = (esp_camera_init(&cam) == ESP_OK);
     Serial.println(camActive ? "CAM: init OK" : "CAM: init FALLITA");
-    if (camActive) camApplyExposure(camGainCeiling, camBrightness, camAgc);
+    if (camActive) {
+        camApplySettings(camStreamSize, camStreamQuality);
+        camApplyFlicker(camFlicker);
+        camApplyExposure(camGainCeiling, camBrightness, camAgc);
+    }
     return camActive;
 }
 

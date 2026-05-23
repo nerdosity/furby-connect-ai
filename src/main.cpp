@@ -87,10 +87,6 @@ void setup() {
     loadBehaviorConfigs();
     loadEventBehaviors();
 
-    camInit();
-    camApplySettings(camStreamSize, camStreamQuality);
-    camApplyFlicker(camFlicker);
-
     // I2C - after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
     pinMode(I2C_SCL_PIN, OUTPUT);
     for (int i = 0; i < 9; i++) {
@@ -172,6 +168,15 @@ void setup() {
     }
 }
 
+// ── Camera auto-sleep ─────────────────────────────────────────────────────────
+// Traccia l'ultimo accesso alla camera; chiamata dagli handler web che usano la cam.
+volatile uint32_t camLastUsed = 0;
+void camTouch() { camLastUsed = millis(); }
+static void camAutoSleep() {
+    if (!camActive) return;
+    if (camLastUsed && millis() - camLastUsed > 30000) camDeinit();
+}
+
 // ── CPU frequency throttling ──────────────────────────────────────────────────
 static void cpuThrottle() {
     static uint8_t curMhz = 240;
@@ -213,6 +218,7 @@ void loop() {
             }, "Stimulus", 16384, (void*)arg, 1, NULL, 1);
         }
     }
+    camAutoSleep();
     cpuThrottle();
     vTaskDelay(1);
 }

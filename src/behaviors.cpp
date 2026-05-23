@@ -417,6 +417,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
 
     String base64Img;
     if (camActive || camInit()) {
+        camTouch();
         camApplySettings(camSnapSize, camSnapQuality);
         camera_fb_t* fb = esp_camera_fb_get();
         if (fb) {
@@ -511,6 +512,7 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
 
     String base64Img;
     if (camActive || camInit()) {
+        camTouch();
         camApplySettings(camSnapSize, camSnapQuality);
         camera_fb_t* fb = esp_camera_fb_get();
         if (fb) {
