@@ -183,7 +183,7 @@ static void cpuThrottle() {
     } else {
         // scende a 80MHz solo dopo 10s di idle
         if (curMhz == 240 && millis() - idleSince > 10000) {
-            setCpuFrequencyMhz(80); curMhz = 80;
+            setCpuFrequencyMhz(160); curMhz = 160;
         }
     }
 }
