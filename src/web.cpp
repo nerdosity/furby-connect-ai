@@ -1384,10 +1384,7 @@ static void sseMicTask(void* arg) {
         bool vad = micVadActive;
         unsigned long now = millis();
         if (r1 != prev1 || r2 != prev2 || vad != prevVad || now - tLast >= 2000) {
-            client.print("data:{\"rms1\":" + String(r1) +
-                         ",\"rms2\":" + String(r2) +
-                         ",\"vad\":" + String(vad ? "true" : "false") +
-                         ",\"threshold\":" + String(vad_threshold) + "}\n\n");
+            client.print("data:[" + String(r1) + "," + String(r2) + "," + String(vad?1:0) + "]\n\n");
             prev1 = r1; prev2 = r2; prevVad = vad; tLast = now;
         }
         vTaskDelay(40 / portTICK_PERIOD_MS);
