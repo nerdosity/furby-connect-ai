@@ -324,7 +324,6 @@ function setLang(l){
   <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-configs" data-i18n="tab.configs">Configurazioni</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
@@ -444,18 +443,6 @@ function setLang(l){
       <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button></div>
     </div>
     <div id="dlc-log" class="bg-dark text-light rounded p-2 small scroll-box-sm" style="display:none"></div>
-  </div></div>
-</div>
-
-<!-- TAB: Configurazioni -->
-<div class="tab-pane fade" id="t-configs">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3">Personalità salvate</h6>
-    <div id="pl-list" class="mb-3"></div>
-    <div class="d-flex gap-2">
-      <input type="text" class="form-control form-control-sm flex-fill" id="pl-new-name" placeholder="Nome nuova personalità">
-      <button class="btn btn-success px-3" onclick="plNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
-    </div>
   </div></div>
 </div>
 
