@@ -117,9 +117,9 @@
         <label class="form-label" data-i18n="llm.label_key">Token API</label>
         <input type="text" class="form-control form-control-sm" name="api_key" id="tok" oninput="llmKeyChange()" onblur="llmKeyBlur()">
       </div>
-      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary px-3" id="llm-save-btn" disabled data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva configurazione AI</button>
-        <button type="button" class="btn btn-outline-secondary px-3" id="llm-test-btn" disabled onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-lightning"></i> Test</button>
+      <div class="row g-2 mt-2">
+        <div class="col-6"><button type="submit" class="btn btn-primary px-3 w-100" id="llm-save-btn" disabled data-i18n="llm.btn_save"><i class="bi bi-floppy"></i> Salva</button></div>
+        <div class="col-6"><button type="button" class="btn btn-outline-secondary px-3 w-100" id="llm-test-btn" disabled onclick="testLlm()" data-i18n="llm.btn_test"><i class="bi bi-lightning"></i> Test</button></div>
       </div>
       <div id="llm-test-result" class="mt-2"></div>
     </form>
@@ -156,9 +156,9 @@
         </div>
         <div id="fmt-hint" class="form-text mt-1"></div>
       </div>
-      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-        <button type="submit" class="btn btn-primary px-3" id="el-save-btn" disabled data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva ElevenLabs</button>
-        <button type="button" class="btn btn-outline-secondary px-3" id="el-test-btn" disabled onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-lightning"></i> Test</button>
+      <div class="row g-2 mt-2">
+        <div class="col-6"><button type="submit" class="btn btn-primary px-3 w-100" id="el-save-btn" disabled data-i18n="el.btn_save"><i class="bi bi-floppy"></i> Salva</button></div>
+        <div class="col-6"><button type="button" class="btn btn-outline-secondary px-3 w-100" id="el-test-btn" disabled onclick="testEl()" data-i18n="el.btn_test"><i class="bi bi-lightning"></i> Test</button></div>
       </div>
       <div id="el-test-result" class="mt-2"></div>
     </form>
@@ -211,10 +211,8 @@
       <span class="fb-dot fb-dot-warn" id="stt-dot"></span>
       <span class="fw-semibold" id="stt-label" data-i18n="sys.loading">carico...</span>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-      <p class="text-muted small mb-0 flex-fill" data-i18n="stt.desc">Trascrive il parlato con Whisper prima di passarlo all'LLM.</p>
-      <button class="btn btn-outline-secondary px-3" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i> STT</button>
-    </div>
+    <p class="text-muted small mb-2" data-i18n="stt.desc">Trascrive il parlato con Whisper prima di passarlo all'LLM.</p>
+    <button class="btn btn-outline-secondary px-3 w-100" onclick="sttToggle()" id="btn-stt-tog"><i class="bi bi-soundwave"></i> STT</button>
   </div>
 </div>
 

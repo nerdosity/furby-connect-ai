@@ -44,14 +44,20 @@ void setup() {
     llm_provider        = preferences.getString("llm_prov",  "openai");
     llm_model           = preferences.getString("llm_model", "gpt-4o-mini");
     openai_api_key = preferences.getString("openai", "");
-    if (openai_api_key.length() == 0)
+    if (openai_api_key.length() == 0) {
         openai_api_key = preferences.getString("openai_key", "");
+        if (openai_api_key.length() > 0) { preferences.putString("openai", openai_api_key); preferences.remove("openai_key"); }
+    }
     claude_api_key = preferences.getString("claude", "");
-    if (claude_api_key.length() == 0)
+    if (claude_api_key.length() == 0) {
         claude_api_key = preferences.getString("claude_key", "");
-    elevenlabs_api_key  = preferences.getString("11labs",    "");
-    if (elevenlabs_api_key.length() == 0)
+        if (claude_api_key.length() > 0) { preferences.putString("claude", claude_api_key); preferences.remove("claude_key"); }
+    }
+    elevenlabs_api_key = preferences.getString("11labs", "");
+    if (elevenlabs_api_key.length() == 0) {
         elevenlabs_api_key = preferences.getString("11labs_key", "");
+        if (elevenlabs_api_key.length() > 0) { preferences.putString("11labs", elevenlabs_api_key); preferences.remove("11labs_key"); }
+    }
     elevenlabs_voice_id = preferences.getString("11labs_vid","pNInz6obpgDQGcFmaJcg");
     el_audio_fmt        = preferences.getString("11labs_fmt","pcm");
     ble_service_uuid    = preferences.getString("ble_svc",  BLE_SVC_DEFAULT);
@@ -71,6 +77,7 @@ void setup() {
     camGainCeiling   = preferences.getInt("cam_gc",  0);
     camBrightness    = preferences.getInt("cam_br",  0);
     camAgc           = preferences.getInt("cam_agc", 1);
+    Serial.printf("[NVS] entry usate: %u/128\n", preferences.freeEntries() < 128 ? 128 - preferences.freeEntries() : 0);
     preferences.end(); // chiude handle globale - da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),

@@ -425,7 +425,7 @@ function setLang(l){
     <div class="row g-2 mb-3">
       <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button></div>
       <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button></div>
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button></div>
+      <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button></div>
     </div>
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
     <div class="d-flex gap-2 align-items-center mb-2">
@@ -462,11 +462,9 @@ function setLang(l){
       <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(1760)"><i class="bi bi-music-note"></i> 1760 Hz</button></div>
       <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(4000)"><i class="bi bi-music-note"></i> 4 kHz</button></div>
     </div>
-    <div class="d-flex gap-2 align-items-end">
-      <div class="flex-fill">
-        <label class="form-label small" data-i18n="aud.tone_freq">Frequenza (Hz)</label>
-        <input type="number" class="form-control form-control-sm" id="tone-freq" value="440" min="20" max="20000">
-      </div>
+    <label class="form-label small" data-i18n="aud.tone_freq">Frequenza (Hz)</label>
+    <div class="input-group">
+      <input type="number" class="form-control form-control-sm" id="tone-freq" value="440" min="20" max="20000">
       <button class="btn btn-warning px-3" onclick="tonePlay(null)" data-i18n="aud.tone_play"><i class="bi bi-play-fill"></i> Play</button>
     </div>
     <div id="tone-result" class="small mt-2 text-muted"></div>
@@ -495,8 +493,8 @@ function setLang(l){
       <input type="number" class="form-control form-control-sm" id="dbg-vad-num" min="0" max="32767" value="800" style="width:90px" oninput="dbgVadNumInput(this.value)">
     </div>
     <div class="row g-2">
+      <div class="col-6"><button class="btn btn-secondary px-3 w-100 disabled" id="vad-badge"><i class="bi bi-mic-mute"></i> Silenzio</button></div>
       <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva</button></div>
-      <div class="col-6 d-flex align-items-center"><span id="vad-badge" class="badge bg-secondary">Silenzio</span></div>
     </div>
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
@@ -514,10 +512,10 @@ function setLang(l){
 <div class="tab-pane fade" id="t-raw">
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
-    <div class="d-flex gap-2">
-      <input type="text" class="form-control form-control-sm font-monospace flex-fill" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
-      <button class="btn btn-success px-3" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
-      <button class="btn btn-primary px-3" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
+    <input type="text" class="form-control form-control-sm font-monospace mb-2" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
+    <div class="row g-2">
+      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button></div>
     </div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
@@ -575,15 +573,15 @@ function setLang(l){
 
   <!-- ── Selezione/editing personalità ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-      <h6 class="text-uppercase text-muted fw-bold small mb-0 me-auto">Personalità</h6>
-      <select class="form-select form-select-sm" id="pers-sel" style="max-width:220px" onchange="persSelChange()"></select>
-      <span id="pers-active-badge" class="badge bg-success" style="display:none">Attiva</span>
+    <!-- riga selezione + azioni rapide -->
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <select class="form-select form-select-sm flex-fill" id="pers-sel" onchange="persSelChange()"></select>
+      <span id="pers-active-badge" class="badge bg-success flex-shrink-0" style="display:none">Attiva</span>
+      <button class="btn btn-outline-success btn-sm px-2" onclick="persActivate()" title="Imposta attiva"><i class="bi bi-check-circle"></i></button>
+      <button class="btn btn-outline-danger btn-sm px-2" onclick="persDel()" title="Elimina"><i class="bi bi-trash3"></i></button>
+      <button class="btn btn-outline-secondary btn-sm px-2" onclick="persNew()" title="Nuova personalità"><i class="bi bi-plus-lg"></i></button>
     </div>
-    <div class="row g-2 mb-3">
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="persActivate()"><i class="bi bi-check-circle"></i> Imposta attiva</button></div>
-      <div class="col-6"><button class="btn btn-outline-danger px-3 w-100" onclick="persDel()"><i class="bi bi-trash3"></i> Elimina</button></div>
-    </div>
+    <!-- campi editor -->
     <div class="row g-2 mb-2">
       <div class="col-12 col-sm-5">
         <label class="form-label small">Nome</label>
@@ -593,17 +591,14 @@ function setLang(l){
         <label class="form-label small">Voce ElevenLabs</label>
         <div class="d-flex gap-1">
           <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">- carica voci -</option></select>
-          <button class="btn btn-outline-secondary px-3" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i></button>
+          <button class="btn btn-outline-secondary btn-sm px-2" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
         <div id="voice-load-msg" class="small text-muted mt-1"></div>
       </div>
     </div>
     <label class="form-label small">System prompt</label>
     <textarea class="form-control form-control-sm font-monospace mb-2" id="pers-prompt" rows="3" placeholder="Sei un giocattolo cinico..."></textarea>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-outline-success px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
-      <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
-    </div>
+    <button class="btn btn-success px-3 w-100" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
     <div id="pers-msg" class="small mt-1 text-muted"></div>
   </div></div>
 
@@ -1010,7 +1005,7 @@ function plDel(idx){
 function dbgRenderSel(){
   var sel=document.getElementById('dbg-pers-sel');
   sel.innerHTML=gPersonalities.map(function(p,i){
-    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name)+(i===gActivePerIdx?' ★':'')+' </option>';
+    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name||'Senza nome')+(i===gActivePerIdx?' ★':'')+' </option>';
   }).join('');
 }
 function dbgPersChange(){dbgUpdateQuickBtns();}
@@ -1036,8 +1031,10 @@ function dbgUpdateHint(){
 }
 function dbgUpdateQuickBtns(){
   var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
-  var p=gPersonalities[pi];if(!p){document.getElementById('dbg-quick-btns').innerHTML='';return;}
-  var el=document.getElementById('dbg-quick-btns');el.innerHTML='';
+  var p=gPersonalities[pi];
+  var el=document.getElementById('dbg-quick-btns');
+  if(!p||(p.behaviors||[]).length===0){el.innerHTML='<span class="text-muted small">Nessuna regola definita per questa personalità.</span>';return;}
+  el.innerHTML='';
   (p.behaviors||[]).forEach(function(b,bi){
     var btn=document.createElement('button');
     btn.className='btn btn-outline-warning btn-sm';
@@ -1315,9 +1312,9 @@ function _micApply(arr){
   document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
   document.getElementById('rms-val-l').textContent=r1;document.getElementById('rms-val-r').textContent=r2;
   var badge=document.getElementById('vad-badge');
-  if(vad){badge.textContent=t('aud.vad_speech');badge.className='badge bg-success';}
-  else if(r1>_vadThreshold||r2>_vadThreshold){badge.textContent=t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
-  else{badge.textContent=t('aud.vad_silence');badge.className='badge bg-secondary';}
+  if(vad){badge.innerHTML='<i class="bi bi-mic-fill"></i> '+t('aud.vad_speech');badge.className='btn btn-success px-3 w-100 disabled';}
+  else if(r1>_vadThreshold||r2>_vadThreshold){badge.innerHTML='<i class="bi bi-soundwave"></i> '+t('aud.vad_noise');badge.className='btn btn-warning px-3 w-100 disabled';}
+  else{badge.innerHTML='<i class="bi bi-mic-mute"></i> '+t('aud.vad_silence');badge.className='btn btn-secondary px-3 w-100 disabled';}
 }
 function startMicPoll(){
   if(_micEs)return;

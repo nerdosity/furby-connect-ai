@@ -9,10 +9,19 @@
 
 static void nvsPut(const char* key, const String& val) {
     Preferences p;
-    if (!p.begin("furby", false)) { Serial.printf("[NVS] begin fallito per key=%s\n", key); return; }
-    size_t written = p.putString(key, val);
-    if (written == 0) Serial.printf("[NVS] putString fallito key=%s len=%u\n", key, val.length());
-    p.end();
+    for (int attempt = 0; attempt < 3; attempt++) {
+        if (!p.begin("furby", false)) {
+            Serial.printf("[NVS] begin fallito key=%s tentativo=%d freeHeap=%u\n", key, attempt, ESP.getFreeHeap());
+            vTaskDelay(50 / portTICK_PERIOD_MS);
+            continue;
+        }
+        size_t written = p.putString(key, val);
+        p.end();
+        if (written > 0) return;
+        Serial.printf("[NVS] putString fallito key=%s len=%u tentativo=%d\n", key, val.length(), attempt);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+    Serial.printf("[NVS] ERRORE PERSISTENTE key=%s - dato NON salvato!\n", key);
 }
 
 static bool strToFramesize(const String& s, framesize_t& out) {
