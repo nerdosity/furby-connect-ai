@@ -170,16 +170,6 @@ static bool connectToFurbyByAddr(BLEAddress bleAddr, const String& nameHint, esp
         for (int i = 0; i < furbyListCount; i++)
             if (furbyList[i].addr == addr && furbyList[i].name != addr) { ble_last_name = furbyList[i].name; break; }
     }
-    try {
-        BLERemoteService* batSvc = pBleClient->getService(BLEUUID((uint16_t)0x180F));
-        if (batSvc) {
-            BLERemoteCharacteristic* batChar = batSvc->getCharacteristic(BLEUUID((uint16_t)0x2A19));
-            if (batChar && batChar->canRead()) {
-                std::string val = batChar->readValue();
-                if (val.length() > 0) { ble_battery_pct = (uint8_t)val[0]; Serial.printf("BLE Battery: %d%%\n", ble_battery_pct); }
-            }
-        }
-    } catch(...) {}
     Serial.println("BLE: connesso a [" + ble_last_name + "] " + ble_last_addr);
     return true;
 }
