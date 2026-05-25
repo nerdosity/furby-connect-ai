@@ -33,6 +33,7 @@ volatile bool bleConnecting    = false;
 volatile bool bleUserDisconnect = false;
 boolean  connected             = false;
 boolean  bleScanning           = false;
+SemaphoreHandle_t        bleMutex                 = nullptr;
 BLEClient*               pBleClient               = nullptr;
 BLERemoteCharacteristic* pRemoteCharacteristicTX  = nullptr;
 BLERemoteCharacteristic* pCharGPListen            = nullptr;

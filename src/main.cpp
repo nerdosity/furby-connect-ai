@@ -188,14 +188,14 @@ static void camAutoSleep() {
 static void cpuThrottle() {
     static uint8_t curMhz = 240;
     static uint32_t idleSince = 0;
+    // 240MHz durante elaborazione, 160MHz a riposo (minimo stabile con WiFi+BLE)
     bool busy = isProcessing || isSpeaking || bleConnecting || isConfigMode;
     if (busy) {
         idleSince = millis();
         if (curMhz != 240) { setCpuFrequencyMhz(240); curMhz = 240; }
     } else {
-        // scende a 80MHz solo dopo 10s di idle
-        if (curMhz == 240 && millis() - idleSince > 10000) {
-            setCpuFrequencyMhz(80); curMhz = 80;
+        if (curMhz != 160 && millis() - idleSince > 10000) {
+            setCpuFrequencyMhz(160); curMhz = 160;
         }
     }
 }

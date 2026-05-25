@@ -270,6 +270,7 @@ extern volatile bool bleConnecting;
 extern volatile bool bleUserDisconnect;
 extern boolean  connected;
 extern boolean  bleScanning;
+extern SemaphoreHandle_t        bleMutex;
 extern BLEClient*               pBleClient;
 extern BLERemoteCharacteristic* pRemoteCharacteristicTX;
 extern BLERemoteCharacteristic* pCharGPListen;

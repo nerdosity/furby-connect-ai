@@ -89,13 +89,17 @@ void bleScanStart(int durationSec) {
 
 void furbyWrite(const uint8_t* buf, size_t len) {
     if (!connected || !pRemoteCharacteristicTX) return;
+    if (!bleMutex || xSemaphoreTake(bleMutex, pdMS_TO_TICKS(200)) != pdTRUE) return;
     Serial.println("BLE TX: " + hexFmt(buf, len));
     try {
         pRemoteCharacteristicTX->writeValue((uint8_t*)buf, len, false);
     } catch (...) {
         Serial.println("BLE TX: errore write");
+        xSemaphoreGive(bleMutex);
         bleResetState();
+        return;
     }
+    xSemaphoreGive(bleMutex);
 }
 
 // ── Internal: sensor packet decoder ──────────────────────────────────────────
@@ -222,6 +226,7 @@ void lipSyncTask(void* pvParameters) {
 
 // ── BLE init helper (called from setup) ──────────────────────────────────────
 void bleInit() {
+    bleMutex = xSemaphoreCreateMutex();
     BLEDevice::init("");
     BLEDevice::getScan()->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
 }
@@ -309,7 +314,7 @@ void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur) {
         if (rule.sensorId == SEN_NONE || rule.len == 0) continue;
         if (curVals[rule.sensorId] && !prevVals[rule.sensorId]) furbyWrite(rule.bytes, rule.len);
     }
-    if (!isProcessing && !wakeUpTriggered) {
+    if (!isProcessing && !wakeUpTriggered && gPersonalityPrompt.length() > 0) {
         for (int s = 1; s < SEN_COUNT; s++) {
             if (curVals[s] && !prevVals[s]) {
                 pendingTrigger = TRG_SENSOR; pendingSensorId = (uint8_t)s;
