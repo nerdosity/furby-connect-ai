@@ -346,7 +346,7 @@ function dbBleScan(){_dbBleStopIdle();document.getElementById('db-ble-list').inn
 function dbBleConn(addr){_dbBleStopIdle();var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});dbBleConnPoll();}).catch(function(){});}
 function dbBleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){dbBleApplyAndSchedule(d);if(d.connecting)setTimeout(dbBleConnPoll,800);}).catch(function(){setTimeout(dbBleConnPoll,1000);});}
 function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(dbBlePoll).catch(function(){});}
+function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(function(){setTimeout(dbBlePoll,600);}).catch(function(){});}
 function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
 dbBlePoll();

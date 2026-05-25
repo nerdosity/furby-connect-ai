@@ -11,6 +11,21 @@ String base64Encode(uint8_t* data, size_t length) {
     return result;
 }
 
+static String jsonEscape(const String& s) {
+    String out;
+    out.reserve(s.length() + 32);
+    for (size_t i = 0; i < s.length(); i++) {
+        char c = s[i];
+        if      (c == '"')  out += "\\\"";
+        else if (c == '\\') out += "\\\\";
+        else if (c == '\n') out += "\\n";
+        else if (c == '\r') out += "\\r";
+        else if (c == '\t') out += "\\t";
+        else                out += c;
+    }
+    return out;
+}
+
 // Builds JSON payload in PSRAM to avoid exhausting internal heap (~80-100KB with base64)
 String callLLM(const String& base64Img, const String& systemPrompt, const String& userText) {
     Serial.printf("[LLM] provider=%s model=%s img=%u char heap=%u PSRAM=%u\n",
@@ -30,17 +45,19 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         return buf;
     };
 
+    http.setTimeout(30000);
+
     if (llm_provider == "openai") {
         http.begin(client, "https://api.openai.com/v1/chat/completions");
         http.addHeader("Content-Type", "application/json");
         http.addHeader("Authorization", "Bearer " + openai_api_key);
 
-        String userContent = "[{\"type\":\"text\",\"text\":\"" + userText + "\"}";
+        String userContent = "[{\"type\":\"text\",\"text\":\"" + jsonEscape(userText) + "\"}";
         if (base64Img.length() > 0)
             userContent += ",{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/jpeg;base64," + base64Img + "\"}}";
         userContent += "]";
         String body = "{\"model\":\"" + llm_model + "\",\"messages\":["
-            "{\"role\":\"system\",\"content\":\"" + systemPrompt + "\"},"
+            "{\"role\":\"system\",\"content\":\"" + jsonEscape(systemPrompt) + "\"},"
             "{\"role\":\"user\",\"content\":" + userContent + "}]}";
         uint8_t* buf = makePsramPayload(body);
         body = "";
@@ -65,12 +82,12 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
         http.addHeader("x-api-key", claude_api_key);
         http.addHeader("anthropic-version", "2023-06-01");
 
-        String claudeContent = "[{\"type\":\"text\",\"text\":\"" + userText + "\"}";
+        String claudeContent = "[{\"type\":\"text\",\"text\":\"" + jsonEscape(userText) + "\"}";
         if (base64Img.length() > 0)
             claudeContent += ",{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"" + base64Img + "\"}}";
         claudeContent += "]";
         String body = "{\"model\":\"" + llm_model + "\",\"max_tokens\":128,"
-            "\"system\":\"" + systemPrompt + "\","
+            "\"system\":\"" + jsonEscape(systemPrompt) + "\","
             "\"messages\":[{\"role\":\"user\",\"content\":" + claudeContent + "}]}";
         uint8_t* buf = makePsramPayload(body);
         body = "";

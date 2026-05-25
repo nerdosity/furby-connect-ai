@@ -197,7 +197,7 @@ void keepAliveTask(void* pvParameters) {
     for (;;) {
         if (connected) {
             if (pBleClient && !pBleClient->isConnected()) { bleResetState(); }
-            else {
+            else if (!isProcessing) {
                 furbyWrite(ka, sizeof(ka));
                 if (ble_last_name == ble_last_addr) {
                     for (int i = 0; i < furbyListCount; i++)
