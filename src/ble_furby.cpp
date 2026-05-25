@@ -293,6 +293,7 @@ void loadBehaviorConfigs() {
     if (deserializeJson(doc, raw) != DeserializationError::Ok) return;
     activeBehaviorConfig = doc["active"] | 0;
     behaviorConfigCount  = 0;
+    bool migrated = false;
     for (JsonObject c : doc["configs"].as<JsonArray>()) {
         if (behaviorConfigCount >= MAX_CONFIGS) break;
         BehaviorConfig& cfg = behaviorConfigs[behaviorConfigCount++];
@@ -301,13 +302,20 @@ void loadBehaviorConfigs() {
         int ri = 0;
         for (JsonObject ro : c["rules"].as<JsonArray>()) {
             if (ri >= MAX_CFG_RULES) break;
-            cfg.rules[ri].sensorId = ro["s"] | 0;
-            cfg.rules[ri].len      = ro["l"] | 0;
+            uint8_t s = ro["s"] | 0;
+            uint8_t l = ro["l"] | 0;
+            uint8_t bs[6] = {};
             int bi = 0;
-            for (int v : ro["b"].as<JsonArray>()) if (bi < 6) cfg.rules[ri].bytes[bi++] = (uint8_t)v;
+            for (int v : ro["b"].as<JsonArray>()) if (bi < 6) bs[bi++] = (uint8_t)v;
+            // migrazione: scarta le regole legacy hardcoded (primo byte 0x14)
+            if (l > 0 && bs[0] == 0x14) { migrated = true; continue; }
+            cfg.rules[ri].sensorId = s;
+            cfg.rules[ri].len      = l;
+            memcpy(cfg.rules[ri].bytes, bs, 6);
             ri++;
         }
     }
+    if (migrated) { Serial.println("BLE: migrate regole legacy rimosse"); saveBehaviorConfigs(); }
 }
 
 void applyBehaviorRules(const FurbySensors& prev, const FurbySensors& cur) {
