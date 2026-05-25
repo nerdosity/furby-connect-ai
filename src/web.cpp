@@ -51,7 +51,7 @@ static void httpLog() {
     String uri = server.uri();
     // skippa polling frequente e risorse statiche
     if (uri == "/sys/info" || uri == "/debug/mic/rms" || uri == "/debug/sensors" ||
-        uri == "/ble/status" || uri == "/debug/mic/sse" || uri == "/debug/sensors/sse" ||
+        uri == "/ble/status" || uri == "/ble/status/sse" || uri == "/debug/mic/sse" || uri == "/debug/sensors/sse" ||
         uri.endsWith(".map")) return;
     String args;
     for (int i = 0; i < server.args(); i++) {
@@ -730,6 +730,52 @@ static void handleBleStatus() {
     }
     String j; serializeJson(d, j);
     server.send(200, "application/json", j);
+}
+
+static void sseBleTask(void* arg) {
+    WiFiClient client = *reinterpret_cast<WiFiClient*>(arg);
+    delete reinterpret_cast<WiFiClient*>(arg);
+    bool prevConn = !connected, prevScan = !bleScanning, prevConnecting = !bleConnecting;
+    int  prevBat  = -99;
+    unsigned long tLast = 0;
+    while (client.connected()) {
+        bool conn = connected, scan = bleScanning, conn2 = bleConnecting;
+        int  bat  = ble_battery_pct;
+        unsigned long now = millis();
+        bool changed = conn != prevConn || scan != prevScan || conn2 != prevConnecting || bat != prevBat;
+        if (changed || now - tLast >= 5000) {
+            JsonDocument d;
+            d["connected"]  = conn;
+            d["scanning"]   = scan;
+            d["connecting"] = conn2;
+            d["name"]       = ble_last_name;
+            d["battery"]    = bat;
+            d["uptime"]     = now / 1000;
+            d["ble_uptime"] = conn ? (now - bleConnectedMs) / 1000 : 0;
+            JsonArray devs = d["devices"].to<JsonArray>();
+            for (int i = 0; i < furbyListCount; i++) {
+                JsonObject o = devs.add<JsonObject>();
+                o["name"] = furbyList[i].name; o["addr"] = furbyList[i].addr;
+            }
+            String j; serializeJson(d, j);
+            client.print("data:" + j + "\n\n");
+            prevConn = conn; prevScan = scan; prevConnecting = conn2; prevBat = bat; tLast = now;
+        }
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+    }
+    client.stop();
+    vTaskDelete(NULL);
+}
+
+static void handleBleStatusSse() {
+    WiFiClient* client = new WiFiClient(server.client());
+    client->println("HTTP/1.1 200 OK");
+    client->println("Content-Type: text/event-stream");
+    client->println("Cache-Control: no-cache");
+    client->println("Connection: keep-alive");
+    client->println("Access-Control-Allow-Origin: *");
+    client->println();
+    xTaskCreatePinnedToCore(sseBleTask, "sseBle", 4096, client, 1, NULL, 1);
 }
 
 static void handleBleConnect() {
@@ -1702,6 +1748,7 @@ void startWebServer() {
     server.on("/ble/scan",       HTTP_POST, handleBleScan);
     server.on("/ble/scan/stop",  HTTP_POST, handleBleScanStop);
     server.on("/ble/status",     HTTP_GET,  handleBleStatus);
+    server.on("/ble/status/sse", HTTP_GET,  handleBleStatusSse);
     server.on("/ble/connect",    HTTP_POST, handleBleConnect);
     server.on("/ble/disconnect", HTTP_POST, handleBleDisconnect);
     server.on("/ble/abort",      HTTP_POST, handleBleAbort);

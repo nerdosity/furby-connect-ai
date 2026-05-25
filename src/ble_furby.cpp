@@ -27,6 +27,17 @@ class MyClientCallback : public BLEClientCallbacks {
   void onDisconnect(BLEClient*) {
       bleResetState();
       Serial.println("BLE: Furby disconnesso.");
+      if (!bleUserDisconnect && ble_last_addr.length() > 0) {
+          // reconnect automatico: schedula senza bloccare la callback
+          pendingConnAddr     = ble_last_addr;
+          pendingConnName     = ble_last_name;
+          pendingConnAddrType = BLE_ADDR_TYPE_RANDOM;
+          for (int i = 0; i < furbyListCount; i++)
+              if (furbyList[i].addr == ble_last_addr) { pendingConnAddrType = furbyList[i].addrType; break; }
+          doConnect = true;
+          Serial.println("BLE: reconnect automatico schedulato.");
+      }
+      bleUserDisconnect = false;
   }
 };
 
@@ -94,9 +105,10 @@ void furbyWrite(const uint8_t* buf, size_t len) {
     try {
         pRemoteCharacteristicTX->writeValue((uint8_t*)buf, len, false);
     } catch (...) {
-        Serial.println("BLE TX: errore write");
+        Serial.println("BLE TX: errore write - connessione persa");
         xSemaphoreGive(bleMutex);
         bleResetState();
+        if (!bleUserDisconnect && ble_last_addr.length() > 0) doConnect = true;
         return;
     }
     xSemaphoreGive(bleMutex);
@@ -194,6 +206,7 @@ void keepAliveTask(void* pvParameters) {
         if (pBleClient && !pBleClient->isConnected()) {
             bleResetState();
             Serial.println("BLE: connessione persa (watchdog).");
+            if (!bleUserDisconnect && ble_last_addr.length() > 0) doConnect = true;
             continue;
         }
         furbyWrite(ka, sizeof(ka));

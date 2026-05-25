@@ -997,19 +997,22 @@ function dbBleApply(d){
     }else{lst.innerHTML='';}
   }
 }
-var _dbBleIdleIv=null;
-function _dbBleStartIdle(){if(_dbBleIdleIv)return;_dbBleIdleIv=setInterval(dbBlePoll,30000);}
-function _dbBleStopIdle(){if(_dbBleIdleIv){clearInterval(_dbBleIdleIv);_dbBleIdleIv=null;}}
-function dbBleApplyAndSchedule(d){dbBleApply(d);if(d.connected||d.scanning||d.connecting)_dbBleStopIdle();else _dbBleStartIdle();}
-function dbBlePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(dbBleApplyAndSchedule).catch(function(){});}
-function dbBleScan(){_dbBleStopIdle();document.getElementById('db-ble-list').innerHTML='';dbBleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
-function dbBleConn(addr){_dbBleStopIdle();var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});dbBleConnPoll();}).catch(function(){});}
-function dbBleConnPoll(){fetch('/ble/status').then(function(r){return r.json();}).then(function(d){dbBleApplyAndSchedule(d);if(d.connecting)setTimeout(dbBleConnPoll,800);}).catch(function(){setTimeout(dbBleConnPoll,1000);});}
+var _bleEs=null;
+function _bleEsStart(){
+  if(_bleEs)return;
+  _bleEs=new EventSource('/ble/status/sse');
+  _bleEs.onmessage=function(e){try{dbBleApply(JSON.parse(e.data));}catch(ex){}};
+  _bleEs.onerror=function(){_bleEs.close();_bleEs=null;setTimeout(_bleEsStart,3000);};
+}
+function _bleEsStop(){if(_bleEs){_bleEs.close();_bleEs=null;}}
+function dbBlePoll(){fetch('/ble/status').then(function(r){return r.json();}).then(dbBleApply).catch(function(){});}
+function dbBleScan(){document.getElementById('db-ble-list').innerHTML='';dbBleApply({connected:false,scanning:true,name:'',devices:[]});fetch('/ble/scan',{method:'POST'}).catch(function(){});}
+function dbBleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/ble/connect',{method:'POST',body:fd}).then(function(){dbBleApply({connected:false,connecting:true,scanning:false,name:'',devices:[]});}).catch(function(){});}
 function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(function(){setTimeout(dbBlePoll,600);}).catch(function(){});}
 function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
-dbBlePoll();
+_bleEsStart();
 
 function log(msg){var el=document.getElementById('log');if(el)el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;else console.log(msg);}
 function wbCmd(label,bytes){espCmd(label,bytes);}
