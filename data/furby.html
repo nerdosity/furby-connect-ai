@@ -1111,7 +1111,7 @@ var ACTIONS_WORLD=[
 function buildActGrid(id,actions){
   var el=document.getElementById(id);
   actions.forEach(function(a){
-    var b=document.createElement('button');b.className='btn btn-primary act-btn px-3';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[0]+' - '+a[4];
+    var b=document.createElement('button');b.className='btn btn-primary act-btn px-3';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[4];
     b.title='[0x13,0x00,'+a[0]+','+a[1]+','+a[2]+','+a[3]+']';
     b.onclick=function(){wbCmd(a[4],[0x13,0x00,a[0],a[1],a[2],a[3]]);};el.appendChild(b);
   });
