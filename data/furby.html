@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html><html lang="it"><head>
 <meta charset="UTF-8"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Furby Debug</title>
+<title>FurbyMind - Furby</title>
 <link rel="stylesheet" href="/bootstrap.min.css">
 <link rel="stylesheet" href="/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/shared.css">
@@ -10,8 +10,7 @@ var TRANSLATIONS={
     'nav.config':'Configurazione','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Riavviare l\'ESP32?',
     'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
-    'tab.configs':'Configurazioni','tab.raw':'Raw / Log','tab.audio':'Audio',
-    'tab.files':'File SPIFFS','tab.persona':'Personalità',
+    'tab.persona':'Personalità',
     'sen.title':'Stato sensori','sen.ant_l':'Antenna sx','sen.ant_r':'Antenna dx',
     'sen.ant_f':'Antenna avanti','sen.ant_b':'Antenna indietro',
     'sen.tickle_head':'Tickle testa','sen.tickle_tummy':'Tickle pancia',
@@ -37,45 +36,6 @@ var TRANSLATIONS={
     'ctrl.eyes_on':'Occhi ON','ctrl.eyes_off':'Occhi OFF',
     'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Imposta mood',
     'ctrl.system':'Sistema','ctrl.dlc':'DLC slot',
-    'aud.amp':'Amplificatore & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
-    'aud.amp_on':'amplificatore attivo','aud.amp_off':'amplificatore spento',
-    'aud.tone':'Test casse (sine wave)',
-    'aud.tone_dur':'Durata (ms) - tutte le frequenze',
-    'aud.tone_freq':'Frequenza personalizzata (Hz)',
-    'aud.tone_play':'<i class="bi bi-play-fill"></i> Play',
-    'aud.mic':'Microfoni live','aud.mic_desc':'RMS live - L=MIC1, R=MIC2',
-    'vad.label_thresh':'Soglia VAD (RMS 0-32767, default 800)',
-    'aud.vad_speech':'Parlato rilevato','aud.vad_noise':'Rumore','aud.vad_silence':'Silenzio',
-    'aud.rec':'Registra e riproduci (3 secondi)',
-    'aud.rec_desc':'Parla per 3 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
-    'aud.rec_btn':'<i class="bi bi-mic"></i> Registra 3s e riproduci',
-    'aud.rec_running':'Registrazione 3s in corso...','aud.rec_countdown':'Registrazione... ',
-    'aud.rec_playing':'Riproduzione in corso...','aud.rec_done':'Fatto.',
-    'aud.tone_sending':'Invio tono...',
-    'aud.tts_browser_hint':'Web Speech API - voce di sistema, nessuna API',
-    'aud.tts_board_hint':'ElevenLabs via ESP32 - usa la voce configurata',
-    'aud.loading':'Carico config...',
-    'aud.el_nokey':'API key ElevenLabs non configurata.',
-    'aud.el_synth':'Sintesi in corso...','aud.el_playing':'<i class="bi bi-play-fill"></i> Riproduzione in corso...',
-    'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Aggiorna','fm.header_name':'File','fm.header_size':'Dim.',
-    'fm.loading':'carico...','fm.no_files':'Nessun file','fm.net_err':'Errore di rete',
-    'fm.save':'<i class="bi bi-floppy"></i> Salva','fm.close':'Chiudi',
-    'fm.upload_title':'Carica file',
-    'fm.upload_path':'Percorso (es. /config.json)',
-    'fm.upload_file':'File da PC','fm.upload_btn':'<i class="bi bi-upload"></i> Carica',
-    'fm.upload_missing':'Inserisci percorso e seleziona file.',
-    'fm.upload_ok':'Caricato in ','fm.saving':'Salvo...',
-    'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete','fm.protected':'File protetto - non modificabile dalla UI',
-    'fm.del_confirm':'Eliminare',
-    'cfg.title':'Configurazioni comportamento',
-    'cfg.new_placeholder':'Nome nuova configurazione',
-    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> Nuova','cfg.rules_label':'Regole - ',
-    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Aggiungi regola','cfg.activate':'<i class="bi bi-check-circle"></i> Attiva',
-    'cfg.del_confirm':'Eliminare questa configurazione?',
-    'cfg.new_default':'Nuova config','cfg.action_placeholder':'Scegli azione','cfg.rules_full':'Tutti i 16 slot sono occupati',
-    'raw.title':'Comando raw (hex bytes separati da spazio)',
-    'raw.placeholder':'es. 13 00 27 03 08 01',
-    'raw.log':'Log','raw.no_bytes':'raw: nessun byte valido',
     'ble_bar.connected':'Connesso: ','ble_bar.connecting':'Connessione...',
     'ble_bar.scanning':'Scansione BLE...','ble_bar.not_connected':'BLE: non connesso',
     'ble_bar.found_so_far':'Trovati finora:','ble_bar.furby_found':'Furby trovati:',
@@ -140,8 +100,7 @@ var TRANSLATIONS={
     'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Restart the ESP32?',
     'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
-    'tab.configs':'Configs','tab.raw':'Raw / Log','tab.audio':'Audio',
-    'tab.files':'SPIFFS Files','tab.persona':'Personality',
+    'tab.persona':'Personality',
     'sen.title':'Sensor state','sen.ant_l':'Antenna left','sen.ant_r':'Antenna right',
     'sen.ant_f':'Antenna forward','sen.ant_b':'Antenna back',
     'sen.tickle_head':'Tickle head','sen.tickle_tummy':'Tickle tummy',
@@ -167,45 +126,6 @@ var TRANSLATIONS={
     'ctrl.eyes_on':'Eyes ON','ctrl.eyes_off':'Eyes OFF',
     'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Set mood',
     'ctrl.system':'System','ctrl.dlc':'DLC slot',
-    'aud.amp':'Amplifier & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
-    'aud.amp_on':'amplifier active','aud.amp_off':'amplifier off',
-    'aud.tone':'Speaker test (sine wave)',
-    'aud.tone_dur':'Duration (ms) - all frequencies',
-    'aud.tone_freq':'Custom frequency (Hz)',
-    'aud.tone_play':'<i class="bi bi-play-fill"></i> Play',
-    'aud.mic':'Live microphones','aud.mic_desc':'Live RMS - L=MIC1, R=MIC2',
-    'vad.label_thresh':'Sensitivity threshold (RMS 0-32767, default 800)',
-    'aud.vad_speech':'Speech detected','aud.vad_noise':'Noise','aud.vad_silence':'Silence',
-    'aud.rec':'Record and play back (3 seconds)',
-    'aud.rec_desc':'Speak for 3 seconds. The ESP32 records and plays back through speakers (MIC1+MIC2 mix).',
-    'aud.rec_btn':'<i class="bi bi-mic"></i> Record 3s and play',
-    'aud.rec_running':'Recording 3s...','aud.rec_countdown':'Recording... ',
-    'aud.rec_playing':'Playing back...','aud.rec_done':'Done.',
-    'aud.tone_sending':'Sending tone...',
-    'aud.tts_browser_hint':'Web Speech API - system voice, no API needed',
-    'aud.tts_board_hint':'ElevenLabs via ESP32 - uses configured voice',
-    'aud.loading':'Loading config...',
-    'aud.el_nokey':'ElevenLabs API key not configured.',
-    'aud.el_synth':'Synthesising...','aud.el_playing':'<i class="bi bi-play-fill"></i> Playing back...',
-    'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Refresh','fm.header_name':'File','fm.header_size':'Size',
-    'fm.loading':'loading...','fm.no_files':'No files','fm.net_err':'Network error',
-    'fm.save':'<i class="bi bi-floppy"></i> Save','fm.close':'Close',
-    'fm.upload_title':'Upload file',
-    'fm.upload_path':'Path (e.g. /config.json)',
-    'fm.upload_file':'File from PC','fm.upload_btn':'<i class="bi bi-upload"></i> Upload',
-    'fm.upload_missing':'Enter path and select file.',
-    'fm.upload_ok':'Uploaded to ','fm.saving':'Saving...',
-    'fm.load_err':'Load error','fm.net_err2':'Network error','fm.protected':'Protected file - cannot be modified from UI',
-    'fm.del_confirm':'Delete',
-    'cfg.title':'Behavior configurations',
-    'cfg.new_placeholder':'New configuration name',
-    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> New','cfg.rules_label':'Rules - ',
-    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Add rule','cfg.activate':'<i class="bi bi-check-circle"></i> Activate',
-    'cfg.del_confirm':'Delete this configuration?',
-    'cfg.new_default':'New config','cfg.action_placeholder':'Choose action','cfg.rules_full':'All 16 slots are used',
-    'raw.title':'Raw command (hex bytes space-separated)',
-    'raw.placeholder':'e.g. 13 00 27 03 08 01',
-    'raw.log':'Log','raw.no_bytes':'raw: no valid bytes',
     'ble_bar.connected':'Connected: ','ble_bar.connecting':'Connecting...',
     'ble_bar.scanning':'BLE scanning...','ble_bar.not_connected':'BLE: not connected',
     'ble_bar.found_so_far':'Found so far:','ble_bar.furby_found':'Furby found:',
@@ -284,53 +204,45 @@ function setLang(l){
     var keys=['ant_l','ant_r','ant_f','ant_b','tickle_head','tickle_tummy','tickle_r','tickle_l','pull_tail','push_tongue','upright','upside_down','side_r','side_l','lean_back','tilt_r','tilt_l'];
     keys.forEach(function(k,i){var o=document.createElement('option');o.value=i+1;o.textContent=t('beh.sensor.'+k);senSel.appendChild(o);});
   }
+  if(gBehaviors&&gBehaviors.length)behRender();
 }
 (function(){gLang=localStorage.getItem('furby_lang')||'it';})();
 </script>
 </head>
 <body><div id="fb-loader"><div class="fb-spinner"></div></div>
 <script src="/shared.js"></script>
-<script>renderNav('debug');</script>
+<script>renderNav('furby');</script>
 
-<div id="sys-info-bar" data-i18n="sys.loading">carico info sistema...</div>
 
-<!-- BLE bar -->
+<!-- ── BLE bar ─────────────────────────────────────────────────────────────── -->
 <div class="ble-bar">
   <div class="ble-dot" id="wb-dot"></div>
-  <span id="wb-label" class="fw-semibold" data-i18n="ble.not_connected">BLE: non connesso</span>
+  <span id="wb-label" class="fw-semibold">BLE: non connesso</span>
   <span id="wb-battery" class="text-muted small ms-2"></span>
   <span id="ble-uptime" class="text-muted small ms-1" style="display:none"></span>
   <div class="ms-auto d-flex gap-1">
-    <button id="btn-scan"  class="btn btn-primary px-3"   onclick="dbBleScan()"  data-i18n="ble.scan"><i class="bi bi-bluetooth"></i> Cerca</button>
-    <button id="btn-stop"  class="btn btn-danger px-3"    onclick="dbBleStop()"  style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop</button>
-    <button id="btn-abort" class="btn btn-danger px-3"    onclick="dbBleAbort()" style="display:none" data-i18n="ble.abort"><i class="bi bi-x-octagon"></i> Abort</button>
-    <button id="btn-disc"  class="btn btn-danger px-3"    onclick="dbBleDisc()"  style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disc</button>
-    <button id="btn-rst"   class="btn btn-warning px-3"   onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i> Riconnetti</button>
+    <button id="btn-scan"  class="btn btn-primary px-3"  onclick="dbBleScan()"><i class="bi bi-bluetooth"></i> Cerca</button>
+    <button id="btn-stop"  class="btn btn-danger px-3"   onclick="dbBleStop()"  style="display:none"><i class="bi bi-stop-fill"></i> Stop</button>
+    <button id="btn-abort" class="btn btn-danger px-3"   onclick="dbBleAbort()" style="display:none"><i class="bi bi-x-octagon"></i> Abort</button>
+    <button id="btn-disc"  class="btn btn-danger px-3"   onclick="dbBleDisc()"  style="display:none"><i class="bi bi-x-circle"></i> Disc</button>
+    <button id="btn-rst"   class="btn btn-warning px-3"  onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i></button>
   </div>
 </div>
 <div id="db-ble-list" class="px-3 py-1 bg-light border-bottom small"></div>
 
-<!-- volume bar -->
-<div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border-bottom">
-  <i class="bi bi-volume-down text-muted flex-shrink-0"></i>
-  <input type="range" class="form-range flex-fill" id="vol-bar" min="0" max="100" value="75" oninput="volBarChange(this.value)" onchange="volSend(this.value)">
-  <i class="bi bi-volume-up text-muted flex-shrink-0"></i>
-  <span id="vol-bar-val" class="text-muted small flex-shrink-0" style="min-width:34px;text-align:right">75%</span>
-</div>
-
-<!-- tabs -->
-<ul class="nav nav-tabs flex-nowrap" id="debugTabs" style="overflow-x:auto;overflow-y:hidden">
-  <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
+<!-- ── Tabs Furby ─────────────────────────────────────────────────────────── -->
+<ul class="nav nav-tabs flex-nowrap" id="furbyTabs" style="overflow-x:auto;overflow-y:hidden">
+  <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#ft-sensors">Sensori</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#ft-actions">Azioni</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#ft-control">Controllo</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#ft-persona">Personalita</a></li>
 </ul>
 <div class="tab-content">
 
 <!-- TAB: Sensori -->
-<div class="tab-pane fade show active" id="t-sensors">
+<div class="tab-pane fade show active" id="ft-sensors">
+<!-- TAB: Sensori -->
+<div>
   <div class="card shadow-sm">
     <div class="card-body">
       <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small class="text-secondary fw-normal" id="sensor-age">-</small></h6>
@@ -357,9 +269,12 @@ function setLang(l){
     </div>
   </div>
 </div>
+</div>
 
 <!-- TAB: Azioni -->
-<div class="tab-pane fade" id="t-actions">
+<div class="tab-pane fade" id="ft-actions">
+<!-- TAB: Azioni -->
+<div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.direct">Interazione diretta</h6>
     <div class="act-grid" id="act-grid-direct"></div>
@@ -384,11 +299,14 @@ function setLang(l){
       <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
     </div>
   </div></div>
-  <div class="card shadow-sm mb-3 border-warning"><div class="card-body"><h6 class="text-uppercase fw-bold small mb-1 text-warning"><i class="bi bi-lightning-charge"></i> Simulatore eventi</h6><p class="text-muted small mb-2">Pannello personalit&#224;, regole e simulatore nella pagina Furby.</p><div class="d-grid d-sm-flex gap-2 justify-content-sm-end"><a class="btn btn-warning px-3" href="/furby"><i class="bi bi-arrow-right-circle"></i> Vai a Furby</a></div></div></div>
+
+</div>
 </div>
 
 <!-- TAB: Controllo -->
-<div class="tab-pane fade" id="t-control">
+<div class="tab-pane fade" id="ft-control">
+<!-- TAB: Controllo -->
+<div>
   <!-- LED -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
@@ -437,148 +355,556 @@ function setLang(l){
     <div id="dlc-log" class="bg-dark text-light rounded p-2 small scroll-box-sm" style="display:none"></div>
   </div></div>
 </div>
-
-<!-- TAB: Audio -->
-<div class="tab-pane fade" id="t-audio">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.tone">Test casse (sine wave)</h6>
-    <div class="mb-3">
-      <label class="form-label small" data-i18n="aud.tone_dur">Durata (ms)</label>
-      <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
-    </div>
-    <div class="row g-2 mb-3">
-      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="tonePlay(220)"><i class="bi bi-music-note"></i> 220 Hz</button></div>
-      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="tonePlay(440)"><i class="bi bi-music-note"></i> 440 Hz (La)</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(880)"><i class="bi bi-music-note"></i> 880 Hz</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(1000)"><i class="bi bi-music-note"></i> 1 kHz</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(1760)"><i class="bi bi-music-note"></i> 1760 Hz</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="tonePlay(4000)"><i class="bi bi-music-note"></i> 4 kHz</button></div>
-    </div>
-    <label class="form-label small" data-i18n="aud.tone_freq">Frequenza (Hz)</label>
-    <div class="input-group">
-      <input type="number" class="form-control form-control-sm" id="tone-freq" value="440" min="20" max="20000">
-      <button class="btn btn-warning px-3" onclick="tonePlay(null)" data-i18n="aud.tone_play"><i class="bi bi-play-fill"></i> Play</button>
-    </div>
-    <div id="tone-result" class="small mt-2 text-muted"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.mic">Microfoni live</h6>
-    <p class="text-muted small mb-2" data-i18n="aud.mic_desc">RMS live - L=MIC1, R=MIC2</p>
-    <div class="row g-3 mb-2">
-      <div class="col">
-        <div class="small text-muted mb-1">MIC1 (L)</div>
-        <div class="progress progress-sm"><div id="rms-bar-l" class="progress-bar" style="width:0%"></div></div>
-        <div id="rms-val-l" class="small text-muted mt-1">0</div>
-      </div>
-      <div class="col">
-        <div class="small text-muted mb-1">MIC2 (R)</div>
-        <div class="progress progress-sm"><div id="rms-bar-r" class="progress-bar bg-success" style="width:0%"></div></div>
-        <div id="rms-val-r" class="small text-muted mt-1">0</div>
-      </div>
-    </div>
-    <hr class="my-3">
-    <label class="form-label small fw-semibold" data-i18n="vad.label_thresh">Soglia VAD (RMS 0-32767, default 800)</label>
-    <div class="d-flex align-items-center gap-2 mt-1 mb-2">
-      <span class="text-muted small">0</span>
-      <input type="range" class="form-range flex-fill" id="dbg-vad-slider" min="0" max="32767" step="50" value="800" oninput="dbgVadSliderInput(this.value)">
-      <span class="text-muted small">32767</span>
-      <input type="number" class="form-control form-control-sm" id="dbg-vad-num" min="0" max="32767" value="800" style="width:90px" oninput="dbgVadNumInput(this.value)">
-    </div>
-    <div class="row g-2">
-      <div class="col-6"><button class="btn btn-secondary px-3 w-100 disabled" id="vad-badge"><i class="bi bi-mic-mute"></i> Silenzio</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva</button></div>
-    </div>
-    <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
-    <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
-    </div>
-    <div id="rec-result" class="small mt-2 text-muted"></div>
-  </div></div>
 </div>
 
-<!-- TAB: Raw / Log -->
-<div class="tab-pane fade" id="t-raw">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
-    <input type="text" class="form-control form-control-sm font-monospace mb-2" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
-    <div class="row g-2">
-      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button></div>
-    </div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.log">Log</h6>
-    <div class="bg-dark text-light rounded p-2 small scroll-box" id="log"></div>
-  </div></div>
-</div>
+<!-- TAB: Personalita -->
+<div class="tab-pane fade" id="ft-persona"><!-- TAB: Personalità (editor unificato + debug) -->
+<div class="px-0">
 
-<!-- TAB: File SPIFFS -->
-<div class="tab-pane fade" id="t-files">
+  <!-- ── Selezione/editing personalità ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-3">
-      <span class="text-muted small" id="fm-quota">-</span>
-      <button class="btn btn-success px-3 ms-auto" onclick="fmLoad()" data-i18n="fm.refresh"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
+    <!-- riga selezione + azioni rapide -->
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <select class="form-select form-select-sm flex-fill" id="pers-sel" onchange="persSelChange()"></select>
+      <span id="pers-active-badge" class="badge bg-success flex-shrink-0" style="display:none">Attiva</span>
+      <button class="btn btn-outline-success btn-sm px-2" onclick="persActivate()" title="Imposta attiva"><i class="bi bi-check-circle"></i></button>
+      <button class="btn btn-outline-danger btn-sm px-2" onclick="persDel()" title="Elimina"><i class="bi bi-trash3"></i></button>
+      <button class="btn btn-outline-secondary btn-sm px-2" onclick="persNew()" title="Nuova personalità"><i class="bi bi-plus-lg"></i></button>
     </div>
-    <div class="table-responsive">
-      <table class="table table-sm table-hover">
-        <thead class="table-light"><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th colspan="3"></th></tr></thead>
-        <tbody id="fm-tbody"><tr><td colspan="5" class="text-center text-muted" data-i18n="fm.loading">carico...</td></tr></tbody>
-      </table>
-    </div>
-  </div></div>
-  <div class="card shadow-sm mb-3" id="fm-editor-card" style="display:none"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" id="fm-editor-title">Editor</h6>
-    <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-success px-3" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
-      <button class="btn btn-outline-secondary px-3" onclick="fmEditorClose()" data-i18n="fm.close"><i class="bi bi-x-lg"></i> Chiudi</button>
-    </div>
-    <div id="fm-editor-msg" class="small mt-1 text-muted"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="fm.upload_title">Carica file</h6>
-    <div class="row g-2 align-items-end">
-      <div class="col-12 col-md-4">
-        <label class="form-label small" data-i18n="fm.upload_path">Percorso</label>
-        <input type="text" class="form-control form-control-sm font-monospace" id="fm-up-path" placeholder="/nomefile.txt">
+    <!-- campi editor -->
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-sm-5">
+        <label class="form-label small">Nome</label>
+        <input type="text" class="form-control form-control-sm" id="pers-name" placeholder="Nome personalità">
       </div>
-      <div class="col-12 col-md-5">
-        <label class="form-label small" data-i18n="fm.upload_file">File da PC</label>
-        <input type="file" class="form-control form-control-sm" id="fm-up-file" onchange="document.getElementById('fm-up-btn').disabled=!this.files.length">
-      </div>
-      <div class="col-12 col-md-3">
-        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-          <button class="btn btn-warning px-3" id="fm-up-btn" onclick="fmUpload()" disabled data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
+      <div class="col-12 col-sm-7">
+        <label class="form-label small">Voce ElevenLabs</label>
+        <div class="d-flex gap-1">
+          <select class="form-select form-select-sm flex-fill" id="pers-voice"><option value="">- carica voci -</option></select>
+          <button class="btn btn-outline-secondary btn-sm px-2" onclick="voiceLoad()" id="btn-voice-load"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
+        <div id="voice-load-msg" class="small text-muted mt-1"></div>
       </div>
     </div>
-    <div id="fm-up-msg" class="small mt-2 text-muted"></div>
+    <label class="form-label small">System prompt</label>
+    <textarea class="form-control form-control-sm font-monospace mb-2" id="pers-prompt" rows="3" placeholder="Sei un giocattolo cinico..."></textarea>
+    <button class="btn btn-success px-3 w-100" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
+    <div id="pers-msg" class="small mt-1 text-muted"></div>
   </div></div>
+
+  <!-- ── Lista regole (stile HA) ── -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2">Regole - quando → allora</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-12"><button class="btn btn-success px-3 w-100" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button></div>
+      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button></div>
+      <div class="col-6"><label class="btn btn-warning px-3 mb-0 w-100 text-center"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label></div>
+    </div>
+    <div id="beh-list"></div>
+    <div id="beh-msg" class="small mt-2 text-muted"></div>
+  </div></div>
+
+  <!-- ── Editor regola inline ── -->
+  <div class="card shadow-sm mb-3 border-primary" id="beh-editor" style="display:none"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" id="beh-editor-title">Nuova regola</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-sm-4">
+        <label class="form-label small fw-semibold">Quando</label>
+        <select class="form-select form-select-sm" id="beh-trg" onchange="behTrgChange()">
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
+        </select>
+      </div>
+      <div class="col-12 col-sm-4" id="beh-sensor-wrap" style="display:none">
+        <label class="form-label small">Sensore</label>
+        <select class="form-select form-select-sm" id="beh-sensor"></select>
+      </div>
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Nome regola</label>
+        <input type="text" class="form-control form-control-sm" id="beh-name" placeholder="es. Tocco testa">
+      </div>
+    </div>
+    <label class="form-label small fw-semibold mt-1">Allora (1-3 conseguenze in sequenza):</label>
+    <div id="csq-list" class="mb-2"></div>
+    <div id="csq-add-btn-wrap">
+      <button class="btn btn-outline-success px-3 mb-3" id="csq-add-btn" onclick="csqAdd()"><i class="bi bi-plus-lg"></i> Aggiungi conseguenza</button>
+    </div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-outline-secondary px-3" onclick="behEditorClose()"><i class="bi bi-x-lg"></i> Annulla</button>
+      <button class="btn btn-primary px-3" onclick="behSave()"><i class="bi bi-floppy"></i> Salva regola</button>
+    </div>
+  </div></div>
+
+  <!-- ── Pannello debug ── -->
+  <div class="card shadow-sm mb-3 border-warning"><div class="card-body">
+    <h6 class="text-uppercase fw-bold small mb-1 text-warning"><i class="bi bi-lightning-charge-fill"></i> Debug - simulatore eventi</h6>
+    <p class="text-muted small mb-3">Simula stimoli senza Furby fisico. BLE loggato ma non inviato. TTS e LLM funzionano normalmente (o li skippa con la checkbox).</p>
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Personalità da testare</label>
+        <select class="form-select form-select-sm" id="dbg-pers-sel" onchange="dbgPersChange()"></select>
+      </div>
+      <div class="col-12 col-sm-4">
+        <label class="form-label small">Trigger</label>
+        <select class="form-select form-select-sm" id="dbg-trg" onchange="dbgTrgChange()">
+          <option value="0">VAD (parlato)</option>
+          <option value="1">Pulsante ESP32</option>
+          <option value="2">Sensore Furby</option>
+        </select>
+      </div>
+      <div class="col-12 col-sm-4" id="dbg-sensor-wrap" style="display:none">
+        <label class="form-label small">Sensore</label>
+        <select class="form-select form-select-sm" id="dbg-sensor" onchange="dbgUpdateHint()"></select>
+      </div>
+    </div>
+    <div id="dbg-vad-wrap" class="mb-2">
+      <label class="form-label small">Testo VAD simulato <span class="text-muted">(opzionale)</span></label>
+      <input type="text" class="form-control form-control-sm" id="dbg-vad-text" placeholder="es. Ciao Furby, come stai?">
+    </div>
+    <div id="dbg-rule-hint" class="small text-info mb-2"></div>
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" id="dbg-skip-llm" role="switch">
+      <label class="form-check-label small" for="dbg-skip-llm">Salta chiamate LLM <span class="text-muted">(mostra prompt, risparmia token)</span></label>
+    </div>
+    <!-- Pulsanti rapidi per stimoli configurati -->
+    <div class="mb-3">
+      <div class="small text-muted mb-1">Stimoli rapidi per questa personalità:</div>
+      <div id="dbg-quick-btns" class="d-flex flex-wrap gap-2"></div>
+    </div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-warning px-3" onclick="dbgRun()" id="btn-dbg-run"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    </div>
+    <div id="dbg-msg" class="small mt-2 text-muted"></div>
+    <pre id="dbg-log" class="bg-dark text-light rounded p-2 mt-2 small scroll-box-lg" style="display:none"></pre>
+  </div></div>
+
+  <!-- Test LLM diretto -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1">Test LLM diretto</h6>
+    <p class="text-muted small mb-2">Invia un messaggio al modello con il prompt della personalità attiva (senza foto)</p>
+    <textarea class="form-control form-control-sm font-monospace mb-2" id="test-llm-text" rows="2" placeholder="Cosa pensi del meteo oggi?"></textarea>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+      <button class="btn btn-primary px-3" onclick="testLlmSend()"><i class="bi bi-send"></i> Invia</button>
+    </div>
+    <div id="test-llm-resp" class="mt-2 p-3 rounded border bg-light small font-monospace" style="display:none;white-space:pre-wrap"></div>
+    <div id="test-llm-msg" class="small mt-1 text-muted"></div>
+  </div></div>
+
+  <!-- Test TTS -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-1">Test TTS</h6>
+    <textarea class="form-control form-control-sm font-monospace mb-3" id="test-tts-text" rows="2" placeholder="Ciao, sono un Furby cinico."></textarea>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-browser" value="browser" checked onchange="ttsPanelDestChange()">
+        <label class="btn btn-outline-primary px-3" for="tts-dest-browser"><i class="bi bi-display"></i> Browser</label>
+        <input type="radio" class="btn-check" name="tts-panel-dest" id="tts-dest-board" value="board" onchange="ttsPanelDestChange()">
+        <label class="btn btn-outline-primary px-3" for="tts-dest-board"><i class="bi bi-broadcast"></i> ESP32</label>
+      </div>
+      <span id="tts-panel-hint" class="text-muted small">Web Speech API</span>
+      <button class="btn btn-success px-3 ms-auto" onclick="testTtsSend()"><i class="bi bi-play-fill"></i> Riproduci</button>
+    </div>
+    <div id="test-tts-msg" class="small mt-2 text-muted"></div>
+  </div></div>
+</div>
+
+</div>
+
 </div>
 
 </div><!-- /tab-content -->
 
 <script src="/bootstrap.bundle.min.js"></script>
 <script>
-document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(el){
+document.querySelectorAll('#furbyTabs [data-bs-toggle="tab"]').forEach(function(el){
   el.addEventListener('shown.bs.tab',function(e){
     var id=e.target.getAttribute('href').replace('#','');
-    if(id==='t-audio'){startMicPoll();dbgVadLoad();}else stopMicPoll();
-    if(id==='t-sensors')startSensorsSse();
-    if(id==='t-files')fmLoad();
+    if(id==='ft-sensors')startSensorsSse();else stopSensorsSse();
+    if(id==='ft-persona')persLoad();
   });
 });
-var gActions=[];
+// ── Globals ───────────────────────────────────────────────────────────────────
+var gPersonalities=[],gActivePerIdx=0,gEditPerIdx=0;
+var gBehaviors=[],gActions=[],gEditIdx=-1;
 var SENSOR_NAMES=['-','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro','Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua','Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
 var CSQ_LABELS={1:'Azione Furby',2:'TTS fisso',3:'Prompt fisso→LLM',4:'LLM risponde',5:'LLM sceglie azione'};
 var CSQ_COLORS={1:'info',2:'success',3:'warning',4:'primary',5:'danger'};
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function sMsg(id,txt,cls){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='small mt-1 text-'+(cls||'muted');if(txt)setTimeout(function(){el.textContent='';el.className='small mt-1 text-muted';},3000);}
+
+// ── Voci ElevenLabs ───────────────────────────────────────────────────────────
+var gVoicesLoading=false;
+// onDone(voiceId): callback opzionale chiamato dopo popolamento; se null mantiene selezione corrente
+function voiceLoad(onDone){
+  if(gVoicesLoading)return;
+  gVoicesLoading=true;
+  var btn=document.getElementById('btn-voice-load'),msg=document.getElementById('voice-load-msg'),sel=document.getElementById('pers-voice');
+  var saveBtn=document.querySelector('[onclick="persSave()"]');
+  sel.disabled=true;btn.disabled=true;if(saveBtn)saveBtn.disabled=true;
+  msg.textContent='...';
+  fetch('/test/voices').then(function(r){return r.json();}).then(function(d){
+    gVoicesLoading=false;
+    sel.disabled=false;btn.disabled=false;if(saveBtn)saveBtn.disabled=false;
+    if(!d.ok||!d.voices||!d.voices.length){sMsg('voice-load-msg','Nessuna voce','warning');return;}
+    var prev=onDone?null:sel.value;
+    sel.innerHTML='';
+    d.voices.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.name;sel.appendChild(o);});
+    if(onDone)onDone(sel);
+    else if(prev)sel.value=prev;
+    sMsg('voice-load-msg',d.voices.length+' voci','success');
+  }).catch(function(){
+    gVoicesLoading=false;
+    sel.disabled=false;btn.disabled=false;if(saveBtn)saveBtn.disabled=false;
+    sMsg('voice-load-msg','Errore connessione','danger');
+  });
+}
+
+// ── Personalità multi-profilo ─────────────────────────────────────────────────
+function persLoad(){
+  fetch('/behaviors/actions').then(r=>r.json()).then(function(d){gActions=d;});
+  fetch('/personalities').then(r=>r.json()).then(function(d){
+    gPersonalities=d.personalities||[];
+    gActivePerIdx=d.active||0;
+    gEditPerIdx=gActivePerIdx;
+    persRenderSel();
+    persRenderEditPanel();
+    dbgRenderSel();
+    dbgUpdateQuickBtns();
+  });
+}
+function persRenderSel(){
+  var sel=document.getElementById('pers-sel');
+  sel.innerHTML=gPersonalities.map(function(p,i){
+    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name||'Senza nome')+'</option>';
+  }).join('');
+}
+function persSelChange(){
+  gEditPerIdx=parseInt(document.getElementById('pers-sel').value);
+  persRenderEditPanel();
+}
+function persRenderEditPanel(){
+  if(gPersonalities.length===0)return;
+  var p=gPersonalities[gEditPerIdx];
+  document.getElementById('pers-name').value=p.name||'';
+  document.getElementById('pers-prompt').value=p.prompt||'';
+  var badge=document.getElementById('pers-active-badge');
+  badge.style.display=(gEditPerIdx===gActivePerIdx)?'':'none';
+  gBehaviors=p.behaviors||[];
+  behRender();
+  // imposta voce nel select - se non ancora caricate, carica prima poi imposta
+  var sel=document.getElementById('pers-voice');
+  var vid=p.voice_id||'';
+  if(sel.options.length<=1){
+    voiceLoad(function(s){if(vid)s.value=vid;});
+  } else {
+    if(vid)sel.value=vid;
+  }
+}
+function persNew(){
+  var nm=prompt('Nome nuova personalità:');if(!nm||!nm.trim())return;
+  var fd=new FormData();fd.append('name',nm.trim());
+  fetch('/personalities/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gEditPerIdx=d.idx;persLoad();}else sMsg('pers-msg','Errore','danger');
+  });
+}
+function persSave(){
+  if(gPersonalities.length===0||gVoicesLoading)return;
+  csqCollect();
+  var p=gPersonalities[gEditPerIdx];
+  p.name=document.getElementById('pers-name').value.trim()||p.name;
+  p.prompt=document.getElementById('pers-prompt').value;
+  p.voice_id=document.getElementById('pers-voice').value;
+  p.behaviors=gBehaviors;
+  var payload={active:gActivePerIdx,personalities:gPersonalities};
+  fetch('/personalities/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).then(function(d){
+    sMsg('pers-msg',d.ok?'Salvato.':'Errore.',d.ok?'success':'danger');
+    if(d.ok)persLoad();
+  });
+}
+function persActivate(){
+  var fd=new FormData();fd.append('idx',gEditPerIdx);
+  fetch('/personalities/activate',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gActivePerIdx=gEditPerIdx;persRenderEditPanel();sMsg('pers-msg','Personalità attiva impostata.','success');}
+  });
+}
+function persDel(){
+  if(gPersonalities.length<=1){sMsg('pers-msg','Impossibile eliminare l\'unica personalità.','warning');return;}
+  if(!confirm('Eliminare "'+gPersonalities[gEditPerIdx].name+'"?'))return;
+  var fd=new FormData();fd.append('idx',gEditPerIdx);
+  fetch('/personalities/del',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(d.ok){gEditPerIdx=0;persLoad();}
+  });
+}
+function behExport(){
+  if(gPersonalities.length===0)return;
+  var blob=new Blob([JSON.stringify(gPersonalities[gEditPerIdx],null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='personality_'+gEditPerIdx+'.json';a.click();
+}
+function behImport(inp){
+  var f=inp.files[0];if(!f)return;
+  var rd=new FileReader();rd.onload=function(e){
+    try{var p=JSON.parse(e.target.result);gPersonalities[gEditPerIdx]=p;gBehaviors=p.behaviors||[];behRender();persSave();}
+    catch(ex){sMsg('beh-msg','JSON non valido','danger');}
+  };rd.readAsText(f);
+}
+
+// ── Lista comportamenti ───────────────────────────────────────────────────────
+function trgLabel(b){
+  if(b.trigger===2)return 'Sensore: '+(SENSOR_NAMES[b.sensor_id]||b.sensor_id);
+  return ['VAD','Pulsante','Sensore'][b.trigger]||'?';
+}
+function behRender(){
+  var el=document.getElementById('beh-list');
+  if(!gBehaviors||!gBehaviors.length){el.innerHTML='<div class="text-muted small py-2">Nessun comportamento configurato.</div>';return;}
+  el.innerHTML=gBehaviors.map(function(b,i){
+    var csqBadges=(b.consequences||[]).map(function(c,ci){
+      var col=CSQ_COLORS[c.type]||'secondary',lbl=CSQ_LABELS[c.type]||'?',det='';
+      if(c.type===1&&c.action_id){var act=gActions.find(function(a){return a.id===c.action_id;});det=act?act.label:c.action_id;}
+      else if((c.type===2||c.type===3||c.type===4)&&c.text)det=c.text.substring(0,30)+(c.text.length>30?'…':'');
+      else if(c.type===5)det=c.snapshot?'📷':'';
+      var snap=((c.type===3||c.type===4||c.type===5)&&c.snapshot)?'<i class="bi bi-camera ms-1"></i>':'';
+      return '<span class="badge text-bg-'+col+' me-1">'+lbl+(det?': '+det:'')+snap+'</span>';
+    }).join('<i class="bi bi-arrow-right text-muted mx-1"></i>');
+    return '<div class="d-flex align-items-start gap-2 py-2 border-bottom flex-wrap">'
+      +'<div class="flex-fill">'
+      +'<span class="badge bg-dark me-2">'+trgLabel(b)+'</span>'
+      +'<span class="fw-semibold small">'+esc(b.name)+'</span>'
+      +'<div class="mt-1">'+csqBadges+'</div>'
+      +'</div>'
+      +'<div class="d-flex gap-1 flex-shrink-0">'
+      +'<button class="btn btn-outline-secondary btn-sm" onclick="behEdit('+i+')"><i class="bi bi-pencil"></i></button>'
+      +'<button class="btn btn-danger btn-sm" onclick="behDel('+i+')"><i class="bi bi-trash3"></i></button>'
+      +'</div></div>';
+  }).join('');
+}
+
+// ── Editor comportamento ──────────────────────────────────────────────────────
+var gEditCsqs=[];
+function behTrgChange(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var wrap=document.getElementById('beh-sensor-wrap');
+  wrap.style.display=(trg===2)?'':'none';
+  if(trg===2){
+    var sel=document.getElementById('beh-sensor'),prev=sel.value;sel.innerHTML='';
+    SENSOR_NAMES.forEach(function(n,i){if(i===0)return;var o=document.createElement('option');o.value=i;o.textContent=n;sel.appendChild(o);});
+    if(prev)sel.value=prev;
+  }
+}
+function behAdd(){
+  gEditIdx=-1;document.getElementById('beh-editor-title').textContent='Nuova regola';
+  document.getElementById('beh-trg').value=0;behTrgChange();
+  document.getElementById('beh-name').value='';gEditCsqs=[];csqRender();
+  document.getElementById('beh-editor').style.display='';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+function behEdit(i){
+  gEditIdx=i;var b=gBehaviors[i];
+  document.getElementById('beh-editor-title').textContent='Modifica: '+b.name;
+  document.getElementById('beh-trg').value=b.trigger||0;behTrgChange();
+  if(b.trigger===2)document.getElementById('beh-sensor').value=b.sensor_id||1;
+  document.getElementById('beh-name').value=b.name||'';
+  gEditCsqs=JSON.parse(JSON.stringify(b.consequences||[]));csqRender();
+  document.getElementById('beh-editor').style.display='';
+  document.getElementById('beh-editor').scrollIntoView({behavior:'smooth'});
+}
+function behEditorClose(){document.getElementById('beh-editor').style.display='none';gEditIdx=-1;gEditCsqs=[];}
+function behDel(i){if(!confirm('Eliminare "'+gBehaviors[i].name+'"?'))return;gBehaviors.splice(i,1);behRender();}
+function behSave(){
+  var trg=parseInt(document.getElementById('beh-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('beh-sensor').value||1):0;
+  var name=document.getElementById('beh-name').value.trim()||'Senza nome';
+  csqCollect();
+  var b={id:'b_'+Date.now(),trigger:trg,sensor_id:sid,name:name,consequences:gEditCsqs,consequence_count:gEditCsqs.length};
+  if(gEditIdx>=0){b.id=gBehaviors[gEditIdx].id;gBehaviors[gEditIdx]=b;}else gBehaviors.push(b);
+  behRender();behEditorClose();dbgUpdateQuickBtns();
+  sMsg('beh-msg','Regola aggiunta. Salva la personalità per renderla permanente.','warning');
+}
+
+// ── Editor conseguenze ────────────────────────────────────────────────────────
+function csqRender(){
+  var el=document.getElementById('csq-list');el.innerHTML='';
+  gEditCsqs.forEach(function(c,i){el.appendChild(csqCard(c,i));});
+  document.getElementById('csq-add-btn-wrap').style.display=gEditCsqs.length>=3?'none':'';
+}
+function csqCard(c,i){
+  var wrap=document.createElement('div');wrap.className='card mb-2';
+  var typeOpts=[
+    [1,'Azione Furby'],[2,'TTS fisso'],[3,'Prompt fisso → LLM'],[4,'LLM risponde'],[5,'LLM sceglie azione']
+  ].map(function(o){return '<option value="'+o[0]+'"'+(c.type===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  var typeSel='<select class="form-select form-select-sm w-auto" onchange="csqTypeChange('+i+',this.value)">'+typeOpts+'</select>';
+  var idx='<span class="badge bg-secondary">'+( i+1)+'</span>';
+  var del='<button class="btn btn-outline-danger btn-sm ms-auto" onclick="csqDel('+i+')"><i class="bi bi-trash3"></i></button>';
+  var body='';
+  if(c.type===1){
+    var opts=gActions.map(function(a){return '<option value="'+a.id+'"'+(c.action_id===a.id?' selected':'')+'>'+a.label+'</option>';}).join('');
+    body='<select class="form-select form-select-sm mt-2" id="csq-act-'+i+'"><option value="">-- scegli azione --</option>'+opts+'</select>';
+  } else if(c.type===2){
+    body='<textarea class="form-control form-control-sm font-monospace mt-2" id="csq-txt-'+i+'" placeholder="Testo da pronunciare" rows="2">'+esc(c.text||'')+'</textarea>';
+  } else if(c.type===3||c.type===4){
+    body='<textarea class="form-control form-control-sm font-monospace mt-2" id="csq-txt-'+i+'" placeholder="Prompt / contesto evento" rows="2">'+esc(c.text||'')+'</textarea>'
+      +'<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'"><i class="bi bi-camera"></i> Includi snapshot fotocamera</label></div>';
+  } else if(c.type===5){
+    body='<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="csq-snap-'+i+'"'+(c.snapshot?' checked':'')+'><label class="form-check-label small" for="csq-snap-'+i+'"><i class="bi bi-camera"></i> Includi snapshot fotocamera</label></div>'
+      +'<div class="text-muted small mt-1">LLM sceglierà autonomamente un\'azione dalla lista completa.</div>';
+  }
+  wrap.innerHTML='<div class="card-body py-2"><div class="d-flex align-items-center gap-2">'+idx+typeSel+del+'</div>'+body+'</div>';
+  return wrap;
+}
+function csqTypeChange(i,v){gEditCsqs[i]={type:parseInt(v),action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0};csqRender();}
+function csqDel(i){gEditCsqs.splice(i,1);csqRender();}
+function csqAdd(){if(gEditCsqs.length>=3)return;gEditCsqs.push({type:1,action_id:'',text:'',snapshot:false,reactions:[],reaction_count:0});csqRender();}
+function csqCollect(){
+  gEditCsqs.forEach(function(c,i){
+    if(c.type===1){var s=document.getElementById('csq-act-'+i);if(s)c.action_id=s.value;}
+    if(c.type===2||c.type===3||c.type===4){var tt=document.getElementById('csq-txt-'+i);if(tt)c.text=tt.value;}
+    if(c.type===3||c.type===4||c.type===5){var sn=document.getElementById('csq-snap-'+i);if(sn)c.snapshot=sn.checked;}
+    c.consequence_count=1;
+  });
+}
+
+// ── Pannello lista personalità (tab Configurazioni) ───────────────────────────
+function plLoad(){
+  fetch('/personalities').then(r=>r.json()).then(function(d){
+    gPersonalities=d.personalities||[];gActivePerIdx=d.active||0;
+    var el=document.getElementById('pl-list');el.innerHTML='';
+    gPersonalities.forEach(function(p,i){
+      var div=document.createElement('div');div.className='d-flex align-items-center gap-2 py-2 border-bottom flex-wrap';
+      div.innerHTML='<span class="fw-semibold flex-fill small">'+esc(p.name)+(i===gActivePerIdx?' <span class="badge bg-success">Attiva</span>':'')+'</span>'
+        +'<span class="text-muted small">'+(p.behaviors||[]).length+' regole</span>'
+        +'<button class="btn btn-outline-success btn-sm" onclick="plActivate('+i+')"><i class="bi bi-check-circle"></i> Attiva</button>'
+        +'<button class="btn btn-outline-secondary btn-sm" onclick="plEdit('+i+')"><i class="bi bi-pencil"></i></button>'
+        +(gPersonalities.length>1?'<button class="btn btn-danger btn-sm" onclick="plDel('+i+')"><i class="bi bi-trash3"></i></button>':'');
+      el.appendChild(div);
+    });
+  });
+}
+function plNew(){
+  var nm=document.getElementById('pl-new-name').value.trim();if(!nm)return;
+  var fd=new FormData();fd.append('name',nm);
+  fetch('/personalities/new',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    document.getElementById('pl-new-name').value='';plLoad();
+  });
+}
+function plActivate(idx){var fd=new FormData();fd.append('idx',idx);fetch('/personalities/activate',{method:'POST',body:fd}).then(plLoad);}
+function plEdit(idx){gEditPerIdx=idx;var tab=document.querySelector('a[href="#ft-persona"]');if(tab)tab.click();persLoad();}
+function plDel(idx){
+  if(!confirm('Eliminare?'))return;
+  var fd=new FormData();fd.append('idx',idx);fetch('/personalities/del',{method:'POST',body:fd}).then(plLoad);
+}
+
+// ── Debug panel ───────────────────────────────────────────────────────────────
+function dbgRenderSel(){
+  var sel=document.getElementById('dbg-pers-sel');
+  sel.innerHTML=gPersonalities.map(function(p,i){
+    return '<option value="'+i+'"'+(i===gEditPerIdx?' selected':'')+'>'+esc(p.name||'Senza nome')+(i===gActivePerIdx?' ★':'')+' </option>';
+  }).join('');
+}
+function dbgPersChange(){dbgUpdateQuickBtns();}
+function dbgTrgChange(){
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  document.getElementById('dbg-sensor-wrap').style.display=(trg===2)?'':'none';
+  document.getElementById('dbg-vad-wrap').style.display=(trg===0)?'':'none';
+  if(trg===2){
+    var sel=document.getElementById('dbg-sensor');sel.innerHTML='';
+    SENSOR_NAMES.forEach(function(n,i){if(i===0)return;var o=document.createElement('option');o.value=i;o.textContent=n;sel.appendChild(o);});
+  }
+  dbgUpdateHint();
+}
+function dbgUpdateHint(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('dbg-sensor').value||'0'):0;
+  var p=gPersonalities[pi];if(!p)return;
+  var found=null;(p.behaviors||[]).forEach(function(b){if(b.trigger===trg&&(trg!==2||b.sensor_id===sid))found=b;});
+  var el=document.getElementById('dbg-rule-hint');
+  if(found)el.innerHTML='<i class="bi bi-check-circle-fill text-success"></i> Regola trovata: <strong>'+esc(found.name)+'</strong> ('+found.consequence_count+' cons.)';
+  else el.innerHTML='<i class="bi bi-exclamation-circle text-warning"></i> Nessuna regola - verrà usato il comportamento default';
+}
+function dbgUpdateQuickBtns(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var p=gPersonalities[pi];
+  var el=document.getElementById('dbg-quick-btns');
+  if(!p||(p.behaviors||[]).length===0){el.innerHTML='<span class="text-muted small">Nessuna regola definita per questa personalità.</span>';return;}
+  el.innerHTML='';
+  (p.behaviors||[]).forEach(function(b,bi){
+    var btn=document.createElement('button');
+    btn.className='btn btn-outline-warning btn-sm';
+    var icon=b.trigger===0?'bi-mic':b.trigger===1?'bi-toggles':'bi-hand-index';
+    btn.innerHTML='<i class="bi '+icon+'"></i> '+esc(b.name);
+    btn.onclick=function(){
+      document.getElementById('dbg-pers-sel').value=pi;
+      document.getElementById('dbg-trg').value=b.trigger;dbgTrgChange();
+      if(b.trigger===2)document.getElementById('dbg-sensor').value=b.sensor_id;
+      dbgUpdateHint();dbgRun();
+    };
+    el.appendChild(btn);
+  });
+}
+function dbgRun(){
+  var pi=parseInt(document.getElementById('dbg-pers-sel').value||'0');
+  var trg=parseInt(document.getElementById('dbg-trg').value);
+  var sid=trg===2?parseInt(document.getElementById('dbg-sensor').value||'0'):0;
+  var vadText=trg===0?document.getElementById('dbg-vad-text').value:'';
+  var skipLlm=document.getElementById('dbg-skip-llm').checked;
+  var msg=document.getElementById('dbg-msg'),logEl=document.getElementById('dbg-log'),btn=document.getElementById('btn-dbg-run');
+  msg.className='small mt-2 text-muted';msg.textContent='Simulazione in corso...';logEl.style.display='none';logEl.textContent='';btn.disabled=true;
+  var fd=new FormData();fd.append('trigger',trg);fd.append('sensor_id',sid);fd.append('vad_text',vadText);fd.append('skip_llm',skipLlm?'1':'0');fd.append('personality',pi);
+  fetch('/test/simulate',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    btn.disabled=false;
+    if(d.ok){
+      msg.className='small mt-2 text-success';msg.textContent='Simulazione completata.';
+      logEl.style.display='block';logEl.textContent=d.log||'(nessun log)';logEl.scrollTop=logEl.scrollHeight;
+    } else {msg.className='small mt-2 text-danger';msg.textContent='Errore: '+(d.error||'?');}
+  }).catch(function(){btn.disabled=false;msg.className='small mt-2 text-danger';msg.textContent='Errore connessione.';});
+}
+
+// ── Test LLM / TTS ────────────────────────────────────────────────────────────
+function testLlmSend(){
+  var text=document.getElementById('test-llm-text').value.trim();if(!text)return;
+  var msg=document.getElementById('test-llm-msg'),resp=document.getElementById('test-llm-resp');
+  sMsg('test-llm-msg','Invio...');resp.style.display='none';
+  var fd=new FormData();fd.append('text',text);
+  fetch('/test/llm',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){resp.style.display='block';resp.textContent=d.response;sMsg('test-llm-msg','','muted');}
+    else sMsg('test-llm-msg','Errore: '+(d.error||'?'),'danger');
+  }).catch(function(){sMsg('test-llm-msg','Errore connessione.','danger');});
+}
+function ttsPanelDestChange(){
+  var v=document.querySelector('input[name=tts-panel-dest]:checked').value;
+  document.getElementById('tts-panel-hint').textContent=v==='browser'?t('tts_browser_hint'):t('tts_board_hint');
+}
+function testTtsSend(){
+  var text=document.getElementById('test-tts-text').value.trim();if(!text)return;
+  var msg=document.getElementById('test-tts-msg'),dest=document.querySelector('input[name=tts-panel-dest]:checked').value;
+  if(dest==='browser'){
+    sMsg('test-tts-msg','Carico config...','muted');
+    fetch('/sys/info').then(function(r){return r.json();}).then(function(cfg){
+      var key=cfg.el_key||'',vid=cfg.el_voice_id||'pNInz6obpgDQGcFmaJcg';
+      if(!key){sMsg('test-tts-msg','API key ElevenLabs non configurata.','danger');return;}
+      sMsg('test-tts-msg','Sintesi in corso...','muted');
+      fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid+'?output_format=mp3_22050_32',{
+        method:'POST',headers:{'Content-Type':'application/json','xi-api-key':key},
+        body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2'})
+      }).then(function(r){if(!r.ok)throw new Error('EL HTTP '+r.status);return r.arrayBuffer();})
+      .then(function(buf){
+        var ctx=new(window.AudioContext||window.webkitAudioContext)();
+        ctx.decodeAudioData(buf,function(decoded){
+          var src=ctx.createBufferSource();src.buffer=decoded;src.connect(ctx.destination);src.start(0);
+          sMsg('test-tts-msg','In riproduzione...','success');
+          src.onended=function(){sMsg('test-tts-msg','','muted');ctx.close();};
+        });
+      }).catch(function(e){sMsg('test-tts-msg','Errore ElevenLabs: '+e.message,'danger');});
+    }).catch(function(){sMsg('test-tts-msg','Errore connessione ESP32.','danger');});
+  } else {
+    sMsg('test-tts-msg','Invio a ElevenLabs...','muted');
+    var fd=new FormData();fd.append('text',text);
+    fetch('/test/tts',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+      sMsg('test-tts-msg',d.ok?'In riproduzione sull\'ESP32.':'Errore: '+(d.error||'?'),d.ok?'success':'danger');
+    }).catch(function(){sMsg('test-tts-msg','Errore connessione.','danger');});
+  }
+}
 
 // ── BLE mask ─────────────────────────────────────────────────────────────────
 var BLE_TIP_IT='Furby non connesso via BLE - usa la barra in alto per cercarlo e connetterlo.';
@@ -592,16 +918,15 @@ function _bsTooltipRefresh(el,msg){
 function bleMaskApply(connected){
   // selettori di tutti gli elementi BLE-dipendenti
   var bleSelectors='#act-grid-direct button,#act-grid-notes button,#act-grid-world button,'
-    +'#t-actions .btn[onclick="sendCustomAction()"],'
+    +'#ft-actions .btn[onclick="sendCustomAction()"],'
     +'#ap-in,#ap-ix,#ap-sx,#ap-sp,'
-    +'#rgb-picker,#t-control .btn[onclick="sendRgb()"],'
+    +'#rgb-picker,#ft-control .btn[onclick="sendRgb()"],'
     +'#btn-eyes,'
     +'#m-well,#m-full,#m-tire,#m-exci,'
-    +'#t-control .btn[onclick="sendMood()"],'
-    +'#t-control .btn[onclick*="espCmd"],'
-    +'#t-control .btn[onclick*="espCmdN"],'
-    +'#dlc-slot,#t-control .btn[onclick*="dlcCmd"],'
-    +'#raw-in,#t-raw .btn[onclick*="sendRaw"]';
+    +'#ft-control .btn[onclick="sendMood()"],'
+    +'#ft-control .btn[onclick*="espCmd"],'
+    +'#ft-control .btn[onclick*="espCmdN"],'
+    +'#dlc-slot,#ft-control .btn[onclick*="dlcCmd"]';
   document.querySelectorAll(bleSelectors).forEach(function(el){
     var isInput=(el.tagName==='INPUT'||el.tagName==='SELECT');
     if(connected){
@@ -618,6 +943,25 @@ function bleMaskApply(connected){
 }
 // ── /end BLE mask ─────────────────────────────────────────────────────────────
 
+// ── LLM / TTS mask ───────────────────────────────────────────────────────────
+function _maskEl(el,disabled,tipKey){
+  el.disabled=disabled;
+  if(disabled){el.title=t(tipKey);}
+  else{el.removeAttribute('title');var tt=bootstrap.Tooltip.getInstance(el);if(tt)tt.dispose();}
+}
+function llmMaskApply(hasLlm,hasEl){
+  // Test LLM diretto: textarea readonly, bottone disabilitato
+  var llmTa=document.getElementById('test-llm-text');
+  var llmBtn=document.querySelector('[onclick="testLlmSend()"]');
+  if(llmTa){llmTa.readOnly=!hasLlm;llmTa.title=hasLlm?'':t('tip.no_llm');}
+  if(llmBtn){_maskEl(llmBtn,!hasLlm,'tip.no_llm');if(!hasLlm)_bsTooltipRefresh(llmBtn,t('tip.no_llm'));}
+  // Test TTS: textarea readonly, bottone disabilitato
+  var ttsTa=document.getElementById('test-tts-text');
+  var ttsBtn=document.querySelector('[onclick="testTtsSend()"]');
+  if(ttsTa){ttsTa.readOnly=!hasEl;ttsTa.title=hasEl?'':t('tip.no_el');}
+  if(ttsBtn){_maskEl(ttsBtn,!hasEl,'tip.no_el');if(!hasEl)_bsTooltipRefresh(ttsBtn,t('tip.no_el'));}
+}
+// ── /end LLM/TTS mask ────────────────────────────────────────────────────────
 
 function dbBleApply(d){
   var dot=document.getElementById('wb-dot'),lbl=document.getElementById('wb-label');
@@ -667,7 +1011,7 @@ function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(
 function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
 dbBlePoll();
 
-function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
+function log(msg){var el=document.getElementById('log');if(el)el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;else console.log(msg);}
 function wbCmd(label,bytes){espCmd(label,bytes);}
 function espCmd(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 function espCmdN(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP-N '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
@@ -695,7 +1039,6 @@ function eyesToggle(){_eyesOn=!_eyesOn;if(_eyesOn)wbCmd('occhi-on',[0xcd,0x01]);
 function sendMood(){wbCmd('mood',[0x24,+document.getElementById('m-well').value,+document.getElementById('m-full').value,+document.getElementById('m-tire').value,+document.getElementById('m-exci').value]);}
 function dlcLog(msg){var el=document.getElementById('dlc-log');el.style.display='block';el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
 function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;var label='dlc-'+code.toString(16);var bytes=code===0x61?[code]:[code,s];var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));if(code===0x61)fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||'')));if(d.response)dlcLog(d.response);});}
-function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().split(/\s+/),bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});if(!bytes.length){log(t('raw.no_bytes'));return;}if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);}
 
 var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;
@@ -713,121 +1056,15 @@ function startSensorsSse(){
 }
 function stopSensorsSse(){if(_sensorsEs){_sensorsEs.close();_sensorsEs=null;}}
 
-var _vadThreshold=800;
-function dbgVadLoad(){
-  fetch('/api/home').then(r=>r.json()).then(function(d){
-    var v=d.vad_threshold||800;
-    _vadThreshold=v;
-    document.getElementById('dbg-vad-slider').value=v;
-    document.getElementById('dbg-vad-num').value=v;
-  }).catch(function(){});
-}
-function dbgVadSliderInput(v){document.getElementById('dbg-vad-num').value=v;}
-function dbgVadNumInput(v){var n=parseInt(v);if(!isNaN(n)&&n>=0&&n<=32767)document.getElementById('dbg-vad-slider').value=n;}
-function dbgVadSave(){
-  var v=parseInt(document.getElementById('dbg-vad-num').value);
-  if(isNaN(v)||v<0||v>32767)return;
-  var msg=document.getElementById('dbg-vad-msg');
-  msg.className='small mt-1 text-muted';msg.textContent=t('sending');
-  var fd=new FormData();fd.append('threshold',v);
-  fetch('/vad/save',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
-    if(d.ok)_vadThreshold=v;
-    msg.className='small mt-1 '+(d.ok?'text-success':'text-danger');
-    msg.textContent=d.ok?t('saved'):t('error');
-    setTimeout(function(){msg.textContent='';msg.className='small mt-1 text-muted';},2000);
-  }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent=t('error_conn');});
-}
-function volBarChange(v){document.getElementById('vol-bar-val').textContent=v+'%';}
-function volSend(v){var fd=new FormData();fd.append('vol',v);fetch('/debug/vol',{method:'POST',body:fd});}
-function tonePlay(freq){
-  var fd=new FormData();fd.append('freq',freq!=null?freq:document.getElementById('tone-freq').value);fd.append('ms',document.getElementById('tone-ms').value);
-  var res=document.getElementById('tone-result');res.textContent=t('aud.tone_sending');
-  fetch('/debug/tone',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){res.textContent=d.ok?'OK - '+d.freq+'Hz per '+d.ms+'ms':'ERR: '+(d.error||'');}).catch(function(){res.textContent='errore di rete';});
-}
-function micRecord(){
-  var btn=document.getElementById('btn-rec'),res=document.getElementById('rec-result');
-  btn.disabled=true;res.textContent=t('aud.rec_running');
-  fetch('/debug/mic/record',{method:'POST'}).then(r=>r.json()).then(function(d){
-    if(d.ok){
-      var countdown=d.duration||3,iv=setInterval(function(){res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;},3500);}},1000);
-    }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
-  }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
-}
-var _micEs=null;
-function _micApply(arr){
-  var r1=arr[0],r2=arr[1],vad=!!arr[2];
-  var p1=Math.min(100,Math.round(r1/5000*100)),p2=Math.min(100,Math.round(r2/5000*100));
-  document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
-  document.getElementById('rms-val-l').textContent=r1;document.getElementById('rms-val-r').textContent=r2;
-  var badge=document.getElementById('vad-badge');
-  if(vad){badge.innerHTML='<i class="bi bi-mic-fill"></i> '+t('aud.vad_speech');badge.className='btn btn-success px-3 w-100 disabled';}
-  else if(r1>_vadThreshold||r2>_vadThreshold){badge.innerHTML='<i class="bi bi-soundwave"></i> '+t('aud.vad_noise');badge.className='btn btn-warning px-3 w-100 disabled';}
-  else{badge.innerHTML='<i class="bi bi-mic-mute"></i> '+t('aud.vad_silence');badge.className='btn btn-secondary px-3 w-100 disabled';}
-}
-function startMicPoll(){
-  if(_micEs)return;
-  _micEs=new EventSource('/debug/mic/sse');
-  _micEs.onmessage=function(e){try{_micApply(JSON.parse(e.data));}catch(ex){}};
-  _micEs.onerror=function(){_micEs.close();_micEs=null;setTimeout(startMicPoll,2000);};
-}
-function stopMicPoll(){
-  if(_micEs){_micEs.close();_micEs=null;}
-}
 
-var fmCurrentPath='';
-function fmFmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}
-function fmLoad(){
-  document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm text-secondary"></span></td></tr>';
-  fetch('/fs/list').then(r=>r.json()).then(function(d){
-    document.getElementById('fm-quota').textContent='SPIFFS: '+fmFmtSize(d.used)+' / '+fmFmtSize(d.total)+' usati';
-    var tb=document.getElementById('fm-tbody');
-    if(!d.files||!d.files.length){tb.innerHTML='<tr><td colspan="5" class="text-center text-muted">'+t('fm.no_files')+'</td></tr>';return;}
-    var rows='';
-    d.files.forEach(function(f){
-      var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-      var ro=/\.(html|htm|css|js|woff2|png)$/.test(f.name)||f.name==='/version.txt';
-      rows+='<tr><td class="font-monospace small text-break">'+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
-        +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
-        +'<td>'+(ro?'':'<button class="btn btn-outline-secondary btn-sm py-0" onclick="fmEdit(\''+n+'\')"><i class="bi bi-pencil"></i></button>')+'</td>'
-        +'<td><a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none" href="/fs/get'+n+'" download>↓</a></td>'
-        +'<td>'+(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+n+'\')"><i class="bi bi-trash3"></i></button>')+'</td></tr>';
-    });
-    tb.innerHTML=rows;
-  }).catch(function(){document.getElementById('fm-tbody').innerHTML='<tr><td colspan="5" class="text-danger">'+t('fm.net_err')+'</td></tr>';});
-}
-function fmEdit(path){
-  fmCurrentPath=path;document.getElementById('fm-editor-card').style.display='';
-  document.getElementById('fm-editor-title').textContent='Editor: '+path;
-  document.getElementById('fm-editor-msg').textContent=t('fm.loading');document.getElementById('fm-editor-ta').value='';
-  fetch('/fs/get'+path).then(r=>r.text()).then(function(txt){document.getElementById('fm-editor-ta').value=txt;document.getElementById('fm-editor-msg').textContent='';}).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
-}
-function fmEditorClose(){document.getElementById('fm-editor-card').style.display='none';fmCurrentPath='';}
-function fmSave(){
-  if(!fmCurrentPath)return;
-  var content=document.getElementById('fm-editor-ta').value,fd=new FormData(),msg=document.getElementById('fm-editor-msg');
-  fd.append('path',fmCurrentPath);fd.append('content',new Blob([content],{type:'text/plain'}),fmCurrentPath.split('/').pop());
-  msg.textContent=t('fm.saving');
-  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmLoad();}).catch(function(){msg.textContent=t('fm.net_err2');});
-}
-function fmDel(path){
-  if(!confirm(t('fm.del_confirm')+' '+path+'?'))return;
-  var fd=new FormData();fd.append('path',path);
-  fetch('/fs/del',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){if(!d.ok)alert('ERR: '+(d.error||''));fmLoad();if(fmCurrentPath===path)fmEditorClose();}).catch(function(){alert(t('fm.net_err2'));});
-}
-function fmUpload(){
-  var path=document.getElementById('fm-up-path').value.trim(),file=document.getElementById('fm-up-file').files[0],msg=document.getElementById('fm-up-msg');
-  if(!path||!file){msg.textContent=t('fm.upload_missing');return;}
-  if(path[0]!=='/')path='/'+path;
-  if(/\.(html|htm|css|js|woff2|png)$/.test(path)){msg.textContent=t('fm.protected');return;}
-  var fd=new FormData();fd.append('path',path);fd.append('content',file,file.name);
-  msg.textContent=t('fm.loading');
-  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
-    msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
-    if(d.ok){document.getElementById('fm-up-path').value='';document.getElementById('fm-up-file').value='';fmLoad();}
-  }).catch(function(){msg.textContent=t('fm.net_err2');});
-}
-
-fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
 setLang(gLang);
+persLoad();
+fetch('/api/home').then(r=>r.json()).then(function(d){
+  var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
+  llmMaskApply(hasLlm,!!(d.el_key&&d.el_key.length>0));
+  if(!hasLlm){document.getElementById('dbg-skip-llm').checked=true;}
+}).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;});
+
 </script>
 </body></html>
+

@@ -1,0 +1,249 @@
+﻿<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FurbyMind – Info</title>
+<link rel="stylesheet" href="/shared.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+<script src="/shared.js"></script>
+<script>renderNav('info');</script>
+<div id="sys-info-bar" data-i18n="sys.loading">carico info sistema...</div>
+
+<div class="container py-3" style="max-width:720px">
+
+  <!-- Firmware -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-cpu"></i> <strong>Firmware &amp; sistema</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm table-hover mb-0">
+        <tbody>
+          <tr><td class="text-muted ps-3" style="width:45%">Versione firmware</td><td id="fw-version" class="align-middle">-</td></tr>
+          <tr><td class="text-muted ps-3">Chip</td><td id="chip-model" class="align-middle">ESP32-S3</td></tr>
+          <tr><td class="text-muted ps-3">Temperatura chip</td><td id="chip-temp" class="align-middle">-</td></tr>
+          <tr><td class="text-muted ps-3">Uptime</td><td id="uptime" class="align-middle">-</td></tr>
+          <tr><td class="text-muted ps-3">Indirizzo IP</td><td id="ip-addr" class="align-middle">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Batteria -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-battery-half"></i> <strong>Batteria</strong>
+    </div>
+    <div class="card-body">
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <span class="fs-3 fw-bold" id="bat-volt">-</span>
+        <div class="flex-grow-1">
+          <div class="progress" style="height:18px">
+            <div id="bat-bar" class="progress-bar" role="progressbar" style="width:0%"></div>
+          </div>
+        </div>
+        <span id="bat-pct" class="fw-semibold" style="min-width:3ch">-</span>
+      </div>
+      <div class="row g-2 text-center">
+        <div class="col-6">
+          <div class="border rounded p-2">
+            <div class="text-muted small">Min (scarica)</div>
+            <div class="fw-semibold">3.0 V</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="border rounded p-2">
+            <div class="text-muted small">Max (carica)</div>
+            <div class="fw-semibold">4.2 V</div>
+          </div>
+        </div>
+      </div>
+      <div id="bat-furby" class="mt-2 d-none">
+        <span class="text-muted small">Furby (BLE): </span><span id="bat-ble" class="fw-semibold">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memoria -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-memory"></i> <strong>Memoria</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr><th class="ps-3">Tipo</th><th>Libera</th><th>Totale</th><th>Uso</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ps-3 align-middle">SRAM interna</td>
+            <td class="align-middle" id="heap-free">-</td>
+            <td class="align-middle" id="heap-total">-</td>
+            <td class="align-middle" style="min-width:90px"><div class="progress" style="height:10px"><div id="heap-bar" class="progress-bar bg-info" role="progressbar" style="width:0%"></div></div></td>
+          </tr>
+          <tr>
+            <td class="ps-3 align-middle">PSRAM</td>
+            <td class="align-middle" id="psram-free">-</td>
+            <td class="align-middle" id="psram-total">-</td>
+            <td class="align-middle"><div class="progress" style="height:10px"><div id="psram-bar" class="progress-bar bg-success" role="progressbar" style="width:0%"></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Flash -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-device-ssd"></i> <strong>Flash</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr><th class="ps-3">Partizione</th><th>Usata</th><th>Totale</th><th>Libera</th><th>Uso</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ps-3 align-middle">Sketch (OTA)</td>
+            <td class="align-middle" id="sketch-used">-</td>
+            <td class="align-middle" id="sketch-total">-</td>
+            <td class="align-middle" id="sketch-free">-</td>
+            <td class="align-middle" style="min-width:90px"><div class="progress" style="height:10px"><div id="sketch-bar" class="progress-bar bg-warning" role="progressbar" style="width:0%"></div></div></td>
+          </tr>
+          <tr>
+            <td class="ps-3 align-middle">SPIFFS</td>
+            <td class="align-middle" id="spiffs-used">-</td>
+            <td class="align-middle" id="spiffs-total">-</td>
+            <td class="align-middle" id="spiffs-free">-</td>
+            <td class="align-middle"><div class="progress" style="height:10px"><div id="spiffs-bar" class="progress-bar bg-warning" role="progressbar" style="width:0%"></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="px-3 pb-2 pt-1 text-muted small">Flash totale: <span id="flash-total">-</span></div>
+    </div>
+  </div>
+
+  <!-- SD -->
+  <div class="card mb-3" id="sd-card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-sd-card"></i> <strong>Scheda SD</strong>
+      <span id="sd-badge" class="badge ms-auto">-</span>
+    </div>
+    <div id="sd-body" class="card-body p-0">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr><th class="ps-3">Usata</th><th>Totale</th><th>Libera</th><th>Uso</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ps-3 align-middle" id="sd-used">-</td>
+            <td class="align-middle" id="sd-total">-</td>
+            <td class="align-middle" id="sd-free">-</td>
+            <td class="align-middle" style="min-width:90px"><div class="progress" style="height:10px"><div id="sd-bar" class="progress-bar bg-secondary" role="progressbar" style="width:0%"></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="sd-absent" class="card-body text-muted small d-none">Nessuna SD inserita — modalità RAM streaming.</div>
+  </div>
+
+  <div class="text-end text-muted small" id="last-update">-</div>
+</div>
+
+<script>
+function fmtMB(mb){ return mb>=1024?(mb/1024).toFixed(1)+' GB':mb+' MB'; }
+function fmtKB(kb){ return kb>=1048576?(kb/1048576).toFixed(2)+' GB':kb>=1024?(kb/1024).toFixed(1)+' MB':kb+' KB'; }
+function pct(used,total){ return total>0?Math.round(used/total*100):0; }
+function barColor(p){ return p>85?'bg-danger':p>60?'bg-warning':''; }
+
+function setBar(barId,p){
+  var b=document.getElementById(barId);
+  b.style.width=p+'%';
+  b.className='progress-bar '+barColor(p);
+}
+
+function updateBat(mv){
+  var MIN_MV=3000, MAX_MV=4200;
+  var v=(mv/1000).toFixed(2)+' V';
+  document.getElementById('bat-volt').textContent=v;
+  var p=Math.max(0,Math.min(100,Math.round((mv-MIN_MV)/(MAX_MV-MIN_MV)*100)));
+  document.getElementById('bat-pct').textContent=p+'%';
+  var bar=document.getElementById('bat-bar');
+  bar.style.width=p+'%';
+  bar.className='progress-bar '+(p<15?'bg-danger':p<30?'bg-warning':'bg-success');
+}
+
+function load(){
+  fetch('/sys/info').then(function(r){return r.json();}).then(function(d){
+    document.getElementById('fw-version').textContent=d.fw_version||'-';
+    document.getElementById('chip-temp').textContent=(d.chip_temp_c!=null?d.chip_temp_c+'°C':'-');
+    document.getElementById('uptime').textContent=fmtSec(d.uptime_s||0);
+    document.getElementById('ip-addr').textContent=d.ip||'-';
+
+    if(d.bat_mv>0) updateBat(d.bat_mv);
+    else document.getElementById('bat-volt').textContent='N/D';
+
+    // BLE battery
+    if(d.ble_bat!=null&&d.ble_bat>=0){
+      document.getElementById('bat-furby').classList.remove('d-none');
+      document.getElementById('bat-ble').textContent=d.ble_bat+'%';
+    }
+
+    // SRAM
+    document.getElementById('heap-free').textContent=fmtKB(d.heap_free||0);
+    document.getElementById('heap-total').textContent=fmtKB(d.heap_total||0);
+    var hp=pct((d.heap_total||0)-(d.heap_free||0),d.heap_total||1);
+    setBar('heap-bar',hp);
+
+    // PSRAM
+    document.getElementById('psram-free').textContent=fmtKB(d.psram_free||0);
+    document.getElementById('psram-total').textContent=fmtKB(d.psram_total||0);
+    var pp=pct((d.psram_total||0)-(d.psram_free||0),d.psram_total||1);
+    setBar('psram-bar',pp);
+
+    // Sketch
+    var skUsed=d.sketch_used||0, skTotal=d.sketch_total||0, skFree=skTotal-skUsed;
+    document.getElementById('sketch-used').textContent=fmtKB(skUsed);
+    document.getElementById('sketch-total').textContent=fmtKB(skTotal);
+    document.getElementById('sketch-free').textContent=fmtKB(skFree);
+    setBar('sketch-bar',pct(skUsed,skTotal));
+
+    // SPIFFS
+    var spUsed=d.spiffs_used||0, spTotal=d.spiffs_total||0, spFree=spTotal-spUsed;
+    document.getElementById('spiffs-used').textContent=fmtKB(spUsed);
+    document.getElementById('spiffs-total').textContent=fmtKB(spTotal);
+    document.getElementById('spiffs-free').textContent=fmtKB(spFree);
+    setBar('spiffs-bar',pct(spUsed,spTotal));
+
+    document.getElementById('flash-total').textContent=(d.flash_mb||0)+' MB';
+
+    // SD
+    if(d.sd_present){
+      document.getElementById('sd-badge').className='badge bg-success ms-auto';
+      document.getElementById('sd-badge').textContent='Presente';
+      document.getElementById('sd-absent').classList.add('d-none');
+      document.getElementById('sd-body').classList.remove('d-none');
+      var sdUsed=d.sd_used_mb||0, sdTotal=d.sd_total_mb||0, sdFree=sdTotal-sdUsed;
+      document.getElementById('sd-used').textContent=fmtMB(sdUsed);
+      document.getElementById('sd-total').textContent=fmtMB(sdTotal);
+      document.getElementById('sd-free').textContent=fmtMB(sdFree);
+      setBar('sd-bar',pct(sdUsed,sdTotal));
+    } else {
+      document.getElementById('sd-badge').className='badge bg-secondary ms-auto';
+      document.getElementById('sd-badge').textContent='Assente';
+      document.getElementById('sd-body').classList.add('d-none');
+      document.getElementById('sd-absent').classList.remove('d-none');
+    }
+
+    document.getElementById('last-update').textContent='Aggiornato: '+new Date().toLocaleTimeString();
+  }).catch(function(){ document.getElementById('last-update').textContent='Errore di connessione'; });
+}
+
+load();
+setInterval(load,10000);
+</script>
+</body>
+</html>

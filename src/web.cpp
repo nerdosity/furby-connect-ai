@@ -898,9 +898,12 @@ static void handleSysInfo() {
     d["bat_mv"]       = readBatteryMv();
     d["chip_temp_c"]  = (int)temperatureRead();
     d["fw_version"]   = spiffsVersion();
+    d["ip"]           = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
+    d["ble_bat"]      = ble_battery_pct;
     d["el_key"]       = elevenlabs_api_key;
     d["el_voice_id"]  = elevenlabs_voice_id;
     d["el_fmt"]       = el_audio_fmt;
+    d["sd_present"]   = sdAvailable;
     if (sdAvailable) {
         d["sd_used_mb"]  = (int)(SD_MMC.usedBytes()  / (1024*1024));
         d["sd_total_mb"] = (int)(SD_MMC.totalBytes() / (1024*1024));
@@ -1716,6 +1719,8 @@ void startWebServer() {
         delay(300);
         ESP.restart();
     });
+    server.on("/info",  HTTP_GET, []() { serveSpiffsETag("/info.html",  "text/html; charset=utf-8", "no-cache"); });
+    server.on("/furby", HTTP_GET, []() { serveSpiffsETag("/furby.html", "text/html; charset=utf-8", "no-cache"); });
     server.on("/camera",                  HTTP_GET,  handleCameraPage);
     server.on("/camera/stream",           HTTP_GET,  handleCameraStream);
     server.on("/camera/frame",            HTTP_GET,  handleCameraFrame);
