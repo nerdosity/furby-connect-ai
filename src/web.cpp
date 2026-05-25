@@ -1906,8 +1906,10 @@ void startWebServer() {
     server.collectHeaders(hdrs, 1);
 
     server.onNotFound([]() {
-        if (server.method() == HTTP_OPTIONS) { server.send(204); return; }
         String uri = server.uri();
+        const char* meth = server.method()==HTTP_POST?"POST":server.method()==HTTP_GET?"GET":server.method()==HTTP_OPTIONS?"OPT":"OTHER";
+        Serial.printf("[HTTP] onNotFound %s %s\n", meth, uri.c_str());
+        if (server.method() == HTTP_OPTIONS) { server.send(204); return; }
         if (uri.startsWith("/fs/get/") || uri == "/fs/get") { handleFsGet(); return; }
         // file statici da SPIFFS (.css .js .png .ico ecc.)
         if (server.method() == HTTP_GET) {
@@ -1925,9 +1927,7 @@ void startWebServer() {
             }
         }
         if (uri.endsWith(".map")) { server.send(204); return; }
-        Serial.printf("[HTTP] 404 %s %s\n",
-            server.method()==HTTP_POST?"POST":server.method()==HTTP_GET?"GET":"OTHER",
-            uri.c_str());
+        Serial.printf("[HTTP] 404 %s %s\n", meth, uri.c_str());
         if (isConfigMode) handleCaptiveRedirect();
         else server.send(404, "text/plain", "Not found");
     });

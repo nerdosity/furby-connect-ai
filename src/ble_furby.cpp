@@ -1,4 +1,5 @@
 #include "ble_furby.h"
+#include "esp_log.h"
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 static String hexFmt(const uint8_t* data, size_t len) {
@@ -27,15 +28,19 @@ class MyClientCallback : public BLEClientCallbacks {
   void onDisconnect(BLEClient*) {
       bleResetState();
       Serial.println("BLE: Furby disconnesso.");
-      if (!bleUserDisconnect && ble_last_addr.length() > 0) {
-          // reconnect automatico: schedula senza bloccare la callback
+      if (!bleUserDisconnect && ble_last_addr.length() > 0 && !bleConnecting) {
           pendingConnAddr     = ble_last_addr;
           pendingConnName     = ble_last_name;
           pendingConnAddrType = BLE_ADDR_TYPE_RANDOM;
           for (int i = 0; i < furbyListCount; i++)
               if (furbyList[i].addr == ble_last_addr) { pendingConnAddrType = furbyList[i].addrType; break; }
-          doConnect = true;
-          Serial.println("BLE: reconnect automatico schedulato.");
+          // piccolo delay prima del reconnect: il Furby ha bisogno di qualche secondo
+          xTaskCreate([](void*){
+              vTaskDelay(3000 / portTICK_PERIOD_MS);
+              if (!connected && !bleConnecting) doConnect = true;
+              vTaskDelete(NULL);
+          }, "BleReconn", 2048, NULL, 1, NULL);
+          Serial.println("BLE: reconnect automatico tra 3s.");
       }
       bleUserDisconnect = false;
   }
@@ -218,10 +223,18 @@ void bleConnectTask(void* pvParameters) {
     esp_ble_addr_type_t atype = pendingConnAddrType;
     pendingConnAddr = ""; pendingConnName = "";
     if (bleScanning) { BLEDevice::getScan()->stop(); vTaskDelay(300/portTICK_PERIOD_MS); bleScanning = false; }
+    // primo tentativo
     bool ok = addr.length() > 0
         ? connectToFurbyByAddr(BLEAddress(addr.c_str()), name, atype)
         : connectToFurby();
-    if (!ok) Serial.println("BLE: connessione fallita");
+    // retry automatico finché non connesso e non è stato l'utente a cancellare
+    while (!ok && !bleUserDisconnect && addr.length() > 0) {
+        Serial.println("BLE: connessione fallita, riprovo tra 5s...");
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        if (bleUserDisconnect) break;
+        ok = connectToFurbyByAddr(BLEAddress(addr.c_str()), name, atype);
+    }
+    if (!ok) Serial.println("BLE: connessione abbandonata.");
     bleConnecting = false;
     vTaskDelete(NULL);
 }
@@ -240,6 +253,7 @@ void lipSyncTask(void* pvParameters) {
 // ── BLE init helper (called from setup) ──────────────────────────────────────
 void bleInit() {
     bleMutex = xSemaphoreCreateMutex();
+    esp_log_level_set("BLERemoteCharacteristic", ESP_LOG_NONE);
     BLEDevice::init("");
     BLEDevice::getScan()->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
 }
@@ -273,10 +287,6 @@ void loadBehaviorConfigs() {
         behaviorConfigCount = 1; activeBehaviorConfig = 0;
         strncpy(behaviorConfigs[0].name, "Default", 24);
         memset(behaviorConfigs[0].rules, 0, sizeof(behaviorConfigs[0].rules));
-        behaviorConfigs[0].rules[0] = { SEN_TICKLE_HEAD,  {0x13,0x00,39,3,1,1}, 6 };
-        behaviorConfigs[0].rules[1] = { SEN_PULL_TAIL,    {0x13,0x00,39,3,8,1}, 6 };
-        behaviorConfigs[0].rules[2] = { SEN_UPSIDE_DOWN,  {0x14,255,0,0},       4 };
-        behaviorConfigs[0].rules[3] = { SEN_UPRIGHT,      {0x14,0,255,0},       4 };
         saveBehaviorConfigs(); return;
     }
     JsonDocument doc;
