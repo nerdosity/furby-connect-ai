@@ -36,7 +36,7 @@ function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <tbody>
-          <tr><td class="text-muted ps-3" style="width:45%">Versione firmware</td><td id="fw-version" class="align-middle">-</td></tr>
+          <tr><td class="text-muted ps-3" style="width:45%">Versione firmware</td><td class="align-middle"><span id="fw-version">-</span> <span id="fw-badge"></span></td></tr>
           <tr><td class="text-muted ps-3">Chip</td><td id="chip-model" class="align-middle">ESP32-S3</td></tr>
           <tr><td class="text-muted ps-3">Temperatura chip</td><td id="chip-temp" class="align-middle">-</td></tr>
           <tr><td class="text-muted ps-3">Uptime</td><td id="uptime" class="align-middle">-</td></tr>
@@ -193,6 +193,7 @@ function updateBat(mv){
 function load(){
   fetch('/sys/info').then(function(r){return r.json();}).then(function(d){
     document.getElementById('fw-version').textContent=d.fw_version||'-';
+    if(d.fw_version) renderFwBadge(d.fw_version);
     document.getElementById('chip-temp').textContent=(d.chip_temp_c!=null?d.chip_temp_c+'°C':'-');
     document.getElementById('uptime').textContent=fmtSec(d.uptime_s||0);
     document.getElementById('ip-addr').textContent=d.ip||'-';
@@ -254,6 +255,43 @@ function load(){
 
     document.getElementById('last-update').textContent='Aggiornato: '+new Date().toLocaleTimeString();
   }).catch(function(){ document.getElementById('last-update').textContent='Errore di connessione'; });
+}
+
+var _fwBadgeDone=false;
+function renderFwBadge(current){
+  if(_fwBadgeDone)return;
+  _fwBadgeDone=true;
+  Promise.all([
+    fetch('/version.txt').then(function(r){return r.ok?r.text():Promise.resolve('');}).catch(function(){return '';}),
+    fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt').then(function(r){return r.text();}).catch(function(){return '';})
+  ]).then(function(res){
+    var local=res[0].trim()||current;
+    var latest=res[1].trim();
+    var el=document.getElementById('fw-badge');
+    if(!el)return;
+    var badge=document.createElement('span');
+    if(!latest){
+      badge.className='badge bg-secondary';
+      badge.textContent='versione online non disponibile';
+    } else {
+      var cmp=_fwCompare(local,latest);
+      if(cmp<0){
+        badge.className='badge bg-danger';
+        badge.title='Aggiornamento disponibile: '+latest;
+        badge.textContent='Aggiornamento disponibile: '+latest;
+      } else if(cmp===0){
+        badge.className='badge bg-success';
+        badge.title='Firmware aggiornato ('+local+')';
+        badge.textContent='Aggiornato';
+      } else {
+        badge.className='badge bg-warning text-dark';
+        badge.title='Locale ('+local+') più recente di online ('+latest+')';
+        badge.textContent='Locale più recente';
+      }
+    }
+    el.textContent='';
+    el.appendChild(badge);
+  });
 }
 
 load();
