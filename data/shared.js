@@ -70,6 +70,7 @@ function renderNav(active){
   document.currentScript
     ? document.currentScript.insertAdjacentHTML('afterend', html)
     : document.body.insertAdjacentHTML('afterbegin', html);
+  if(typeof setLang!=='function') applyI18n();
 }
 // ── i18n ──────────────────────────────────────────────────────────────────────
 
