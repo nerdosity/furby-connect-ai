@@ -223,15 +223,19 @@ void bleConnectTask(void* pvParameters) {
     esp_ble_addr_type_t atype = pendingConnAddrType;
     pendingConnAddr = ""; pendingConnName = "";
     if (bleScanning) { BLEDevice::getScan()->stop(); vTaskDelay(300/portTICK_PERIOD_MS); bleScanning = false; }
-    // primo tentativo
     bool ok = addr.length() > 0
         ? connectToFurbyByAddr(BLEAddress(addr.c_str()), name, atype)
         : connectToFurby();
-    // retry automatico finché non connesso e non è stato l'utente a cancellare
     while (!ok && !bleUserDisconnect && addr.length() > 0) {
-        Serial.println("BLE: connessione fallita, riprovo tra 5s...");
+        Serial.println("BLE: connessione fallita, reset stack e riprovo tra 5s...");
         vTaskDelay(5000 / portTICK_PERIOD_MS);
         if (bleUserDisconnect) break;
+        // reset stack BLE per pulire stato sporco dopo disconnessione inaspettata
+        if (pBleClient) { try { if (pBleClient->isConnected()) pBleClient->disconnect(); } catch(...) {} delete pBleClient; pBleClient = nullptr; }
+        BLEDevice::deinit(true);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        bleInit();
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         ok = connectToFurbyByAddr(BLEAddress(addr.c_str()), name, atype);
     }
     if (!ok) Serial.println("BLE: connessione abbandonata.");

@@ -124,7 +124,7 @@ function setLang(l){
     <button id="btn-stop"  class="btn btn-danger px-3"    onclick="dbBleStop()"  style="display:none" data-i18n="ble.stop"><i class="bi bi-stop-fill"></i> Stop</button>
     <button id="btn-abort" class="btn btn-danger px-3"    onclick="dbBleAbort()" style="display:none" data-i18n="ble.abort"><i class="bi bi-x-octagon"></i> Abort</button>
     <button id="btn-disc"  class="btn btn-danger px-3"    onclick="dbBleDisc()"  style="display:none" data-i18n="ble.disconnect"><i class="bi bi-x-circle"></i> Disc</button>
-    <button id="btn-rst"   class="btn btn-warning px-3"   onclick="dbBleReset()" title="Reset stack BLE"><i class="bi bi-arrow-repeat"></i> Riconnetti</button>
+    <button id="btn-rst"   class="btn btn-warning px-3"   onclick="dbBleReset()" title="Riavvia ESP32 per resettare BLE"><i class="bi bi-arrow-repeat"></i> Riavvia</button>
   </div>
 </div>
 <div id="db-ble-list" class="px-3 py-1 bg-light border-bottom small"></div>
@@ -351,7 +351,15 @@ function dbBleConn(addr){var fd=new FormData();fd.append('addr',addr);fetch('/bl
 function dbBleStop(){fetch('/ble/scan/stop',{method:'POST'}).then(dbBlePoll).catch(function(){});}
 function dbBleDisc(){fetch('/ble/disconnect',{method:'POST'}).then(function(){setTimeout(dbBlePoll,600);}).catch(function(){});}
 function dbBleAbort(){fetch('/ble/abort',{method:'POST'}).then(dbBlePoll).catch(function(){});}
-function dbBleReset(){if(!confirm(t('ble_bar.reset_confirm')))return;fetch('/ble/reset',{method:'POST'}).then(function(){setTimeout(dbBlePoll,1500);}).catch(function(){});}
+function dbBleReset(){
+  if(!confirm('Reset BLE: l\'ESP32 verrà riavviato. Continuare?'))return;
+  fetch('/ble/reset',{method:'POST'}).catch(function(){});
+  var t0=Date.now();
+  (function poll(){
+    if(Date.now()-t0>30000){location.reload();return;}
+    setTimeout(function(){fetch('/sys/info',{signal:AbortSignal.timeout?AbortSignal.timeout(2000):undefined}).then(function(){location.reload();}).catch(function(){poll();});},2000);
+  })();
+}
 _bleEsStart();
 
 function log(msg){var el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}

@@ -899,24 +899,10 @@ static void handleBleAbort() {
 static void handleBleReset() {
     HTTP_LOG();
     server.send(200, "application/json", "{\"ok\":true}");
-    xTaskCreatePinnedToCore([](void*) {
-        bleUserDisconnect = true;
-        bleConnecting     = false;
-        bleScanning       = false;
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        if (pBleClient) {
-            try { if (pBleClient->isConnected()) pBleClient->disconnect(); } catch(...) {}
-            vTaskDelay(300 / portTICK_PERIOD_MS);
-            delete pBleClient; pBleClient = nullptr;
-        }
-        bleResetState();
-        BLEDevice::deinit(true);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-        bleInit();
-        furbyListCount = 0;
-        Serial.println("BLE: stack resettato");
-        vTaskDelete(NULL);
-    }, "BLEReset", 4096, NULL, 2, NULL, 0);
+    // Il deinit/reinit in-place è racey con keepAliveTask/lipSyncTask/vadTask.
+    // Riavvio pulito: unico modo affidabile per resettare lo stack BLE.
+    delay(300);
+    esp_restart();
 }
 
 static void handleSysInfo() {
