@@ -126,8 +126,9 @@ void ch32Init() {
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
     ch32SetBit(4, true); // IO4 HIGH - SD card CS
-    ch32SetBit(6, true); // IO6 HIGH - amplificatore sempre ON
-    Serial.println("IO expander: init OK, amp ON");
+    ch32SetBit(5, true); // IO5 HIGH - PA_CTRL amplificatore ON
+    ch32SetBit(6, true); // IO6 HIGH - BAT_EN self-hold alimentazione da batteria
+    Serial.println("IO expander: init OK");
 }
 
 
@@ -140,11 +141,9 @@ int readBatteryMv() {
     if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) { batFailed = true; return -1; }
     uint8_t lo = Wire.read(), hi = Wire.read();
     uint16_t raw = (uint16_t)(hi << 8 | lo);
-    // raw=0..4095 (ADC 12-bit CH32), Vref=3.3V
-    // divisore R39=200K + R42=100K → Vadc = Vbat/3 → Vbat = raw*3300*3/4095
-    int mv = (int)((uint32_t)raw * 3300 * 3 / 4095);
-    Serial.printf("[BAT] raw=%u mv=%d\n", raw, mv);
-    return mv;
+    // raw=0..1023 (ADC 10-bit CH32), Vref=3.3V
+    // divisore R39=200K + R42=100K → Vadc = Vbat/3 → Vbat = raw*3300*3/1023
+    return (int)((uint32_t)raw * 3300 * 3 / 1023);
 }
 
 // ── ES8311 DAC ────────────────────────────────────────────────────────────────
