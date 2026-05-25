@@ -1027,9 +1027,87 @@ function wbCmd(label,bytes){espCmd(label,bytes);}
 function espCmd(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 function espCmdN(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP-N '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 
-var ACTIONS_DIRECT=[[1,0,0,0,'Accarezza (rnd)'],[2,0,0,0,'Accarezza 2'],[3,0,0,0,'Accarezza 3'],[4,0,0,0,'Coccola'],[5,0,0,0,'Coccola 2'],[6,0,0,0,'Peto 1'],[6,1,0,0,'Peto 2'],[6,2,0,0,'Peto 3'],[6,3,0,0,'Peto 4'],[7,0,0,0,'Rutto 1'],[7,1,0,0,'Rutto 2'],[7,2,0,0,'Rutto 3'],[8,0,0,0,'Starnuto'],[9,0,0,0,'Sbadiglio'],[10,0,0,0,'Risposta conv.'],[11,0,0,0,'Risposta 2'],[12,0,0,0,'Risposta 3'],[13,0,0,0,'Saluto'],[14,0,0,0,'Saluto 2'],[15,0,0,0,'Movimento 1'],[16,0,0,0,'Movimento 2'],[17,0,0,0,'Danza'],[18,0,0,0,'Danza 2'],[19,0,0,0,'Danza 3'],[20,0,0,0,'Felicità'],[21,0,0,0,'Addormenta'],[22,0,0,0,'Sveglia'],[23,0,0,0,'Sogno 1'],[24,0,0,0,'Sogno 2'],[25,0,0,0,'Fame'],[26,0,0,0,'Noia'],[27,0,0,0,'Sorpresa'],[28,0,0,0,'Paura']];
-var ACTIONS_NOTES=[[71,0,0,0,'Do'],[71,1,0,0,'Re'],[71,2,0,0,'Mi'],[71,3,0,0,'Fa'],[71,4,0,0,'Sol'],[71,5,0,0,'La'],[71,6,0,0,'Ti'],[71,7,0,0,'Do alta']];
-var ACTIONS_WORLD=[[29,0,0,0,'Chiedi nome'],[30,0,0,0,'Ricorda nome'],[31,0,0,0,'Amicizia'],[32,0,0,0,'Miglior amico'],[33,0,0,0,'Canzone amicizia'],[34,0,0,0,'Personalità DJ'],[35,0,0,0,'Pers. Princess'],[36,0,0,0,'Quest start'],[37,0,0,0,'Quest complete'],[38,0,0,0,'Quest fail'],[39,3,8,1,'Legendary!'],[39,4,6,1,'Nice'],[39,3,1,1,'Hey hey'],[40,0,0,0,'Colleziona'],[41,0,0,0,'Regalo ricevuto'],[42,0,0,0,'Regalo inviato'],[43,0,0,0,'Scambio'],[44,0,0,0,'Vittoria'],[45,0,0,0,'Sconfitta'],[50,0,0,0,'Festa'],[51,0,0,0,'Celebrazione'],[60,0,0,0,'Apprendimento'],[61,0,0,0,'Conta 1'],[62,0,0,0,'Conta 2'],[63,0,0,0,'Colori'],[64,0,0,0,'Animali'],[70,0,0,0,'Frase generica 1'],[70,1,0,0,'Frase generica 2'],[72,0,0,0,'Ciao mondo'],[73,0,0,0,'Buonanotte'],[74,0,0,0,'Sogno personalità'],[75,0,4,4,'DLC action']];
+// Fonte: bluefluff/doc/actionlist.md (Jeija) — verificato
+var ACTIONS_DIRECT=[
+  // Coccole (input 1)
+  [1,0,0,0,'Coccola felice'],       // "ah-may moh-moh"
+  [1,0,0,1,'Coccola sì sì'],        // "ee-tay ee-tay yes yes"
+  [1,0,0,3,'Coccola wow'],          // "kah feel good"
+  [1,1,0,0,'Coccola riluttante'],   // "kah woo-bye kah-tay"
+  [1,2,0,0,'Coccola yawn'],         // yawn "besties?"
+  [1,3,0,3,'Coccola sing'],         // sing "lovely lovely"
+  // Risate / solletico (input 2)
+  [2,0,0,0,'Risata frenetica'],
+  [2,0,0,3,'Risata + peto'],        // laughter "tickle, make kah!" fart
+  [2,0,1,3,'Risata tinkle'],        // "wait, no!" "kah just tinkled"
+  [2,3,0,0,'Risata gefaw'],
+  [2,3,0,3,'Risata gefaw'],
+  [2,3,0,6,'Risata con sbuffo'],    // laugh snort "ow"
+  // Peti / ruttini (input 7)
+  [7,0,0,0,'Peto musicale'],        // fart fanfare
+  [7,0,0,2,'Peto umido MEATBALLS'],[7,0,0,3,'Peto umido'],
+  [7,1,0,0,'Peto wet echoey'],
+  [7,3,0,0,'Rutto mmm tasty'],      // "hehe wait wait" burp
+  [7,3,0,3,'Silent but deadly'],    // "wait for it... silent but deadly"
+  // Conversazione (input 8)
+  [8,0,0,0,'Conv: yaaaas'],
+  [8,0,0,1,'Conv: no way!'],
+  [8,0,0,3,'Conv: best news!'],
+  [8,1,0,0,'Conv: dude what?'],
+  [8,1,0,2,'Conv: uhhhh'],
+  [8,1,0,3,'Conv: da no likey'],
+  [8,2,0,0,'Conv: se lo dici'],
+  [8,2,1,0,'Conv: kah wonder'],
+  [8,3,0,0,'Conv: go on'],
+  [8,3,0,6,'Conv: hmmm'],
+  // Movimento / agitato (input 9)
+  [9,0,0,0,'Tremare'],              // "wugh"
+  [9,0,0,3,'Belly is jelly'],
+  [9,1,0,1,'Vomitare'],             // "kah regret nothing" + puke
+  [9,1,0,2,'Vomitare 2'],
+  // Singhiozzo / ruttini (input 16)
+  [16,0,0,0,'Singhiozzo'],
+  [16,0,1,0,'Gola rumorosa'],
+  [16,0,2,0,'Rutto + risata'],
+  // Canto / ballo (input 17)
+  [17,0,0,0,'Canta: boo boo believe'],
+  [17,0,0,5,'Beatbox'],
+  [17,1,0,0,'Ballo: nyah nee nee'],
+  [17,2,0,3,'Ballo: dance with kah?'],
+  [17,3,0,1,'Ballo: wanna dance?'],
+  // Sonno (input 12 sonnolento, input 28 addormentarsi)
+  [12,0,0,0,'Assonnato: purr'],
+  [12,2,0,2,'Assonnato: way-loh'],
+  [12,2,1,1,'Ninna nanna'],         // "rock a by furby"
+  [12,3,0,0,'Addormentato: purr'],
+  [28,0,0,0,'Addormentarsi'],       // "kah be back"
+  [28,0,0,1,'Buonanotte bestie'],
+  // Svegliarsi (input 27)
+  [27,0,0,0,'Svegliarsi: sogno'],   // "oh, kah dream about oo-nye"
+  [27,0,0,1,'Svegliarsi: hi!'],
+  [27,2,0,0,'Buenos días'],
+  [27,3,0,0,'Non voglio alzarmi'],  // "kah don't wanna go to sleep"
+  // Reazioni varie
+  [20,0,0,0,'Rumore forte'],        // "huh! What was that?"
+  [21,0,0,0,'Caduto'],              // waugh
+  [22,0,0,0,'Malato'],              // coughing vomit
+  [23,0,0,0,'Fame'],                // "ugh, so hungry"
+  [14,0,0,0,'Mangiare'],
+];
+// Note: input=71, index=0, subindex=0, specific=0..7 (fonte: bluefluff/actionlist.md)
+var ACTIONS_NOTES=[[71,0,0,0,'Do'],[71,0,0,1,'Re'],[71,0,0,2,'Mi'],[71,0,0,3,'Fa'],[71,0,0,4,'Sol'],[71,0,0,5,'La'],[71,0,0,6,'Ti'],[71,0,0,7,'Do alta']];
+// World App / DLC (input 29-75) — valori empirici da pdjstone/bluefluff community
+var ACTIONS_WORLD=[
+  [39,3,8,1,'Legendary!'],          // da pdjstone furble.html
+  [39,4,6,1,'Nice'],
+  [39,3,1,1,'Hey hey'],
+  [29,0,0,0,'Ritorno da app'],
+  [30,0,0,0,'Gioca con amico'],
+  [31,0,0,0,'Reazione app'],
+  [33,0,0,0,'Parla nome (0)'],
+  [34,0,0,0,'Connesso a world app'],
+  [74,0,0,0,'Sogno personalità'],
+];
 function buildActGrid(id,actions){
   var el=document.getElementById(id);
   actions.forEach(function(a){

@@ -65,38 +65,51 @@ const char* SENSOR_NAMES[] = {
 };
 
 const FurbyActionDef FURBY_ACTIONS[] = {
-    {"pet_happy",    "Coccola felice",          {0x13,0x00, 1,0,0,0}, 6},
-    {"pet_reluctant","Coccola riluttante",       {0x13,0x00, 1,1,0,0}, 6},
-    {"tickle_laugh", "Risata (solletico)",        {0x13,0x00, 2,0,0,0}, 6},
-    {"belly_laugh",  "Risata di pancia",          {0x13,0x00, 2,3,0,0}, 6},
-    {"laugh_snort",  "Risata con sbuffo",         {0x13,0x00, 2,3,0,6}, 6},
-    {"fart_musical", "Peto musicale",             {0x13,0x00, 7,0,0,0}, 6},
-    {"fart_wet",     "Peto umido",                {0x13,0x00, 7,0,0,2}, 6},
-    {"fart_silent",  "Silent but deadly",         {0x13,0x00, 7,3,0,3}, 6},
-    {"burp",         "Rutto",                     {0x13,0x00, 7,3,0,0}, 6},
-    {"burp_loud",    "Rutto forte",               {0x13,0x00,16,0,2,2}, 6},
-    {"hiccup",       "Singhiozzo",                {0x13,0x00,16,0,0,0}, 6},
-    {"sing",         "Cantare",                   {0x13,0x00,17,0,0,0}, 6},
-    {"beatbox",      "Beatbox",                   {0x13,0x00,17,0,0,5}, 6},
-    {"dance",        "Ballare",                   {0x13,0x00,17,2,0,3}, 6},
-    {"shake",        "Tremare/agitato",            {0x13,0x00, 9,0,0,0}, 6},
-    {"vomit",        "Vomitare",                  {0x13,0x00, 9,1,0,1}, 6},
-    {"sleep",        "Addormentarsi",             {0x13,0x00,12,0,0,0}, 6},
-    {"snore",        "Russare",                   {0x13,0x00,12,3,0,0}, 6},
-    {"lullaby",      "Ninna nanna",               {0x13,0x00,12,2,1,1}, 6},
-    {"wakeup",       "Svegliarsi",                {0x13,0x00,13,0,0,0}, 6},
-    {"hungry",       "Fame",                      {0x13,0x00,23,0,0,0}, 6},
-    {"sick",         "Malato",                    {0x13,0x00,22,0,0,0}, 6},
-    {"dropped",      "Caduto",                    {0x13,0x00,21,0,0,0}, 6},
-    {"loud_noise",   "Rumore forte",              {0x13,0x00,20,0,0,0}, 6},
-    {"convo_yes",    "Conversazione: si!",        {0x13,0x00, 8,0,0,0}, 6},
-    {"convo_no",     "Conversazione: no",         {0x13,0x00, 8,1,0,0}, 6},
-    {"convo_bored",  "Conversazione: annoiato",   {0x13,0x00, 8,2,0,0}, 6},
-    {"eating",       "Mangiare",                  {0x13,0x00,14,0,0,0}, 6},
-    {"ant_red",      "Antenna rossa",             {0x14,255,  0,  0,0,0}, 4},
-    {"ant_blue",     "Antenna blu",               {0x14,  0,  0,255,0,0}, 4},
-    {"ant_green",    "Antenna verde",             {0x14,  0,255,  0,0,0}, 4},
-    {"ant_off",      "Antenna spenta",            {0x14,  0,  0,  0,0,0}, 4},
+    // ── Coccole (input 1) ────────────────────────────────────────────────────
+    {"pet_happy",    "Coccola felice",            {0x13,0x00, 1,0,0,0}, 6},  // "ah-may moh-moh"
+    {"pet_reluctant","Coccola riluttante",         {0x13,0x00, 1,1,0,0}, 6},  // "kah woo-bye kah-tay"
+    // ── Risate / solletico (input 2) ─────────────────────────────────────────
+    {"tickle_laugh", "Risata (solletico)",          {0x13,0x00, 2,0,0,0}, 6},  // risata frenetica
+    {"belly_laugh",  "Risata di pancia",            {0x13,0x00, 2,3,0,0}, 6},  // gefaw
+    {"laugh_snort",  "Risata con sbuffo",           {0x13,0x00, 2,3,0,6}, 6},  // laugh snort "ow"
+    // ── Peti / ruttini (input 7) ─────────────────────────────────────────────
+    {"fart_musical", "Peto musicale",               {0x13,0x00, 7,0,0,0}, 6},  // fanfare musicale
+    {"fart_wet",     "Peto umido",                  {0x13,0x00, 7,0,0,2}, 6},  // echoey wet "MEATBALLS!"
+    {"fart_silent",  "Silent but deadly",           {0x13,0x00, 7,3,0,3}, 6},  // "wait for it... silent but deadly"
+    {"burp",         "Rutto",                       {0x13,0x00, 7,3,0,0}, 6},  // "hehe wait wait" burp "mmm tasty"
+    // ── Singhiozzo / rutto sonoro (input 16) ────────────────────────────────
+    {"hiccup",       "Singhiozzo",                  {0x13,0x00,16,0,0,0}, 6},  // hiccup
+    {"burp_loud",    "Rutto + risata",              {0x13,0x00,16,0,2,0}, 6},  // burp giggle (16|0|2|0)
+    // ── Canto / ballo (input 17) ─────────────────────────────────────────────
+    {"sing",         "Cantare",                     {0x13,0x00,17,0,0,0}, 6},  // "boo boo believe in"
+    {"beatbox",      "Beatbox",                     {0x13,0x00,17,0,0,5}, 6},  // beatboxing
+    {"dance",        "Ballare",                     {0x13,0x00,17,2,0,3}, 6},  // "oo-nye dance with kah?"
+    // ── Movimento / vomito (input 9) ─────────────────────────────────────────
+    {"shake",        "Tremare/agitato",              {0x13,0x00, 9,0,0,0}, 6},  // "wugh"
+    {"vomit",        "Vomitare",                    {0x13,0x00, 9,1,0,1}, 6},  // "kah regret nothing" + puke
+    // ── Sonno (input 12 = sonnolento, 28 = addormentarsi) ───────────────────
+    {"sleepy",       "Assonnato",                   {0x13,0x00,12,0,0,0}, 6},  // purr "kah likey" (sonnolento)
+    {"sleep",        "Addormentarsi",               {0x13,0x00,28,0,0,0}, 6},  // "kah be back" (vero sleep)
+    {"lullaby",      "Ninna nanna",                 {0x13,0x00,12,2,1,1}, 6},  // "rock a by furby"
+    // ── Svegliarsi (input 27) ─────────────────────────────────────────────────
+    {"wakeup",       "Svegliarsi",                  {0x13,0x00,27,0,0,0}, 6},  // "oh, kah dream about oo-nye"
+    {"wakeup_reluctant","Sveglia a fatica",          {0x13,0x00,27,3,0,0}, 6},  // "kah don't wanna go to sleep"
+    // ── Reazioni fisiologiche ─────────────────────────────────────────────────
+    {"hungry",       "Fame",                        {0x13,0x00,23,0,0,0}, 6},  // "ugh, so hungry"
+    {"sick",         "Malato",                      {0x13,0x00,22,0,0,0}, 6},  // coughing vomit
+    {"dropped",      "Caduto",                      {0x13,0x00,21,0,0,0}, 6},  // waugh
+    {"loud_noise",   "Rumore forte",                {0x13,0x00,20,0,0,0}, 6},  // "huh! What was that?"
+    {"eating",       "Mangiare",                    {0x13,0x00,14,0,0,0}, 6},  // eating noises
+    // ── Conversazione (input 8) ──────────────────────────────────────────────
+    {"convo_yes",    "Conversazione: sì!",          {0x13,0x00, 8,0,0,0}, 6},  // "yaaaas"
+    {"convo_no",     "Conversazione: no",           {0x13,0x00, 8,1,0,0}, 6},  // "pft, doo know what?"
+    {"convo_bored",  "Conversazione: annoiato",     {0x13,0x00, 8,2,0,0}, 6},  // "if oo-nye say so"
+    {"convo_gossip", "Conversazione: pettegolezzo", {0x13,0x00, 8,3,0,15}, 6}, // whisper "did kah tell you"
+    // ── Antenna LED (0x14) ───────────────────────────────────────────────────
+    {"ant_red",      "Antenna rossa",               {0x14,255,  0,  0,0,0}, 4},
+    {"ant_blue",     "Antenna blu",                 {0x14,  0,  0,255,0,0}, 4},
+    {"ant_green",    "Antenna verde",               {0x14,  0,255,  0,0,0}, 4},
+    {"ant_off",      "Antenna spenta",              {0x14,  0,  0,  0,0,0}, 4},
 };
 const int FURBY_ACTIONS_COUNT = (int)(sizeof(FURBY_ACTIONS)/sizeof(FURBY_ACTIONS[0]));
 
