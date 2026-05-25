@@ -193,21 +193,12 @@ bool connectToFurby(BLEAdvertisedDevice* dev) {
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 void keepAliveTask(void* pvParameters) {
-    const uint8_t ka[] = {0x20, 0x06};
     for (;;) {
-        if (connected) {
-            if (pBleClient && !pBleClient->isConnected()) { bleResetState(); }
-            else if (!isProcessing) {
-                furbyWrite(ka, sizeof(ka));
-                if (ble_last_name == ble_last_addr) {
-                    for (int i = 0; i < furbyListCount; i++)
-                        if (furbyList[i].addr == ble_last_addr && furbyList[i].name != ble_last_addr) {
-                            ble_last_name = furbyList[i].name; break;
-                        }
-                }
-            }
+        if (connected && pBleClient && !pBleClient->isConnected()) {
+            bleResetState();
+            Serial.println("BLE: connessione persa (watchdog).");
         }
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        vTaskDelay(2000/portTICK_PERIOD_MS);
     }
 }
 
