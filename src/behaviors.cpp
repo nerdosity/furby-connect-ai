@@ -536,6 +536,10 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
     }
 
     if (!beh) {
+        if (gPersonalityPrompt.length() == 0) {
+            Serial.println("[STIMULUS] skip - nessuna personalità configurata");
+            return;
+        }
         processStimulusDefault(base64Img);
         return;
     }
