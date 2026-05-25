@@ -166,9 +166,9 @@ void setup() {
         if (gSttBuf) Serial.println("STT: buffer PSRAM allocato");
         else          Serial.println("STT: WARN buffer PSRAM non allocato, STT disabilitato");
 
-        xTaskCreatePinnedToCore(lipSyncTask,   "LipSync",   2048, NULL, 1, NULL, 0);
-        xTaskCreatePinnedToCore(keepAliveTask, "KeepAlive", 2048, NULL, 1, NULL, 0);
-        xTaskCreatePinnedToCore(vadTask,       "VAD",       4096, NULL, 1, NULL, 0);
+        xTaskCreatePinnedToCore(lipSyncTask,   "LipSync",   2048, NULL, 1, NULL, 1);
+        xTaskCreatePinnedToCore(keepAliveTask, "KeepAlive", 2048, NULL, 1, NULL, 1);
+        xTaskCreatePinnedToCore(vadTask,       "VAD",       4096, NULL, 1, NULL, 1);
 
         pinMode(WAKE_BTN_PIN, INPUT_PULLUP);
         attachInterrupt(WAKE_BTN_PIN, isrWakeUp, FALLING);
