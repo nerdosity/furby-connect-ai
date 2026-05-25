@@ -9,36 +9,7 @@ var TRANSLATIONS={
   it:{
     'nav.config':'Configurazione','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Riavviare l\'ESP32?',
-    'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
-    'tab.configs':'Configurazioni','tab.raw':'Raw / Log','tab.audio':'Audio',
-    'tab.files':'File SPIFFS','tab.persona':'Personalità',
-    'sen.title':'Stato sensori','sen.ant_l':'Antenna sx','sen.ant_r':'Antenna dx',
-    'sen.ant_f':'Antenna avanti','sen.ant_b':'Antenna indietro',
-    'sen.tickle_head':'Tickle testa','sen.tickle_tummy':'Tickle pancia',
-    'sen.tickle_r':'Tickle dx','sen.tickle_l':'Tickle sx',
-    'sen.pull_tail':'Tira coda','sen.push_tongue':'Spingi lingua',
-    'sen.upright':'Dritto','sen.upside_down':'Capovolto',
-    'sen.side_r':'Lato dx','sen.side_l':'Lato sx',
-    'sen.lean_back':'Inclinato back','sen.tilt_r':'Inclinato dx','sen.tilt_l':'Inclinato sx',
-    'act.direct':'Interazione diretta','act.notes':'Note musicali (input 71)',
-    'act.world':'World App / Personalità','act.custom':'Azione personalizzata',
-    'act.custom_run':'<i class="bi bi-play-fill"></i> Esegui',
-    'act.test_title':'<i class="bi bi-lightning"></i> Test behavior (senza Furby)',
-    'act.test_desc':'Simula un trigger ed esegue LLM + TTS come in produzione. Con "Dry run" le azioni BLE verso il Furby vengono skippate.',
-    'act.test_trigger':'Trigger','act.test_sensor':'Sensore',
-    'act.test_dry':'Dry run','act.test_dry_sub':'(skippa azioni BLE)',
-    'act.test_run':'<i class="bi bi-play-fill"></i> Simula trigger',
-    'act.no_behavior':'→ nessun behavior configurato, verrà usato il default',
-    'act.trigger_sent':'Trigger inviato - guarda la console seriale per il log completo.',
-    'act.trigger_sent_dry':'[DRY RUN] Trigger inviato - guarda la console seriale per il log completo.',
-    'act.trigger_err':'Errore: ','act.trigger_sending':'Invio trigger...',
-    'tbeh.trg.0':'VAD (parlato)','tbeh.trg.1':'Pulsante ESP32','tbeh.trg.2':'Sensore Furby',
-    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Imposta',
-    'ctrl.eyes_on':'Occhi ON','ctrl.eyes_off':'Occhi OFF',
-    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Imposta mood',
-    'ctrl.system':'Sistema','ctrl.dlc':'DLC slot',
-    'aud.amp':'Amplificatore & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
-    'aud.amp_on':'amplificatore attivo','aud.amp_off':'amplificatore spento',
+    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'File SPIFFS',
     'aud.tone':'Test casse (sine wave)',
     'aud.tone_dur':'Durata (ms) - tutte le frequenze',
     'aud.tone_freq':'Frequenza personalizzata (Hz)',
@@ -52,9 +23,6 @@ var TRANSLATIONS={
     'aud.rec_running':'Registrazione 3s in corso...','aud.rec_countdown':'Registrazione... ',
     'aud.rec_playing':'Riproduzione in corso...','aud.rec_done':'Fatto.',
     'aud.tone_sending':'Invio tono...',
-    'aud.tts_browser_hint':'Web Speech API - voce di sistema, nessuna API',
-    'aud.tts_board_hint':'ElevenLabs via ESP32 - usa la voce configurata',
-    'aud.loading':'Carico config...',
     'aud.el_nokey':'API key ElevenLabs non configurata.',
     'aud.el_synth':'Sintesi in corso...','aud.el_playing':'<i class="bi bi-play-fill"></i> Riproduzione in corso...',
     'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Aggiorna','fm.header_name':'File','fm.header_size':'Dim.',
@@ -67,12 +35,6 @@ var TRANSLATIONS={
     'fm.upload_ok':'Caricato in ','fm.saving':'Salvo...',
     'fm.load_err':'Errore caricamento','fm.net_err2':'Errore di rete','fm.protected':'File protetto - non modificabile dalla UI',
     'fm.del_confirm':'Eliminare',
-    'cfg.title':'Configurazioni comportamento',
-    'cfg.new_placeholder':'Nome nuova configurazione',
-    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> Nuova','cfg.rules_label':'Regole - ',
-    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Aggiungi regola','cfg.activate':'<i class="bi bi-check-circle"></i> Attiva',
-    'cfg.del_confirm':'Eliminare questa configurazione?',
-    'cfg.new_default':'Nuova config','cfg.action_placeholder':'Scegli azione','cfg.rules_full':'Tutti i 16 slot sono occupati',
     'raw.title':'Comando raw (hex bytes separati da spazio)',
     'raw.placeholder':'es. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: nessun byte valido',
@@ -81,94 +43,13 @@ var TRANSLATIONS={
     'ble_bar.found_so_far':'Trovati finora:','ble_bar.furby_found':'Furby trovati:',
     'ble_bar.conn_btn':'Connetti',
     'ble_bar.reset_confirm':'Reset completo stack BLE? La connessione verrà persa.',
-    'tts_browser_hint':'Web Speech API - voce di sistema, nessuna API',
-    'tts_board_hint':'ElevenLabs via ESP32 - usa la voce configurata',
-    'voices_loaded':' voci caricate.',
-    'ble.not_connected':'BLE: non connesso','ble.connected':'Connesso','ble.connecting':'Connessione...',
-    'ble.scanning':'Scansione BLE...','ble.scan':'<i class="bi bi-bluetooth"></i> Cerca','ble.stop':'<i class="bi bi-stop-fill"></i> Stop scan',
-    'ble.abort':'<i class="bi bi-x-octagon"></i> Abort','ble.disconnect':'<i class="bi bi-x-circle"></i> Disc','ble.found_so_far':'Trovati finora:',
-    'ble.connect':'<i class="bi bi-link-45deg"></i> Connetti',
-    'persona.base_title':'Personalità base',
-    'persona.base_desc':'System prompt LLM - definisce carattere e tono del Furby',
-    'persona.voice_label':'ElevenLabs Voice ID',
-    'persona.save_btn':'<i class="bi bi-floppy"></i> Salva personalità',
-    'persona.beh_title':'Comportamenti - eventi → conseguenze',
-    'persona.beh_desc':'Ogni comportamento mappa un evento su 1-3 conseguenze eseguite in sequenza.',
-    'persona.beh_add':'<i class="bi bi-plus-lg"></i> Aggiungi','persona.beh_export':'<i class="bi bi-download"></i> Esporta JSON','persona.beh_import':'<i class="bi bi-upload"></i> Importa JSON',
-    'beh.new_title':'Nuovo comportamento','beh.trigger_label':'Trigger','beh.sensor_label':'Sensore',
-    'beh.name_label':'Nome','beh.name_placeholder':'es. Tocco testa',
-    'beh.save':'<i class="bi bi-floppy"></i> Salva comportamento','beh.cancel':'Annulla','beh.add_csq':'<i class="bi bi-plus-lg"></i> Conseguenza',
-    'beh.del_confirm':'Elimina',
-    'beh.trg.vad':'VAD (parlato)','beh.trg.button':'Pulsante ESP32','beh.trg.sensor':'Sensore Furby',
-    'beh.sensor.ant_l':'Antenna sx','beh.sensor.ant_r':'Antenna dx',
-    'beh.sensor.ant_f':'Antenna avanti','beh.sensor.ant_b':'Antenna indietro',
-    'beh.sensor.tickle_head':'Tickle testa','beh.sensor.tickle_tummy':'Tickle pancia',
-    'beh.sensor.tickle_r':'Tickle dx','beh.sensor.tickle_l':'Tickle sx',
-    'beh.sensor.pull_tail':'Tira coda','beh.sensor.push_tongue':'Spingi lingua',
-    'beh.sensor.upright':'Dritto','beh.sensor.upside_down':'Capovolto',
-    'beh.sensor.side_r':'Lato dx','beh.sensor.side_l':'Lato sx',
-    'beh.sensor.lean_back':'Inclinato back','beh.sensor.tilt_r':'Inclinato dx','beh.sensor.tilt_l':'Inclinato sx',
-    'csq.furby_action':'Azione Furby','csq.tts_fixed':'TTS fisso',
-    'csq.prompt_fixed':'Prompt fisso → LLM','csq.llm_decide':'LLM decide (+ reazioni)',
-    'csq.snapshot':'Includi foto (snapshot)',
-    'csq.reactions_label':'Reazioni fisiche disponibili (max 3) - l\'LLM sceglie la più adatta',
-    'csq.tts_placeholder':'Testo da pronunciare',
-    'csq.prompt_placeholder':'Prompt fisso (es. \'Commenta in modo irritato la foto\')',
-    'csq.llm_placeholder':'Contesto evento (es. \'Qualcuno ti parla\')',
-    'csq.action_placeholder':'-- scegli azione --',
-    'sim.title':'<i class="bi bi-lightning-charge"></i> Simulatore eventi',
-    'sim.desc':'Simula un trigger e vedi la catena di conseguenze eseguita. Il dry run skippa le azioni BLE fisiche ma esegue LLM e TTS normalmente.',
-    'sim.trigger':'Trigger','sim.vad_text':'Testo VAD simulato','sim.run':'<i class="bi bi-play-fill"></i> Esegui simulazione',
-    'sim.running':'Simulazione in corso...','sim.done':'Simulazione completata.','sim.err':'Errore simulazione: ',
-    'test.llm_title':'Test LLM','test.llm_desc':'Invia un messaggio al modello con il personality prompt corrente (senza foto)',
-    'test.llm_send':'<i class="bi bi-send"></i> Invia','test.llm_placeholder':'Cosa pensi del meteo oggi?',
-    'test.tts_title':'Test TTS','test.tts_desc':'Invia testo ad ElevenLabs e riproduci sull\'ESP32 (usa la voce corrente)',
-    'test.tts_play':'<i class="bi bi-play-fill"></i> Riproduci','test.tts_placeholder':'Ciao, sono un Furby cinico.',
-    'test.voices_title':'Voci ElevenLabs','test.voices_desc':'Voci disponibili nel tuo account',
-    'test.voices_load':'<i class="bi bi-arrow-clockwise"></i> Carica voci','test.voices_use':'<i class="bi bi-check-lg"></i> Usa','test.voices_none':'Nessuna voce trovata.',
-    'sys.loading':'carico info sistema...',
-    'tip.no_llm':'Token LLM non configurato - vai in Configurazione → sezione AI e inserisci la chiave API.',
-    'tip.no_el':'Token ElevenLabs non configurato - vai in Configurazione → sezione ElevenLabs e inserisci la chiave API.',
     'saved':'Salvato.','error':'Errore.','error_conn':'Errore connessione.',
-    'no_behaviors':'Nessun comportamento configurato.',
-    'imported':'Importato.','playing':'In riproduzione sull\'ESP32.','sending':'Invio...',
-    'sending_tts':'Invio a ElevenLabs e riproduco...',
-    'modify':'Modifica','delete_btn':'<i class="bi bi-trash3"></i>','no_name':'Senza nome',
-    'voice_set':'Voice ID impostato:'
+    'sending':'Invio...'
   },
   en:{
     'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Restart the ESP32?',
-    'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
-    'tab.configs':'Configs','tab.raw':'Raw / Log','tab.audio':'Audio',
-    'tab.files':'SPIFFS Files','tab.persona':'Personality',
-    'sen.title':'Sensor state','sen.ant_l':'Antenna left','sen.ant_r':'Antenna right',
-    'sen.ant_f':'Antenna forward','sen.ant_b':'Antenna back',
-    'sen.tickle_head':'Tickle head','sen.tickle_tummy':'Tickle tummy',
-    'sen.tickle_r':'Tickle right','sen.tickle_l':'Tickle left',
-    'sen.pull_tail':'Pull tail','sen.push_tongue':'Push tongue',
-    'sen.upright':'Upright','sen.upside_down':'Upside down',
-    'sen.side_r':'Right side','sen.side_l':'Left side',
-    'sen.lean_back':'Lean back','sen.tilt_r':'Tilt right','sen.tilt_l':'Tilt left',
-    'act.direct':'Direct interaction','act.notes':'Musical notes (input 71)',
-    'act.world':'World App / Personality','act.custom':'Custom action',
-    'act.custom_run':'<i class="bi bi-play-fill"></i> Run',
-    'act.test_title':'<i class="bi bi-lightning"></i> Behavior test (without Furby)',
-    'act.test_desc':'Simulate a trigger and execute LLM + TTS as in production. With "Dry run" BLE actions toward Furby are skipped.',
-    'act.test_trigger':'Trigger','act.test_sensor':'Sensor',
-    'act.test_dry':'Dry run','act.test_dry_sub':'(skip BLE actions)',
-    'act.test_run':'<i class="bi bi-play-fill"></i> Simulate trigger',
-    'act.no_behavior':'→ no behavior configured, default will be used',
-    'act.trigger_sent':'Trigger sent - check serial console for full log.',
-    'act.trigger_sent_dry':'[DRY RUN] Trigger sent - check serial console for full log.',
-    'act.trigger_err':'Error: ','act.trigger_sending':'Sending trigger...',
-    'tbeh.trg.0':'VAD (speech)','tbeh.trg.1':'ESP32 button','tbeh.trg.2':'Furby sensor',
-    'ctrl.rgb':'Antenna LED (RGB)','ctrl.rgb_set':'<i class="bi bi-lightbulb"></i> Set',
-    'ctrl.eyes_on':'Eyes ON','ctrl.eyes_off':'Eyes OFF',
-    'ctrl.mood':'Mood (0x24)','ctrl.mood_set':'<i class="bi bi-emoji-smile"></i> Set mood',
-    'ctrl.system':'System','ctrl.dlc':'DLC slot',
-    'aud.amp':'Amplifier & volume','aud.amp_lbl':'AMP','aud.vol_lbl':'VOL',
-    'aud.amp_on':'amplifier active','aud.amp_off':'amplifier off',
+    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'SPIFFS Files',
     'aud.tone':'Speaker test (sine wave)',
     'aud.tone_dur':'Duration (ms) - all frequencies',
     'aud.tone_freq':'Custom frequency (Hz)',
@@ -182,9 +63,6 @@ var TRANSLATIONS={
     'aud.rec_running':'Recording 3s...','aud.rec_countdown':'Recording... ',
     'aud.rec_playing':'Playing back...','aud.rec_done':'Done.',
     'aud.tone_sending':'Sending tone...',
-    'aud.tts_browser_hint':'Web Speech API - system voice, no API needed',
-    'aud.tts_board_hint':'ElevenLabs via ESP32 - uses configured voice',
-    'aud.loading':'Loading config...',
     'aud.el_nokey':'ElevenLabs API key not configured.',
     'aud.el_synth':'Synthesising...','aud.el_playing':'<i class="bi bi-play-fill"></i> Playing back...',
     'fm.refresh':'<i class="bi bi-arrow-clockwise"></i> Refresh','fm.header_name':'File','fm.header_size':'Size',
@@ -197,12 +75,6 @@ var TRANSLATIONS={
     'fm.upload_ok':'Uploaded to ','fm.saving':'Saving...',
     'fm.load_err':'Load error','fm.net_err2':'Network error','fm.protected':'Protected file - cannot be modified from UI',
     'fm.del_confirm':'Delete',
-    'cfg.title':'Behavior configurations',
-    'cfg.new_placeholder':'New configuration name',
-    'cfg.new_btn':'<i class="bi bi-plus-lg"></i> New','cfg.rules_label':'Rules - ',
-    'cfg.rule_add':'<i class="bi bi-plus-lg"></i> Add rule','cfg.activate':'<i class="bi bi-check-circle"></i> Activate',
-    'cfg.del_confirm':'Delete this configuration?',
-    'cfg.new_default':'New config','cfg.action_placeholder':'Choose action','cfg.rules_full':'All 16 slots are used',
     'raw.title':'Raw command (hex bytes space-separated)',
     'raw.placeholder':'e.g. 13 00 27 03 08 01',
     'raw.log':'Log','raw.no_bytes':'raw: no valid bytes',
@@ -211,60 +83,8 @@ var TRANSLATIONS={
     'ble_bar.found_so_far':'Found so far:','ble_bar.furby_found':'Furby found:',
     'ble_bar.conn_btn':'Connect',
     'ble_bar.reset_confirm':'Full BLE stack reset? Connection will be lost.',
-    'tts_browser_hint':'Web Speech API - system voice, no API needed',
-    'tts_board_hint':'ElevenLabs via ESP32 - uses configured voice',
-    'voices_loaded':' voices loaded.',
-    'ble.not_connected':'BLE: not connected','ble.connected':'Connected','ble.connecting':'Connecting...',
-    'ble.scanning':'BLE scanning...','ble.scan':'<i class="bi bi-bluetooth"></i> Scan','ble.stop':'<i class="bi bi-stop-fill"></i> Stop scan',
-    'ble.abort':'<i class="bi bi-x-octagon"></i> Abort','ble.disconnect':'<i class="bi bi-x-circle"></i> Disc','ble.found_so_far':'Found so far:',
-    'ble.connect':'<i class="bi bi-link-45deg"></i> Connect',
-    'persona.base_title':'Base personality',
-    'persona.base_desc':'LLM system prompt - defines Furby\'s character and tone',
-    'persona.voice_label':'ElevenLabs Voice ID',
-    'persona.save_btn':'<i class="bi bi-floppy"></i> Save personality',
-    'persona.beh_title':'Behaviors - triggers → consequences',
-    'persona.beh_desc':'Each behavior maps a trigger to 1-3 consequences executed in sequence.',
-    'persona.beh_add':'<i class="bi bi-plus-lg"></i> Add','persona.beh_export':'<i class="bi bi-download"></i> Export JSON','persona.beh_import':'<i class="bi bi-upload"></i> Import JSON',
-    'beh.new_title':'New behavior','beh.trigger_label':'Trigger','beh.sensor_label':'Sensor',
-    'beh.name_label':'Name','beh.name_placeholder':'e.g. Head tickle',
-    'beh.save':'<i class="bi bi-floppy"></i> Save behavior','beh.cancel':'Cancel','beh.add_csq':'<i class="bi bi-plus-lg"></i> Consequence',
-    'beh.del_confirm':'Delete',
-    'beh.trg.vad':'VAD (speech)','beh.trg.button':'ESP32 button','beh.trg.sensor':'Furby sensor',
-    'beh.sensor.ant_l':'Antenna left','beh.sensor.ant_r':'Antenna right',
-    'beh.sensor.ant_f':'Antenna forward','beh.sensor.ant_b':'Antenna back',
-    'beh.sensor.tickle_head':'Tickle head','beh.sensor.tickle_tummy':'Tickle tummy',
-    'beh.sensor.tickle_r':'Tickle right','beh.sensor.tickle_l':'Tickle left',
-    'beh.sensor.pull_tail':'Pull tail','beh.sensor.push_tongue':'Push tongue',
-    'beh.sensor.upright':'Upright','beh.sensor.upside_down':'Upside down',
-    'beh.sensor.side_r':'Right side','beh.sensor.side_l':'Left side',
-    'beh.sensor.lean_back':'Lean back','beh.sensor.tilt_r':'Tilt right','beh.sensor.tilt_l':'Tilt left',
-    'csq.furby_action':'Furby action','csq.tts_fixed':'Fixed TTS',
-    'csq.prompt_fixed':'Fixed prompt → LLM','csq.llm_decide':'LLM decides (+ reactions)',
-    'csq.snapshot':'Include photo (snapshot)',
-    'csq.reactions_label':'Available physical reactions (max 3) - LLM picks the best fit',
-    'csq.tts_placeholder':'Text to speak',
-    'csq.prompt_placeholder':'Fixed prompt (e.g. \'Comment the photo in an annoyed way\')',
-    'csq.llm_placeholder':'Event context (e.g. \'Someone is talking to you\')',
-    'csq.action_placeholder':'-- choose action --',
-    'sim.title':'<i class="bi bi-lightning-charge"></i> Event simulator',
-    'sim.desc':'Simulate a trigger and see the consequence chain executed. Dry run skips physical BLE actions but runs LLM and TTS normally.',
-    'sim.trigger':'Trigger','sim.vad_text':'Simulated VAD text','sim.run':'<i class="bi bi-play-fill"></i> Run simulation',
-    'sim.running':'Running simulation...','sim.done':'Simulation complete.','sim.err':'Simulation error: ',
-    'test.llm_title':'Test LLM','test.llm_desc':'Send a message to the model with the current personality prompt (no photo)',
-    'test.llm_send':'<i class="bi bi-send"></i> Send','test.llm_placeholder':'What do you think about the weather today?',
-    'test.tts_title':'Test TTS','test.tts_desc':'Send text to ElevenLabs and play on the ESP32 (uses current voice)',
-    'test.tts_play':'<i class="bi bi-play-fill"></i> Play','test.tts_placeholder':'Hello, I\'m a cynical Furby.',
-    'test.voices_title':'ElevenLabs Voices','test.voices_desc':'Voices available in your account',
-    'test.voices_load':'<i class="bi bi-arrow-clockwise"></i> Load voices','test.voices_use':'<i class="bi bi-check-lg"></i> Use','test.voices_none':'No voices found.',
-    'sys.loading':'loading system info...',
-    'tip.no_llm':'LLM token not configured - go to Configuration → AI section and enter your API key.',
-    'tip.no_el':'ElevenLabs token not configured - go to Configuration → ElevenLabs section and enter your API key.',
     'saved':'Saved.','error':'Error.','error_conn':'Connection error.',
-    'no_behaviors':'No behaviors configured.',
-    'imported':'Imported.','playing':'Playing on ESP32.','sending':'Sending...',
-    'sending_tts':'Sending to ElevenLabs and playing...',
-    'modify':'Edit','delete_btn':'<i class="bi bi-trash3"></i>','no_name':'Unnamed',
-    'voice_set':'Voice ID set:'
+    'sending':'Sending...'
   }
 };
 var gLang='it';
@@ -292,7 +112,6 @@ function setLang(l){
 <script src="/shared.js"></script>
 <script>renderNav('debug');</script>
 
-<div id="sys-info-bar" data-i18n="sys.loading">carico info sistema...</div>
 
 <!-- BLE bar -->
 <div class="ble-bar">
@@ -320,126 +139,14 @@ function setLang(l){
 
 <!-- tabs -->
 <ul class="nav nav-tabs flex-nowrap" id="debugTabs" style="overflow-x:auto;overflow-y:hidden">
-  <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-sensors" data-i18n="tab.sensors">Sensori</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-actions" data-i18n="tab.actions">Azioni</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-control" data-i18n="tab.control">Controllo</a></li>
+  <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
 </ul>
 <div class="tab-content">
 
-<!-- TAB: Sensori -->
-<div class="tab-pane fade show active" id="t-sensors">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small class="text-secondary fw-normal" id="sensor-age">-</small></h6>
-      <div class="sensors">
-        <div class="sensor"><div class="dot" id="s-ant-l"></div><span data-i18n="sen.ant_l">Antenna sx</span></div>
-        <div class="sensor"><div class="dot" id="s-ant-r"></div><span data-i18n="sen.ant_r">Antenna dx</span></div>
-        <div class="sensor"><div class="dot" id="s-ant-f"></div><span data-i18n="sen.ant_f">Antenna avanti</span></div>
-        <div class="sensor"><div class="dot" id="s-ant-b"></div><span data-i18n="sen.ant_b">Antenna indietro</span></div>
-        <div class="sensor"><div class="dot" id="s-t-head"></div><span data-i18n="sen.tickle_head">Tickle testa</span></div>
-        <div class="sensor"><div class="dot" id="s-t-tummy"></div><span data-i18n="sen.tickle_tummy">Tickle pancia</span></div>
-        <div class="sensor"><div class="dot" id="s-t-right"></div><span data-i18n="sen.tickle_r">Tickle dx</span></div>
-        <div class="sensor"><div class="dot" id="s-t-left"></div><span data-i18n="sen.tickle_l">Tickle sx</span></div>
-        <div class="sensor"><div class="dot" id="s-tail"></div><span data-i18n="sen.pull_tail">Tira coda</span></div>
-        <div class="sensor"><div class="dot" id="s-tongue"></div><span data-i18n="sen.push_tongue">Spingi lingua</span></div>
-        <div class="sensor"><div class="dot" id="s-up"></div><span data-i18n="sen.upright">Dritto</span></div>
-        <div class="sensor"><div class="dot" id="s-down"></div><span data-i18n="sen.upside_down">Capovolto</span></div>
-        <div class="sensor"><div class="dot" id="s-right"></div><span data-i18n="sen.side_r">Lato dx</span></div>
-        <div class="sensor"><div class="dot" id="s-left"></div><span data-i18n="sen.side_l">Lato sx</span></div>
-        <div class="sensor"><div class="dot" id="s-lean"></div><span data-i18n="sen.lean_back">Inclinato back</span></div>
-        <div class="sensor"><div class="dot" id="s-tr"></div><span data-i18n="sen.tilt_r">Inclinato dx</span></div>
-        <div class="sensor"><div class="dot" id="s-tl"></div><span data-i18n="sen.tilt_l">Inclinato sx</span></div>
-      </div>
-      <div class="font-monospace text-muted small mt-2" id="raw-bytes">raw: -</div>
-    </div>
-  </div>
-</div>
-
-<!-- TAB: Azioni -->
-<div class="tab-pane fade" id="t-actions">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.direct">Interazione diretta</h6>
-    <div class="act-grid" id="act-grid-direct"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.notes">Note musicali (input 71)</h6>
-    <div class="act-grid" id="act-grid-notes"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.world">World App / Personalità</h6>
-    <div class="act-grid" id="act-grid-world"></div>
-  </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.custom">Azione personalizzata</h6>
-    <div class="row g-2 mb-2">
-      <div class="col"><div class="text-muted small mb-1">Input (0-75)</div><input type="number" class="form-control form-control-sm" id="ap-in" min="0" max="75" value="39"></div>
-      <div class="col"><div class="text-muted small mb-1">Index</div><input type="number" class="form-control form-control-sm" id="ap-ix" min="0" max="127" value="3"></div>
-      <div class="col"><div class="text-muted small mb-1">Subindex</div><input type="number" class="form-control form-control-sm" id="ap-sx" min="0" max="30" value="8"></div>
-      <div class="col"><div class="text-muted small mb-1">Specific</div><input type="number" class="form-control form-control-sm" id="ap-sp" min="0" max="10" value="1"></div>
-    </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
-    </div>
-  </div></div>
-  <div class="card shadow-sm mb-3 border-warning"><div class="card-body"><h6 class="text-uppercase fw-bold small mb-1 text-warning"><i class="bi bi-lightning-charge"></i> Simulatore eventi</h6><p class="text-muted small mb-2">Pannello personalit&#224;, regole e simulatore nella pagina Furby.</p><div class="d-grid d-sm-flex gap-2 justify-content-sm-end"><a class="btn btn-warning px-3" href="/furby"><i class="bi bi-arrow-right-circle"></i> Vai a Furby</a></div></div></div>
-</div>
-
-<!-- TAB: Controllo -->
-<div class="tab-pane fade" id="t-control">
-  <!-- LED -->
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
-    <div class="d-flex align-items-center gap-3">
-      <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px">
-      <button class="btn btn-success px-3" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
-      <button class="btn btn-outline-secondary px-3" id="btn-eyes" onclick="eyesToggle()"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
-    </div>
-  </div></div>
-  <!-- Mood -->
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.mood">Mood (0x24)</h6>
-    <div class="row g-2 mb-2">
-      <div class="col-6"><label class="form-label small mb-1">Wellness</label><input type="number" class="form-control form-control-sm" id="m-well" min="0" max="7" value="4"></div>
-      <div class="col-6"><label class="form-label small mb-1">Fullness</label><input type="number" class="form-control form-control-sm" id="m-full" min="0" max="7" value="4"></div>
-      <div class="col-6"><label class="form-label small mb-1">Tiredness</label><input type="number" class="form-control form-control-sm" id="m-tire" min="0" max="7" value="4"></div>
-      <div class="col-6"><label class="form-label small mb-1">Excitedness</label><input type="number" class="form-control form-control-sm" id="m-exci" min="0" max="7" value="4"></div>
-    </div>
-    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-primary px-3" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
-    </div>
-  </div></div>
-  <!-- Sistema + DLC -->
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
-    <div class="row g-2 mb-3">
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button></div>
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button></div>
-      <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button></div>
-    </div>
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
-    <div class="d-flex gap-2 align-items-center mb-2">
-      <div class="input-group w-auto">
-        <span class="input-group-text">Slot</span>
-        <input type="number" class="form-control" id="dlc-slot" min="0" max="13" value="0">
-      </div>
-      <button class="btn btn-outline-primary px-3 flex-fill" onclick="dlcCmd(0x60)"><i class="bi bi-box-arrow-in-down"></i> Load</button>
-    </div>
-    <div class="row g-2 mb-2">
-      <div class="col-6"><button class="btn btn-outline-success px-3 w-100" onclick="dlcCmd(0x61)"><i class="bi bi-check-circle"></i> Activate</button></div>
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x62)"><i class="bi bi-circle"></i> Deactivate</button></div>
-      <div class="col-6"><button class="btn btn-outline-danger px-3 w-100" onclick="dlcCmd(0x74)"><i class="bi bi-trash3"></i> Delete</button></div>
-      <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x72)"><i class="bi bi-info-circle"></i> Info tutti</button></div>
-      <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="dlcCmd(0x73)"><i class="bi bi-info-circle"></i> Info slot</button></div>
-    </div>
-    <div id="dlc-log" class="bg-dark text-light rounded p-2 small scroll-box-sm" style="display:none"></div>
-  </div></div>
-</div>
-
 <!-- TAB: Audio -->
-<div class="tab-pane fade" id="t-audio">
+<div class="tab-pane fade show active" id="t-audio">
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.tone">Test casse (sine wave)</h6>
     <div class="mb-3">
@@ -568,19 +275,9 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
   el.addEventListener('shown.bs.tab',function(e){
     var id=e.target.getAttribute('href').replace('#','');
     if(id==='t-audio'){startMicPoll();dbgVadLoad();}else stopMicPoll();
-    if(id==='t-sensors')startSensorsSse();
     if(id==='t-files')fmLoad();
   });
 });
-var gActions=[];
-var SENSOR_NAMES=['-','Antenna sx','Antenna dx','Antenna avanti','Antenna indietro','Tickle testa','Tickle pancia','Tickle dx','Tickle sx','Tira coda','Spingi lingua','Dritto','Capovolto','Lato dx','Lato sx','Inclinato back','Inclinato dx','Inclinato sx'];
-var CSQ_LABELS={1:'Azione Furby',2:'TTS fisso',3:'Prompt fisso→LLM',4:'LLM risponde',5:'LLM sceglie azione'};
-var CSQ_COLORS={1:'info',2:'success',3:'warning',4:'primary',5:'danger'};
-
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function sMsg(id,txt,cls){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='small mt-1 text-'+(cls||'muted');if(txt)setTimeout(function(){el.textContent='';el.className='small mt-1 text-muted';},3000);}
-
-// ── BLE mask ─────────────────────────────────────────────────────────────────
 var BLE_TIP_IT='Furby non connesso via BLE - usa la barra in alto per cercarlo e connetterlo.';
 var BLE_TIP_EN='Furby not connected via BLE - use the bar above to scan and connect.';
 function bleTip(){return gLang==='en'?BLE_TIP_EN:BLE_TIP_IT;}
@@ -590,18 +287,7 @@ function _bsTooltipRefresh(el,msg){
   new bootstrap.Tooltip(el,{trigger:'hover focus',title:msg||el.title||''});
 }
 function bleMaskApply(connected){
-  // selettori di tutti gli elementi BLE-dipendenti
-  var bleSelectors='#act-grid-direct button,#act-grid-notes button,#act-grid-world button,'
-    +'#t-actions .btn[onclick="sendCustomAction()"],'
-    +'#ap-in,#ap-ix,#ap-sx,#ap-sp,'
-    +'#rgb-picker,#t-control .btn[onclick="sendRgb()"],'
-    +'#btn-eyes,'
-    +'#m-well,#m-full,#m-tire,#m-exci,'
-    +'#t-control .btn[onclick="sendMood()"],'
-    +'#t-control .btn[onclick*="espCmd"],'
-    +'#t-control .btn[onclick*="espCmdN"],'
-    +'#dlc-slot,#t-control .btn[onclick*="dlcCmd"],'
-    +'#raw-in,#t-raw .btn[onclick*="sendRaw"]';
+  var bleSelectors='#raw-in,#t-raw .btn[onclick*="sendRaw"]';
   document.querySelectorAll(bleSelectors).forEach(function(el){
     var isInput=(el.tagName==='INPUT'||el.tagName==='SELECT');
     if(connected){
@@ -616,7 +302,6 @@ function bleMaskApply(connected){
     }
   });
 }
-// ── /end BLE mask ─────────────────────────────────────────────────────────────
 
 
 function dbBleApply(d){
@@ -626,7 +311,6 @@ function dbBleApply(d){
   var lst=document.getElementById('db-ble-list');
   _bleConnected=!!d.connected;
   bleMaskApply(_bleConnected);
-  if(_bleConnected)startSensorsSse();else stopSensorsSse();
   if(d.uptime!==undefined){_bootRefSet(Date.now(),d.uptime);_uptimeTick();}
   var bu=document.getElementById('ble-uptime');
   if(bu){if(d.connected&&d.ble_uptime){bu.textContent='(conn. '+fmtSec(d.ble_uptime)+')';bu.style.display='';}else{bu.textContent='';bu.style.display='none';}}
@@ -672,47 +356,10 @@ function wbCmd(label,bytes){espCmd(label,bytes);}
 function espCmd(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 function espCmdN(label,bytes){var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>log('ESP-N '+label+': '+(d.ok?'OK':'ERR '+(d.error||''))));}
 
-var ACTIONS_DIRECT=[[1,0,0,0,'Accarezza (rnd)'],[2,0,0,0,'Accarezza 2'],[3,0,0,0,'Accarezza 3'],[4,0,0,0,'Coccola'],[5,0,0,0,'Coccola 2'],[6,0,0,0,'Peto 1'],[6,1,0,0,'Peto 2'],[6,2,0,0,'Peto 3'],[6,3,0,0,'Peto 4'],[7,0,0,0,'Rutto 1'],[7,1,0,0,'Rutto 2'],[7,2,0,0,'Rutto 3'],[8,0,0,0,'Starnuto'],[9,0,0,0,'Sbadiglio'],[10,0,0,0,'Risposta conv.'],[11,0,0,0,'Risposta 2'],[12,0,0,0,'Risposta 3'],[13,0,0,0,'Saluto'],[14,0,0,0,'Saluto 2'],[15,0,0,0,'Movimento 1'],[16,0,0,0,'Movimento 2'],[17,0,0,0,'Danza'],[18,0,0,0,'Danza 2'],[19,0,0,0,'Danza 3'],[20,0,0,0,'Felicità'],[21,0,0,0,'Addormenta'],[22,0,0,0,'Sveglia'],[23,0,0,0,'Sogno 1'],[24,0,0,0,'Sogno 2'],[25,0,0,0,'Fame'],[26,0,0,0,'Noia'],[27,0,0,0,'Sorpresa'],[28,0,0,0,'Paura']];
-var ACTIONS_NOTES=[[71,0,0,0,'Do'],[71,1,0,0,'Re'],[71,2,0,0,'Mi'],[71,3,0,0,'Fa'],[71,4,0,0,'Sol'],[71,5,0,0,'La'],[71,6,0,0,'Ti'],[71,7,0,0,'Do alta']];
-var ACTIONS_WORLD=[[29,0,0,0,'Chiedi nome'],[30,0,0,0,'Ricorda nome'],[31,0,0,0,'Amicizia'],[32,0,0,0,'Miglior amico'],[33,0,0,0,'Canzone amicizia'],[34,0,0,0,'Personalità DJ'],[35,0,0,0,'Pers. Princess'],[36,0,0,0,'Quest start'],[37,0,0,0,'Quest complete'],[38,0,0,0,'Quest fail'],[39,3,8,1,'Legendary!'],[39,4,6,1,'Nice'],[39,3,1,1,'Hey hey'],[40,0,0,0,'Colleziona'],[41,0,0,0,'Regalo ricevuto'],[42,0,0,0,'Regalo inviato'],[43,0,0,0,'Scambio'],[44,0,0,0,'Vittoria'],[45,0,0,0,'Sconfitta'],[50,0,0,0,'Festa'],[51,0,0,0,'Celebrazione'],[60,0,0,0,'Apprendimento'],[61,0,0,0,'Conta 1'],[62,0,0,0,'Conta 2'],[63,0,0,0,'Colori'],[64,0,0,0,'Animali'],[70,0,0,0,'Frase generica 1'],[70,1,0,0,'Frase generica 2'],[72,0,0,0,'Ciao mondo'],[73,0,0,0,'Buonanotte'],[74,0,0,0,'Sogno personalità'],[75,0,4,4,'DLC action']];
-function buildActGrid(id,actions){
-  var el=document.getElementById(id);
-  actions.forEach(function(a){
-    var b=document.createElement('button');b.className='btn btn-primary act-btn px-3';b.innerHTML='<i class="bi bi-play-fill"></i> '+a[0]+' - '+a[4];
-    b.title='[0x13,0x00,'+a[0]+','+a[1]+','+a[2]+','+a[3]+']';
-    b.onclick=function(){wbCmd(a[4],[0x13,0x00,a[0],a[1],a[2],a[3]]);};el.appendChild(b);
-  });
-}
-buildActGrid('act-grid-direct',ACTIONS_DIRECT);buildActGrid('act-grid-notes',ACTIONS_NOTES);buildActGrid('act-grid-world',ACTIONS_WORLD);
 bleMaskApply(_bleConnected);
-function sendCustomAction(){wbCmd('custom',[0x13,0x00,+document.getElementById('ap-in').value,+document.getElementById('ap-ix').value,+document.getElementById('ap-sx').value,+document.getElementById('ap-sp').value]);}
-
-
-function syncColorPicker(){} // color picker is source of truth
-function sendRgb(){var hex=document.getElementById('rgb-picker').value;var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);wbCmd('antenna',[0x14,r,g,b]);}
-var _eyesOn=true;
-function eyesToggle(){_eyesOn=!_eyesOn;if(_eyesOn)wbCmd('occhi-on',[0xcd,0x01]);else wbCmd('occhi-off',[0xcd,0x00]);document.getElementById('eyes-icon').className=_eyesOn?'bi bi-eye':'bi bi-eye-slash';document.getElementById('eyes-label').innerHTML=t(_eyesOn?'ctrl.eyes_on':'ctrl.eyes_off');}
-function sendMood(){wbCmd('mood',[0x24,+document.getElementById('m-well').value,+document.getElementById('m-full').value,+document.getElementById('m-tire').value,+document.getElementById('m-exci').value]);}
-function dlcLog(msg){var el=document.getElementById('dlc-log');el.style.display='block';el.textContent=new Date().toLocaleTimeString()+' '+msg+'\n'+el.textContent;}
-function dlcCmd(code){var s=+document.getElementById('dlc-slot').value;var label='dlc-'+code.toString(16);var bytes=code===0x61?[code]:[code,s];var fd=new FormData();fd.append('bytes',JSON.stringify(bytes));if(code===0x61)fd.append('channel','nordic');fetch('/debug/cmd',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{log('ESP '+label+': '+(d.ok?'OK':'ERR '+(d.error||'')));if(d.response)dlcLog(d.response);});}
 function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().split(/\s+/),bytes=hex.map(function(h){return parseInt(h,16);}).filter(function(n){return !isNaN(n);});if(!bytes.length){log(t('raw.no_bytes'));return;}if(ch==='nordic')espCmdN('raw',bytes);else wbCmd('raw',bytes);}
 
-var sensorMap={'antennaLeft':'s-ant-l','antennaRight':'s-ant-r','antennaForward':'s-ant-f','antennaBack':'s-ant-b','tickleHead':'s-t-head','tickleTummy':'s-t-tummy','tickleRight':'s-t-right','tickleLeft':'s-t-left','pullTail':'s-tail','pushTongue':'s-tongue','upright':'s-up','upsideDown':'s-down','onRightSide':'s-right','onLeftSide':'s-left','leanBack':'s-lean','tiltRight':'s-tr','tiltLeft':'s-tl'};
 var _bleConnected=false;
-function _sensorsApply(d){
-  document.getElementById('sensor-age').textContent=d.sensor_age_ms<5000?(d.sensor_age_ms+'ms fa'):'-';
-  for(var k in sensorMap){var el=document.getElementById(sensorMap[k]);if(el)el.className='dot'+(d[k]?' on':'');}
-  document.getElementById('raw-bytes').textContent='raw: '+[d.rawB1,d.rawB2,d.rawB3,d.rawB4].map(function(x){return '0x'+(x||0).toString(16).padStart(2,'0');}).join(' ');
-}
-var _sensorsEs=null;
-function startSensorsSse(){
-  if(_sensorsEs)return;
-  _sensorsEs=new EventSource('/debug/sensors/sse');
-  _sensorsEs.onmessage=function(e){try{_sensorsApply(JSON.parse(e.data));}catch(ex){}};
-  _sensorsEs.onerror=function(){_sensorsEs.close();_sensorsEs=null;setTimeout(startSensorsSse,2000);};
-}
-function stopSensorsSse(){if(_sensorsEs){_sensorsEs.close();_sensorsEs=null;}}
-
 var _vadThreshold=800;
 function dbgVadLoad(){
   fetch('/api/home').then(r=>r.json()).then(function(d){
@@ -827,7 +474,6 @@ function fmUpload(){
   }).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 
-fetch('/behaviors/actions').then(r=>r.json()).then(d=>{gActions=d;});
 setLang(gLang);
 </script>
 </body></html>
