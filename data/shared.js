@@ -416,7 +416,7 @@ function _updateSysBar(d){
     _fwCurrent=d.fw_version;
     Promise.all([
       fetch('/version.txt').then(function(r){return r.ok?r.text():Promise.resolve('');}).catch(function(){return '';}),
-      fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt').then(function(r){return r.text();}).catch(function(){return '';})
+      fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt',{cache:'no-store'}).then(function(r){return r.text();}).catch(function(){return '';})
     ]).then(function(results){
       var local=results[0].trim();
       var latest=results[1].trim();

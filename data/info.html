@@ -258,7 +258,7 @@ function renderFwBadge(current){
   _fwBadgeDone=true;
   Promise.all([
     fetch('/version.txt').then(function(r){return r.ok?r.text():Promise.resolve('');}).catch(function(){return '';}),
-    fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt').then(function(r){return r.text();}).catch(function(){return '';})
+    fetch('https://raw.githubusercontent.com/nerdosity/furby-connect-ai/main/version.txt',{cache:'no-store'}).then(function(r){return r.text();}).catch(function(){return '';})
   ]).then(function(res){
     var local=res[0].trim()||current;
     var latest=res[1].trim();
