@@ -7,7 +7,7 @@
 <script>
 var TRANSLATIONS={
   it:{
-    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'File SPIFFS',
+    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'File manager','tab.sd':'SD',
     'aud.tone':'Test casse (sine wave)',
     'aud.tone_dur':'Durata (ms) - tutte le frequenze',
     'aud.tone_freq':'Frequenza personalizzata (Hz)',
@@ -45,7 +45,7 @@ var TRANSLATIONS={
     'sending':'Invio...'
   },
   en:{
-    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'SPIFFS Files',
+    'tab.raw':'Raw / Log','tab.audio':'Audio','tab.files':'File manager','tab.sd':'SD',
     'aud.tone':'Speaker test (sine wave)',
     'aud.tone_dur':'Duration (ms) - all frequencies',
     'aud.tone_freq':'Custom frequency (Hz)',
@@ -84,7 +84,7 @@ var TRANSLATIONS={
   }
 };
 var gLang='it';
-function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||k;}
+function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||(_SHARED_TR[gLang]||_SHARED_TR.it)[k]||k;}
 function setLang(l){
   gLang=l;localStorage.setItem('furby_lang',l);
   var sel=document.getElementById('lang-sel');if(sel)sel.value=l;
@@ -137,7 +137,8 @@ function setLang(l){
 <ul class="nav nav-tabs flex-nowrap" id="debugTabs" style="overflow-x:auto;overflow-y:hidden">
   <li class="nav-item"><a class="nav-link active small text-nowrap" data-bs-toggle="tab" href="#t-audio" data-i18n="tab.audio">Audio</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
-  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File SPIFFS</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File manager</a></li>
+  <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-sd" data-i18n="tab.sd">SD</a></li>
 </ul>
 <div class="tab-content">
 
@@ -263,6 +264,44 @@ function setLang(l){
   </div></div>
 </div>
 
+<!-- TAB: SD -->
+<div class="tab-pane fade" id="t-sd">
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="text-muted small" id="sd-fm-quota">-</span>
+      <span class="text-muted small ms-2" id="sd-fm-path">/</span>
+      <button class="btn btn-outline-secondary px-3 ms-auto" id="sd-fm-up-btn" onclick="sdFmUp()" style="display:none"><i class="bi bi-arrow-up"></i> Su</button>
+      <button class="btn btn-success px-3" onclick="sdFmLoad(sdFmCurDir)" data-i18n="fm.refresh"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
+    </div>
+    <div id="sd-fm-absent" class="text-muted small d-none">SD non presente.</div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead class="table-light"><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th class="text-end"></th></tr></thead>
+        <tbody id="sd-fm-tbody"><tr><td colspan="3" class="text-center text-muted" data-i18n="fm.loading">carico...</td></tr></tbody>
+      </table>
+    </div>
+  </div></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="fm.upload_title">Carica file</h6>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label small" data-i18n="fm.upload_path">Percorso</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="sd-fm-up-path" placeholder="/nomefile.bin">
+      </div>
+      <div class="col-12 col-md-5">
+        <label class="form-label small" data-i18n="fm.upload_file">File da PC</label>
+        <input type="file" class="form-control form-control-sm" id="sd-fm-up-file" onchange="document.getElementById('sd-fm-up-send').disabled=!this.files.length">
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+          <button class="btn btn-warning px-3" id="sd-fm-up-send" onclick="sdFmUpload()" disabled data-i18n="fm.upload_btn"><i class="bi bi-upload"></i> Carica</button>
+        </div>
+      </div>
+    </div>
+    <div id="sd-fm-up-msg" class="small mt-2 text-muted"></div>
+  </div></div>
+</div>
+
 </div><!-- /tab-content -->
 
 <script src="/bootstrap.bundle.min.js"></script>
@@ -272,6 +311,7 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
     var id=e.target.getAttribute('href').replace('#','');
     if(id==='t-audio'){startMicPoll();dbgVadLoad();}else stopMicPoll();
     if(id==='t-files')fmLoad();
+    if(id==='t-sd')sdFmLoad('/');
   });
 });
 var BLE_TIP_IT='Furby non connesso via BLE - usa la barra in alto per cercarlo e connetterlo.';
@@ -478,6 +518,61 @@ function fmUpload(){
   fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
     msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
     if(d.ok){document.getElementById('fm-up-path').value='';document.getElementById('fm-up-file').value='';fmLoad();}
+  }).catch(function(){msg.textContent=t('fm.net_err2');});
+}
+
+// ── SD file manager ────────────────────────────────────────────────────────
+var sdFmCurDir='/';
+function sdFmLoad(dir){
+  if(!dir)dir='/';
+  sdFmCurDir=dir;
+  document.getElementById('sd-fm-path').textContent=dir;
+  document.getElementById('sd-fm-up-btn').style.display=(dir==='/')?'none':'';
+  document.getElementById('sd-fm-tbody').innerHTML='<tr><td colspan="3" class="text-center py-3"><span class="spinner-border spinner-border-sm text-secondary"></span></td></tr>';
+  fetch('/sd/list?dir='+encodeURIComponent(dir)).then(r=>r.json()).then(function(d){
+    if(d.error){document.getElementById('sd-fm-absent').classList.remove('d-none');document.getElementById('sd-fm-tbody').innerHTML='';return;}
+    document.getElementById('sd-fm-absent').classList.add('d-none');
+    var used=d.used||0,total=d.total||0;
+    document.getElementById('sd-fm-quota').textContent='SD: '+fmFmtSize(used/1024)+' / '+fmFmtSize(total/1024)+' usati';
+    var tb=document.getElementById('sd-fm-tbody');
+    if(!d.files||!d.files.length){tb.innerHTML='<tr><td colspan="3" class="text-center text-muted">Cartella vuota</td></tr>';return;}
+    var rows='';
+    d.files.forEach(function(f){
+      var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      var fullPath=(dir==='/'?'/':dir+'/')+n;
+      if(f.dir){
+        rows+='<tr><td class="font-monospace small"><i class="bi bi-folder-fill text-warning me-1"></i><a href="#" onclick="sdFmLoad(\''+fullPath.replace(/'/g,"\\'")+'\')" class="text-decoration-none">'+n+'</a></td><td>-</td><td class="text-end"></td></tr>';
+      } else {
+        rows+='<tr><td class="font-monospace small text-break"><i class="bi bi-file-earmark me-1 text-muted"></i>'+n+'</td>'
+          +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
+          +'<td class="text-end"><a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="/sd/get?path='+encodeURIComponent(fullPath)+'" download>↓</a>'
+          +'<button class="btn btn-danger btn-sm py-0" onclick="sdFmDel(\''+fullPath.replace(/'/g,"\\'")+'\')" ><i class="bi bi-trash3"></i></button></td></tr>';
+      }
+    });
+    tb.innerHTML=rows;
+  }).catch(function(){document.getElementById('sd-fm-tbody').innerHTML='<tr><td colspan="3" class="text-danger">Errore di connessione</td></tr>';});
+}
+function sdFmUp(){
+  var parts=sdFmCurDir.split('/').filter(Boolean);parts.pop();
+  sdFmLoad(parts.length?'/'+parts.join('/'):'/' );
+}
+function sdFmDel(path){
+  if(!confirm('Eliminare '+path+'?'))return;
+  var fd=new FormData();fd.append('path',path);
+  fetch('/sd/del',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    if(!d.ok)alert('ERR: '+(d.error||''));
+    sdFmLoad(sdFmCurDir);
+  }).catch(function(){alert('Errore di connessione');});
+}
+function sdFmUpload(){
+  var path=document.getElementById('sd-fm-up-path').value.trim(),file=document.getElementById('sd-fm-up-file').files[0],msg=document.getElementById('sd-fm-up-msg');
+  if(!path||!file){msg.textContent=t('fm.upload_missing');return;}
+  if(path[0]!=='/')path='/'+path;
+  var fd=new FormData();fd.append('path',path);fd.append('content',file,file.name);
+  msg.textContent=t('fm.loading');
+  fetch('/sd/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    msg.textContent=d.ok?t('fm.upload_ok')+path:'ERR: '+(d.error||'');
+    if(d.ok){document.getElementById('sd-fm-up-path').value='';document.getElementById('sd-fm-up-file').value='';sdFmLoad(sdFmCurDir);}
   }).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 

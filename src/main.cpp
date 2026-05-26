@@ -1,4 +1,5 @@
 #include <math.h>
+#include <time.h>
 #include "globals.h"
 #include "hw.h"
 #include "audio.h"
@@ -6,6 +7,7 @@
 #include "behaviors.h"
 #include "ble_furby.h"
 #include "web.h"
+#include "config_backup.h"
 #include "AudioGeneratorMP3.h"
 #include "AudioFileSourceBuffer.h"
 #include "AudioFileSourcePROGMEM.h"
@@ -40,6 +42,7 @@ void setup() {
         SPIFFS.usedBytes()/1024, SPIFFS.totalBytes()/1024);
 
     preferences.begin("furby", false);
+    bool nvsWasEmpty = (preferences.freeEntries() >= 128);
     loadWifiNets();
     llm_provider        = preferences.getString("llm_prov",  "openai");
     llm_model           = preferences.getString("llm_model", "gpt-4o-mini");
@@ -77,7 +80,9 @@ void setup() {
     camGainCeiling   = preferences.getInt("cam_gc",  0);
     camBrightness    = preferences.getInt("cam_br",  0);
     camAgc           = preferences.getInt("cam_agc", 1);
-    Serial.printf("[NVS] entry usate: %u/128\n", preferences.freeEntries() < 128 ? 128 - preferences.freeEntries() : 0);
+    Serial.printf("[NVS] entry usate: %u/128%s\n",
+        preferences.freeEntries() < 128 ? 128 - preferences.freeEntries() : 0,
+        nvsWasEmpty ? " (VUOTO)" : "");
     preferences.end(); // chiude handle globale - da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),
@@ -135,6 +140,13 @@ void setup() {
         Serial.println("SD: assente o non riconosciuta - modalita RAM");
     }
 
+    if (loadConfigBackupIfNeeded(nvsWasEmpty)) {
+        Serial.println("[CFG] config ripristinata da backup");
+    } else if (!nvsWasEmpty) {
+        // NVS presente e valido: aggiorna/crea il backup con lo stato attuale
+        saveConfigBackup();
+    }
+
     initI2S();
     initES8311();
     initES7210();
@@ -157,6 +169,11 @@ void setup() {
         p.end();
     }
     if (!tryConnectWifi(false)) startCaptivePortal();
+    // NTP: sincronizza subito se WiFi connesso (UTC, offset applicato lato browser)
+    if (WiFi.status() == WL_CONNECTED) {
+        configTime(0, 0, "pool.ntp.org", "time.google.com");
+        Serial.println("NTP: sync avviato");
+    }
     startWebServer();
 
     if (!isConfigMode) {

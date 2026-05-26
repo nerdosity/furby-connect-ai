@@ -397,12 +397,14 @@ function _updateSysBar(d){
   var sramPct=d.heap_total?Math.round(sramUsed*100/d.heap_total):0;
   var psramUsed=d.psram_total-d.psram_free;
   var psramPct=d.psram_total?Math.round(psramUsed*100/d.psram_total):0;
+  var ntpTime = (d.now_ts > 0) ? new Date(d.now_ts * 1000).toLocaleTimeString() : '';
   _lastSysPlain='CPU '+d.cpu_mhz+'MHz'
     +' | SRAM '+fmtKB(sramUsed)+'/'+fmtKB(d.heap_total)+' ('+sramPct+'%)'
     +' | PSRAM '+fmtKB(psramUsed)+'/'+fmtKB(d.psram_total)+' ('+psramPct+'%)'
     +' | Sketch '+fmtKB(d.sketch_used)+'/'+fmtKB(d.sketch_total)
     +' | SPIFFS '+fmtKB(d.spiffs_used)+'/'+fmtKB(d.spiffs_total)
-    +' | Flash '+flashUsed+' '+T('sys.flash_used')+', '+flashFree+' '+T('sys.flash_free')+' ('+d.flash_mb+'MB)'+bat+sd;
+    +' | Flash '+flashUsed+' '+T('sys.flash_used')+', '+flashFree+' '+T('sys.flash_free')+' ('+d.flash_mb+'MB)'+bat+sd
+    +(ntpTime?' | '+ntpTime:'');
   _lastTempC=(d.chip_temp_c!=null)?d.chip_temp_c:null;
   if(bar) _renderSysBar(bar, _lastSysPlain, _lastTempC, _fwLatestVersion);
   if(d.uptime_s!=null&&!_bootRef){

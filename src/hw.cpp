@@ -1,4 +1,5 @@
 #include "hw.h"
+#include "config_backup.h"
 
 const byte DNS_PORT = 53;
 
@@ -31,6 +32,7 @@ void upsertWifiNet(const String& ssid, const String& pass, int priority) {
             for (int j = i; j > priority; j--) wifiNets[j] = wifiNets[j-1];
             wifiNets[priority] = tmp;
             saveWifiNets();
+            saveConfigBackup();
             return;
         }
     }
@@ -40,6 +42,7 @@ void upsertWifiNet(const String& ssid, const String& pass, int priority) {
         wifiNets[pos] = {ssid, pass};
         wifiNetCount++;
         saveWifiNets();
+        saveConfigBackup();
     }
 }
 
@@ -48,6 +51,7 @@ void removeWifiNet(int idx) {
     for (int i = idx; i < wifiNetCount - 1; i++) wifiNets[i] = wifiNets[i+1];
     wifiNetCount--;
     saveWifiNets();
+    saveConfigBackup();
 }
 
 bool tryConnectWifi(bool useDelay) {
@@ -119,11 +123,22 @@ void ch32SetBit(uint8_t bit, bool val) {
 
 void ch32Init() {
     // IO3=CHG_STAT, IO7=CHG_DET: input (bit=0). Tutti gli altri: output (bit=1).
-    uint8_t modeData[2] = {0x02, 0xFF & ~(1<<3) & ~(1<<7)};
+    uint8_t modeVal = 0xFF & ~(1<<3) & ~(1<<7); // = 0x77
+    uint8_t modeData[2] = {0x02, modeVal};
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(modeData, 2);
     uint8_t err = Wire.endTransmission();
     if (err) Serial.printf("IO exp init mode err=%d\n", err);
+
+    // verifica readback registro mode
+    Wire.beginTransmission(CH32_ADDR);
+    Wire.write(0x02);
+    if (Wire.endTransmission(false) == 0 && Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)1) == 1) {
+        uint8_t rb = Wire.read();
+        Serial.printf("IO exp mode readback: 0x%02X (atteso 0x%02X) %s\n",
+            rb, modeVal, rb == modeVal ? "OK" : "MISMATCH!");
+    }
+
     ch32PortState = 0x00;
     ch32WritePort(ch32PortState);
     ch32SetBit(4, true); // IO4 HIGH - SD card CS

@@ -184,7 +184,7 @@ var TRANSLATIONS={
   }
 };
 var gLang='it';
-function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||k;}
+function t(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||TRANSLATIONS.it[k]||(_SHARED_TR[gLang]||_SHARED_TR.it)[k]||k;}
 function setLang(l){
   gLang=l;localStorage.setItem('furby_lang',l);
   var sel=document.getElementById('lang-sel');if(sel)sel.value=l;

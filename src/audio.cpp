@@ -345,11 +345,15 @@ void vadTask(void* pvParameters) {
                 if (speechLen >= VAD_SPEECH_MS && silenceLen >= VAD_SILENCE_MS) {
                     inSpeech = false;
                     micVadActive = false;
-                    Serial.printf("VAD: parlato rilevato -> trigger (STT buf=%d samples)\n", (int)gSttLen);
-                    pendingTrigger = TRG_VAD;
-                    pendingSensorId = 0;
-                    pendingEvent = EVT_VAD;
-                    wakeUpTriggered = true;
+                    if (!connected && !gDryRun) {
+                        // nessun Furby connesso e dry run disattivo: ignora silenziosamente
+                    } else {
+                        Serial.printf("VAD: parlato rilevato -> trigger (STT buf=%d samples)\n", (int)gSttLen);
+                        pendingTrigger = TRG_VAD;
+                        pendingSensorId = 0;
+                        pendingEvent = EVT_VAD;
+                        wakeUpTriggered = true;
+                    }
                 }
             } else {
                 micVadActive = false;

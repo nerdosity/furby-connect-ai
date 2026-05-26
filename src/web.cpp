@@ -4,6 +4,7 @@
 #include "llm.h"
 #include "behaviors.h"
 #include "ble_furby.h"
+#include "config_backup.h"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -358,6 +359,7 @@ static void handleApiConfig() {
         upsertWifiNet(server.arg("ssid"), server.arg("pass"), 0);
         changed = true;
     }
+    if (changed) saveConfigBackup();
     server.send(200, "application/json",
         String("{\"ok\":true,\"changed\":") + (changed ? "true" : "false") + "}");
 }
@@ -460,6 +462,7 @@ static void handleLlmSave() {
     else                     { openai_api_key = newKey; nvsPut("openai", openai_api_key); }
     llm_provider = newProv; nvsPut("llm_prov", llm_provider);
     if (newModel.length() > 0) { llm_model = newModel; nvsPut("llm_model", llm_model); }
+    saveConfigBackup();
     // risponde con i valori salvati
     const String& activeKey = (llm_provider == "claude") ? claude_api_key : openai_api_key;
     String out = "{\"ok\":true,\"provider\":\"" + llm_provider + "\",\"model\":\"" + llm_model
@@ -481,6 +484,7 @@ static void handleElSave() {
     elevenlabs_api_key  = newKey; nvsPut("11labs",     elevenlabs_api_key);
     elevenlabs_voice_id = newVid; nvsPut("11labs_vid", elevenlabs_voice_id);
     el_audio_fmt        = newFmt; nvsPut("11labs_fmt", el_audio_fmt);
+    saveConfigBackup();
     String out = "{\"ok\":true,\"key\":\"" + elevenlabs_api_key
                + "\",\"vid\":\"" + elevenlabs_voice_id
                + "\",\"fmt\":\"" + el_audio_fmt + "\"}";
@@ -506,6 +510,7 @@ static void handleVadSave() {
         p.putBool("stt_en", sttEnabled);
     }
     p.end();
+    saveConfigBackup();
     server.send(200, "application/json",
         "{\"ok\":true,\"vad_enabled\":" + String(vadEnabled ? "true" : "false") +
         ",\"stt_enabled\":"             + String(sttEnabled ? "true" : "false") +
@@ -927,6 +932,7 @@ static void handleSysInfo() {
     d["flash_used_kb"]= sketchKb + spiffsKb;
     d["flash_free_kb"]= ESP.getFlashChipSize() / 1024 - sketchKb - spiffsKb;
     d["uptime_s"]     = millis() / 1000;
+    { time_t now = time(nullptr); d["now_ts"] = (now > 1000000000) ? (long)now : 0; }
     d["bat_mv"]       = readBatteryMv();
     d["usb_connected"] = readUsbConnected();
     d["chg_stat"]      = readChargingStat();
@@ -1337,6 +1343,78 @@ static void handleFsDel() {
     if (!SPIFFS.exists(path)) { server.send(404, "application/json", "{\"ok\":false,\"error\":\"non trovato\"}"); return; }
     SPIFFS.remove(path);
     server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ── SD file manager ───────────────────────────────────────────────────────────
+
+static void handleSdList() {
+    if (!sdAvailable) { server.send(503, "application/json", "{\"error\":\"SD non presente\"}"); return; }
+    String dirPath = server.arg("dir");
+    if (dirPath.length() == 0) dirPath = "/";
+    JsonDocument doc;
+    doc["total"] = (long long)SD_MMC.totalBytes();
+    doc["used"]  = (long long)SD_MMC.usedBytes();
+    doc["dir"]   = dirPath;
+    JsonArray files = doc["files"].to<JsonArray>();
+    File root = SD_MMC.open(dirPath.c_str());
+    if (root && root.isDirectory()) {
+        for (File f = root.openNextFile(); f; f = root.openNextFile()) {
+            JsonObject o = files.add<JsonObject>();
+            o["name"] = String(f.name());
+            o["size"] = (long long)f.size();
+            o["dir"]  = f.isDirectory();
+        }
+    }
+    String out; serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+static void handleSdGet() {
+    if (!sdAvailable) { server.send(503, "text/plain", "SD non presente"); return; }
+    String path = server.arg("path");
+    if (path.length() == 0 || path[0] != '/') { server.send(400, "text/plain", "path mancante"); return; }
+    File f = SD_MMC.open(path.c_str(), "r");
+    if (!f || f.isDirectory()) { server.send(404, "text/plain", "non trovato"); return; }
+    String ct = "application/octet-stream";
+    if (path.endsWith(".json")) ct = "application/json; charset=utf-8";
+    else if (path.endsWith(".txt") || path.endsWith(".csv") || path.endsWith(".log")) ct = "text/plain; charset=utf-8";
+    server.streamFile(f, ct);
+    f.close();
+}
+
+static void handleSdDel() {
+    HTTP_LOG();
+    if (!sdAvailable) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"SD non presente\"}"); return; }
+    String path = server.arg("path");
+    if (path.length() == 0 || path[0] != '/') { server.send(400, "application/json", "{\"ok\":false,\"error\":\"path mancante\"}"); return; }
+    if (!SD_MMC.exists(path.c_str())) { server.send(404, "application/json", "{\"ok\":false,\"error\":\"non trovato\"}"); return; }
+    SD_MMC.remove(path.c_str());
+    server.send(200, "application/json", "{\"ok\":true}");
+}
+
+static File   _sdUploadFile;
+static String _sdUploadPath;
+
+static void handleSdPut() {
+    HTTP_LOG();
+    if (!_sdUploadFile && _sdUploadPath.length() == 0)
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"nessun file ricevuto\"}");
+}
+
+static void handleSdUpload() {
+    if (!sdAvailable) return;
+    HTTPUpload& up = server.upload();
+    if (up.status == UPLOAD_FILE_START) {
+        _sdUploadPath = server.arg("path");
+        if (_sdUploadPath.length() == 0 || _sdUploadPath[0] != '/') _sdUploadPath = "/" + _sdUploadPath;
+        if (_sdUploadFile) _sdUploadFile.close();
+        _sdUploadFile = SD_MMC.open(_sdUploadPath.c_str(), "w");
+    } else if (up.status == UPLOAD_FILE_WRITE) {
+        if (_sdUploadFile) _sdUploadFile.write(up.buf, up.currentSize);
+    } else if (up.status == UPLOAD_FILE_END) {
+        if (_sdUploadFile) _sdUploadFile.close();
+        server.send(200, "application/json", "{\"ok\":true}");
+    }
 }
 
 static void handleDebugSensors() {
@@ -1871,6 +1949,10 @@ void startWebServer() {
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);
+    server.on("/sd/list",    HTTP_GET,  handleSdList);
+    server.on("/sd/get",     HTTP_GET,  handleSdGet);
+    server.on("/sd/put",     HTTP_POST, handleSdPut, handleSdUpload);
+    server.on("/sd/del",     HTTP_POST, handleSdDel);
     server.on("/favicon.ico",                     HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
     server.on("/apple-touch-icon.png",            HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
     server.on("/apple-touch-icon-precomposed.png",HTTP_GET, []() { serveSpiffs("/apple-touch-icon.png", "image/png", "public, max-age=86400"); });
