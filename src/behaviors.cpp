@@ -260,20 +260,6 @@ void activatePersonality(int idx) {
     Serial.printf("[PERS] attivata: \"%s\" (idx=%d)\n", gpActivePers->name, idx);
 }
 
-// ── Legacy compat ─────────────────────────────────────────────────────────────
-void saveEventBehaviors() {
-    if (!gpActivePers) return;
-    strlcpy(gpActivePers->prompt,   gPersonalityPrompt.c_str(),  sizeof(gpActivePers->prompt));
-    strlcpy(gpActivePers->voice_id, gPersonalityVoiceId.c_str(), sizeof(gpActivePers->voice_id));
-    gpActivePers->behavior_count = gEventBehaviorCount;
-    for (int i = 0; i < gEventBehaviorCount; i++)
-        gpActivePers->behaviors[i] = gEventBehaviors[i];
-    savePersonalities();
-}
-
-void loadEventBehaviors() {
-    loadPersonalities();
-}
 
 // ── Lookup azione ─────────────────────────────────────────────────────────────
 const FurbyActionDef* findFurbyAction(const char* id) {

@@ -108,7 +108,7 @@ void setup() {
         gEventBehaviors = new EventBehavior[MAX_EVENT_BEHAVIORS];
     }
     loadBehaviorConfigs();
-    loadEventBehaviors();
+    loadPersonalities();
 
     // I2C - after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
     pinMode(I2C_SCL_PIN, OUTPUT);

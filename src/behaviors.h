@@ -7,9 +7,6 @@ void activatePersonality(int idx);
 void applyActivePersonality();
 void serializeActivePersonalityTo(JsonObject po);
 
-// legacy compat
-void saveEventBehaviors();
-void loadEventBehaviors();
 
 const FurbyActionDef* findFurbyAction(const char* id);
 void speakText(const String& text);

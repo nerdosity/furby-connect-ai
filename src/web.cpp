@@ -1079,60 +1079,6 @@ static void handlePersonalityGet() {
     server.send(200, "application/json", out);
 }
 
-static void handlePersonalitySave() {
-    HTTP_LOG();
-    if (server.hasArg("prompt"))   gPersonalityPrompt  = server.arg("prompt");
-    if (server.hasArg("voice_id")) gPersonalityVoiceId = server.arg("voice_id");
-    saveEventBehaviors();
-    server.send(200, "application/json", "{\"ok\":true}");
-}
-
-static void handleBehaviorsGet() {
-    if (!SPIFFS.exists("/behaviors.json")) saveEventBehaviors();
-    File f = SPIFFS.open("/behaviors.json", "r");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    server.streamFile(f, "application/json"); f.close();
-}
-
-static void handleBehaviorsSave() {
-    HTTP_LOG();
-    String body = server.arg("plain");
-    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
-    JsonDocument doc;
-    if (deserializeJson(doc, body) != DeserializationError::Ok) {
-        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
-    }
-    File f = SPIFFS.open("/behaviors.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(body); f.close();
-    loadEventBehaviors();
-    server.send(200, "application/json", "{\"ok\":true}");
-}
-
-static void handleBehaviorsExport() {
-    HTTP_LOG();
-    if (!SPIFFS.exists("/behaviors.json")) saveEventBehaviors();
-    File f = SPIFFS.open("/behaviors.json", "r");
-    if (!f) { server.send(404, "text/plain", "not found"); return; }
-    server.sendHeader("Content-Disposition", "attachment; filename=behaviors.json");
-    server.streamFile(f, "application/json"); f.close();
-}
-
-static void handleBehaviorsImport() {
-    HTTP_LOG();
-    String body = server.arg("plain");
-    if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
-    JsonDocument doc;
-    if (deserializeJson(doc, body) != DeserializationError::Ok) {
-        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
-    }
-    File f = SPIFFS.open("/behaviors.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(body); f.close();
-    loadEventBehaviors();
-    server.send(200, "application/json", "{\"ok\":true}");
-}
-
 static void handleBehaviorsActions() {
     HTTP_LOG();
     JsonDocument doc;
@@ -1956,11 +1902,6 @@ void startWebServer() {
     server.on("/debug/tone",       HTTP_POST, handleDebugTone);
     server.on("/debug/mic/record", HTTP_POST, handleDebugMicRecord);
     server.on("/personality",         HTTP_GET,  handlePersonalityGet);
-    server.on("/personality/save",    HTTP_POST, handlePersonalitySave);
-    server.on("/behaviors",           HTTP_GET,  handleBehaviorsGet);
-    server.on("/behaviors/save",      HTTP_POST, handleBehaviorsSave);
-    server.on("/behaviors/export",    HTTP_GET,  handleBehaviorsExport);
-    server.on("/behaviors/import",    HTTP_POST, handleBehaviorsImport);
     server.on("/behaviors/actions",   HTTP_GET,  handleBehaviorsActions);
     server.on("/personalities",          HTTP_GET,  handlePersonalitiesList);
     server.on("/personalities/activate", HTTP_POST, handlePersonalitiesActivate);
