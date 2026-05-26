@@ -219,9 +219,9 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
     <input type="text" class="form-control form-control-sm font-monospace mb-2" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
-    <div class="row g-2">
-      <div class="col-6"><button class="btn btn-success px-3 w-100" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button></div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-success px-3" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
+      <button class="btn btn-primary px-3" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
     </div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
@@ -525,8 +525,8 @@ function fmLoadDir(dir){
   fetch(url).then(r=>r.json()).then(function(d){
     if(d.error){document.getElementById('fm-absent').classList.remove('d-none');document.getElementById('fm-tbody').innerHTML='';return;}
     var label=(fmSource==='spiffs')?'SPIFFS':'SD';
-    var used=fmSource==='spiffs'?d.used:(d.used||0)/1024;
-    var total=fmSource==='spiffs'?d.total:(d.total||0)/1024;
+    var used=d.used||0;
+    var total=d.total||0;
     document.getElementById('fm-quota').textContent=label+': '+fmFmtSize(used)+' / '+fmFmtSize(total)+' usati';
     var tb=document.getElementById('fm-tbody');
     if(!d.files||!d.files.length){tb.innerHTML='<tr><td colspan="4" class="text-center text-muted">'+t('fm.no_files')+'</td></tr>';return;}

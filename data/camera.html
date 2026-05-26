@@ -108,9 +108,9 @@
         <input class="form-check-input" type="checkbox" id="agc-switch" onchange="onAgcSwitch(this.checked)" checked>
         <label class="form-check-label small" for="agc-switch">AGC automatico</label>
       </div>
-      <div class="row g-2">
-        <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="saveExposure()"><i class="bi bi-floppy"></i> Salva</button></div>
-        <div id="exp-msg" class="col-6 d-flex align-items-center small text-muted"></div>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end align-items-center mt-1">
+        <span id="exp-msg" class="small text-muted me-auto"></span>
+        <button class="btn btn-primary px-3" onclick="saveExposure()"><i class="bi bi-floppy"></i> Salva</button>
       </div>
     </div>
   </div>

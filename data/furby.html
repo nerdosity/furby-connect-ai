@@ -398,17 +398,19 @@ function setLang(l){
     </div>
     <label class="form-label small">System prompt</label>
     <textarea class="form-control form-control-sm font-monospace mb-2" id="pers-prompt" rows="3" placeholder="Sei un giocattolo cinico..."></textarea>
-    <button class="btn btn-success px-3 w-100" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva</button>
+    </div>
     <div id="pers-msg" class="small mt-1 text-muted"></div>
   </div></div>
 
   <!-- ── Lista regole (stile HA) ── -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2">Regole - quando → allora</h6>
-    <div class="row g-2 mb-2">
-      <div class="col-12"><button class="btn btn-success px-3 w-100" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button></div>
-      <div class="col-6"><label class="btn btn-warning px-3 mb-0 w-100 text-center"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label></div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mb-2">
+      <label class="btn btn-warning px-3 mb-0"><i class="bi bi-upload"></i> Importa<input type="file" id="beh-import-file" accept=".json" style="display:none" onchange="behImport(this)"></label>
+      <button class="btn btn-primary px-3" onclick="behExport()"><i class="bi bi-download"></i> Esporta</button>
+      <button class="btn btn-success px-3" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
     </div>
     <div id="beh-list"></div>
     <div id="beh-msg" class="small mt-2 text-muted"></div>
