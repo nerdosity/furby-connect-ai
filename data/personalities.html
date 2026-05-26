@@ -80,6 +80,12 @@
     <div class="d-flex align-items-center gap-2 mb-2">
       <h6 class="mb-0"><i class="bi bi-play-circle"></i> Simula flusso</h6>
     </div>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="bi bi-volume-down text-muted flex-shrink-0"></i>
+      <input type="range" class="form-range flex-fill" id="sim-vol" min="0" max="100" value="75" oninput="document.getElementById('sim-vol-val').textContent=this.value+'%'" onchange="simVolSend(this.value)">
+      <i class="bi bi-volume-up text-muted flex-shrink-0"></i>
+      <span id="sim-vol-val" class="text-muted small flex-shrink-0" style="min-width:34px;text-align:right">75%</span>
+    </div>
     <div class="row g-2 align-items-end">
       <div class="col-sm-4">
         <label class="form-label small mb-1">Comportamento da simulare</label>
@@ -686,6 +692,11 @@ function simBehSel() {
   if (cur) sel.value = cur;
 }
 
+function simVolSend(v) {
+  const fd = new FormData(); fd.append('vol', v);
+  fetch('/debug/vol', { method: 'POST', body: fd });
+}
+
 function simRun() {
   if (editIdx < 0) return;
   const behIdx = parseInt(document.getElementById('sim-beh-sel').value);
@@ -702,16 +713,17 @@ function simRun() {
   log.classList.remove('d-none');
 
   const params = new URLSearchParams({
-    pers_id: p.id || String(editIdx),
-    beh_id: beh.id || beh.name,
-    text: text,
-    skip_llm: skipLlm,
-    skip_tts: skipTts,
-    skip_ble: skipBle
+    trigger:     beh.trigger   || 0,
+    sensor_id:   beh.sensor_id || 0,
+    personality: editIdx,
+    vad_text:    text,
+    skip_llm:    skipLlm,
+    skip_tts:    skipTts,
+    skip_ble:    skipBle
   });
   fetch('/test/simulate', { method: 'POST', body: params })
-    .then(r => r.text())
-    .then(t => { log.textContent = t; })
+    .then(r => r.json())
+    .then(d => { log.textContent = d.log || JSON.stringify(d); })
     .catch(e => { log.textContent = 'Errore: ' + e; });
 }
 </script>
