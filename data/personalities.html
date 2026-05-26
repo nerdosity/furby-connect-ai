@@ -45,7 +45,7 @@
   </div>
 
   <div id="editor-wrap" class="editor-panel p-3 mb-3 d-none">
-    <h6 id="editor-title" class="mb-3">Modifica personalità</h6>
+    <div class="fb-sec" style="margin-top:0"><i class="bi bi-pencil-square"></i> <span id="editor-title">Modifica personalità</span></div>
     <div class="row g-2 mb-2">
       <div class="col-sm-4">
         <label class="form-label small mb-1">Nome</label>
@@ -78,15 +78,13 @@
 
     <hr class="my-2">
     <div class="d-flex align-items-center gap-2 mb-2">
-      <h6 class="mb-0">Comportamenti</h6>
+      <div class="fb-sec" style="margin:0"><i class="bi bi-list-check"></i> <span>Comportamenti</span></div>
       <button class="btn btn-outline-primary btn-sm ms-auto px-2" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
     </div>
     <div id="beh-list" class="d-flex flex-column gap-2"></div>
 
     <hr class="my-3">
-    <div class="d-flex align-items-center gap-2 mb-2">
-      <h6 class="mb-0"><i class="bi bi-play-circle"></i> Simula flusso</h6>
-    </div>
+    <div class="fb-sec" style="margin-top:0"><i class="bi bi-play-circle"></i> <span>Simula flusso</span></div>
     <div class="d-flex align-items-center gap-2 mb-2">
       <i class="bi bi-volume-down text-muted flex-shrink-0"></i>
       <input type="range" class="form-range flex-fill" id="sim-vol" min="0" max="100" value="75" oninput="document.getElementById('sim-vol-val').textContent=this.value+'%'" onchange="simVolSend(this.value)">
@@ -154,7 +152,7 @@
         </div>
         <hr class="my-2">
         <div class="d-flex align-items-center gap-2 mb-2">
-          <h6 class="mb-0">Conseguenze</h6>
+          <div class="fb-sec" style="margin:0"><i class="bi bi-arrow-right-circle"></i> <span>Conseguenze</span></div>
           <button class="btn btn-outline-primary btn-sm ms-auto px-2" onclick="csqAdd()"><i class="bi bi-plus-lg"></i></button>
         </div>
         <div id="csq-list" class="d-flex flex-column gap-2"></div>

@@ -238,9 +238,9 @@ function setLang(l){
 <div class="tab-pane fade show active" id="ft-sensors">
 <!-- TAB: Sensori -->
 <div>
+  <div class="fb-sec"><i class="bi bi-broadcast"></i> <span data-i18n="sen.title">Stato sensori</span> <small class="text-secondary fw-normal ms-2" id="sensor-age">-</small></div>
   <div class="card shadow-sm">
     <div class="card-body">
-      <h6 class="text-uppercase text-muted fw-bold small mb-3"><span data-i18n="sen.title">Stato sensori</span> &nbsp;<small class="text-secondary fw-normal" id="sensor-age">-</small></h6>
       <div class="sensors">
         <div class="sensor"><div class="dot" id="s-ant-l"></div><span data-i18n="sen.ant_l">Antenna sx</span></div>
         <div class="sensor"><div class="dot" id="s-ant-r"></div><span data-i18n="sen.ant_r">Antenna dx</span></div>
@@ -263,6 +263,7 @@ function setLang(l){
       <div class="font-monospace text-muted small mt-2" id="raw-bytes">raw: -</div>
     </div>
   </div>
+
 </div>
 </div>
 
@@ -270,20 +271,20 @@ function setLang(l){
 <div class="tab-pane fade" id="ft-actions">
 <!-- TAB: Azioni -->
 <div>
+  <div class="fb-sec"><i class="bi bi-hand-index-thumb"></i> <span data-i18n="act.direct">Interazione diretta</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.direct">Interazione diretta</h6>
     <div class="act-grid" id="act-grid-direct"></div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-music-note-beamed"></i> <span data-i18n="act.notes">Note musicali (input 71)</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.notes">Note musicali (input 71)</h6>
     <div class="act-grid" id="act-grid-notes"></div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-globe"></i> <span data-i18n="act.world">World App / Personalità</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.world">World App / Personalità</h6>
     <div class="act-grid" id="act-grid-world"></div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-sliders"></i> <span data-i18n="act.custom">Azione personalizzata</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="act.custom">Azione personalizzata</h6>
     <div class="row g-2 mb-2">
       <div class="col"><div class="text-muted small mb-1">Input (0-75)</div><input type="number" class="form-control form-control-sm" id="ap-in" min="0" max="75" value="39"></div>
       <div class="col"><div class="text-muted small mb-1">Index</div><input type="number" class="form-control form-control-sm" id="ap-ix" min="0" max="127" value="3"></div>
@@ -294,7 +295,6 @@ function setLang(l){
       <button class="btn btn-primary px-3" onclick="sendCustomAction()" data-i18n="act.custom_run"><i class="bi bi-play-fill"></i> Esegui</button>
     </div>
   </div></div>
-
 </div>
 </div>
 
@@ -302,9 +302,9 @@ function setLang(l){
 <div class="tab-pane fade" id="ft-control">
 <!-- TAB: Controllo -->
 <div>
+  <div class="fb-sec"><i class="bi bi-mic-fill"></i> <span>Sensibilità microfono</span></div>
   <!-- Mic gain -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-mic-fill"></i> Sensibilità microfono</h6>
     <div class="d-flex align-items-center gap-2 mt-1 mb-2">
       <span class="text-muted small">0 dB</span>
       <input type="range" class="form-range flex-fill" id="home-mic-gain-slider" min="0" max="14" step="1" value="10" oninput="homeMicGainInput(this.value)">
@@ -316,18 +316,18 @@ function setLang(l){
     </div>
     <div id="home-mic-gain-msg" class="small mt-1 text-muted"></div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-lightbulb"></i> <span data-i18n="ctrl.rgb">Antenna LED (RGB)</span></div>
   <!-- LED -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
     <div class="d-flex align-items-center gap-3">
       <input type="color" id="rgb-picker" value="#00ff00" oninput="syncColorPicker()" class="form-control form-control-color" style="width:56px">
       <button class="btn btn-success px-3" onclick="sendRgb()" data-i18n="ctrl.rgb_set"><i class="bi bi-lightbulb"></i> Imposta</button>
       <button class="btn btn-outline-secondary px-3" id="btn-eyes" onclick="eyesToggle()"><i class="bi bi-eye" id="eyes-icon"></i> <span id="eyes-label" data-i18n="ctrl.eyes_on">Occhi ON</span></button>
     </div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-emoji-smile"></i> <span data-i18n="ctrl.mood">Mood (0x24)</span></div>
   <!-- Mood -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.mood">Mood (0x24)</h6>
     <div class="row g-2 mb-2">
       <div class="col-6"><label class="form-label small mb-1">Wellness</label><input type="number" class="form-control form-control-sm" id="m-well" min="0" max="7" value="4"></div>
       <div class="col-6"><label class="form-label small mb-1">Fullness</label><input type="number" class="form-control form-control-sm" id="m-full" min="0" max="7" value="4"></div>
@@ -338,15 +338,15 @@ function setLang(l){
       <button class="btn btn-primary px-3" onclick="sendMood()" data-i18n="ctrl.mood_set"><i class="bi bi-emoji-smile"></i> Imposta mood</button>
     </div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-gear"></i> <span data-i18n="ctrl.system">Sistema</span></div>
   <!-- Sistema + DLC -->
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.system">Sistema</h6>
     <div class="row g-2 mb-3">
       <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmd('debug-cycle',[0xdb])"><i class="bi bi-tools"></i> Ciclo debug</button></div>
       <div class="col-6"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('fw-version',[0x01])"><i class="bi bi-info-circle"></i> FW version</button></div>
       <div class="col-12"><button class="btn btn-outline-secondary px-3 w-100" onclick="espCmdN('power',[0x03])"><i class="bi bi-battery-half"></i> Power</button></div>
     </div>
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="ctrl.dlc">DLC slot</h6>
+    <div class="fb-sec" style="margin-top:0"><i class="bi bi-collection"></i> <span data-i18n="ctrl.dlc">DLC slot</span></div>
     <div class="d-flex gap-2 align-items-center mb-2">
       <div class="input-group w-auto">
         <span class="input-group-text">Slot</span>

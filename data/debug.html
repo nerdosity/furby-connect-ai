@@ -144,9 +144,8 @@ function setLang(l){
 
 <!-- TAB: Audio -->
 <div class="tab-pane fade show active" id="t-audio">
-  <div class="card shadow-sm mb-3">
-    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-speaker"></i> <strong data-i18n="aud.tone">Test casse (sine wave)</strong></div>
-    <div class="card-body">
+  <div class="fb-sec"><i class="bi bi-speaker"></i> <span data-i18n="aud.tone">Test casse (sine wave)</span></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
     <div class="mb-3">
       <label class="form-label small" data-i18n="aud.tone_dur">Durata (ms)</label>
       <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
@@ -166,9 +165,8 @@ function setLang(l){
     </div>
     <div id="tone-result" class="small mt-2 text-muted"></div>
   </div></div>
-  <div class="card shadow-sm mb-3">
-    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-mic"></i> <strong data-i18n="aud.mic">Microfoni live</strong> <span id="vad-badge" class="badge bg-secondary ms-auto"><i class="bi bi-mic-mute"></i> <span data-i18n="aud.vad_silence">Silenzio</span></span></div>
-    <div class="card-body">
+  <div class="fb-sec"><i class="bi bi-mic"></i> <span data-i18n="aud.mic">Microfoni live</span> <span id="vad-badge" class="badge bg-secondary ms-2"><i class="bi bi-mic-mute"></i> <span data-i18n="aud.vad_silence">Silenzio</span></span></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
     <p class="text-muted small mb-2" data-i18n="aud.mic_desc">RMS live - L=MIC1, R=MIC2</p>
     <div class="row g-3 mb-2">
       <div class="col">
@@ -203,9 +201,8 @@ function setLang(l){
     </div>
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
-  <div class="card shadow-sm mb-3">
-    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-record-circle"></i> <strong data-i18n="aud.rec">Registra e riproduci (5s)</strong></div>
-    <div class="card-body">
+  <div class="fb-sec"><i class="bi bi-record-circle"></i> <span data-i18n="aud.rec">Registra e riproduci (5s)</span></div>
+  <div class="card shadow-sm mb-3"><div class="card-body">
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 5 secondi. L'ESP32 registra e riproduce sulle casse.</p>
     <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e;opacity:0.3;transition:opacity 0.4s"></canvas>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
@@ -217,16 +214,16 @@ function setLang(l){
 
 <!-- TAB: Raw / Log -->
 <div class="tab-pane fade" id="t-raw">
+  <div class="fb-sec"><i class="bi bi-terminal"></i> <span data-i18n="raw.title">Comando raw</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.title">Comando raw</h6>
     <input type="text" class="form-control form-control-sm font-monospace mb-2" id="raw-in" data-i18n-attr="placeholder" data-i18n="raw.placeholder" placeholder="es. 13 00 27 03 08 01">
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
       <button class="btn btn-success px-3" onclick="sendRaw('gp')"><i class="bi bi-send"></i> GP</button>
       <button class="btn btn-primary px-3" onclick="sendRaw('nordic')"><i class="bi bi-send"></i> Nordic</button>
     </div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-list-ul"></i> <span data-i18n="raw.log">Log</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="raw.log">Log</h6>
     <div class="bg-dark text-light rounded p-2 small scroll-box" id="log"></div>
   </div></div>
 </div>
@@ -253,7 +250,7 @@ function setLang(l){
     </div>
   </div></div>
   <div class="card shadow-sm mb-3" id="fm-editor-card" style="display:none"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" id="fm-editor-title">Editor</h6>
+    <div class="fb-sec mb-2" style="margin-top:0"><i class="bi bi-pencil-square"></i> <span id="fm-editor-title">Editor</span></div>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-success px-3" onclick="fmSave()" data-i18n="fm.save"><i class="bi bi-floppy"></i> Salva</button>
@@ -261,8 +258,8 @@ function setLang(l){
     </div>
     <div id="fm-editor-msg" class="small mt-1 text-muted"></div>
   </div></div>
+  <div class="fb-sec"><i class="bi bi-upload"></i> <span data-i18n="fm.upload_title">Carica file</span></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="fm.upload_title">Carica file</h6>
     <div class="row g-2 align-items-end">
       <div class="col-12 col-md-4">
         <label class="form-label small" data-i18n="fm.upload_path">Percorso</label>

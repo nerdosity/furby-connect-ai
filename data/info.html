@@ -10,11 +10,9 @@
 <script>renderNav('info');</script>
 <div class="container-fluid px-3 px-xl-5 py-3 fb-page">
 
+  <div class="fb-sec"><i class="bi bi-cpu"></i> <span>Firmware &amp; sistema</span></div>
   <!-- Firmware -->
   <div class="card mb-3">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-cpu"></i> <strong>Firmware &amp; sistema</strong>
-    </div>
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <tbody>
@@ -29,11 +27,9 @@
     </div>
   </div>
 
+  <div class="fb-sec"><i class="bi bi-battery-half"></i> <span>Batteria</span></div>
   <!-- Batteria -->
   <div class="card mb-3">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-battery-half"></i> <strong>Batteria</strong>
-    </div>
     <div class="card-body">
       <div class="d-flex align-items-center gap-3 mb-2">
         <span class="fs-3 fw-bold" id="bat-volt">-</span>
@@ -68,11 +64,9 @@
     </div>
   </div>
 
+  <div class="fb-sec"><i class="bi bi-memory"></i> <span>Memoria</span></div>
   <!-- Memoria -->
   <div class="card mb-3">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-memory"></i> <strong>Memoria</strong>
-    </div>
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
@@ -98,11 +92,9 @@
     </div>
   </div>
 
+  <div class="fb-sec"><i class="bi bi-device-ssd"></i> <span>Flash</span></div>
   <!-- Flash -->
   <div class="card mb-3">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-device-ssd"></i> <strong>Flash</strong>
-    </div>
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
@@ -129,12 +121,9 @@
     </div>
   </div>
 
+  <div class="fb-sec"><i class="bi bi-sd-card"></i> <span>Scheda SD</span> <span id="sd-badge" class="badge bg-secondary ms-2">-</span></div>
   <!-- SD -->
   <div class="card mb-3" id="sd-card">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-sd-card"></i> <strong>Scheda SD</strong>
-      <span id="sd-badge" class="badge ms-auto">-</span>
-    </div>
     <div id="sd-body" class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
@@ -239,7 +228,7 @@ function load(){
 
     // SD
     if(d.sd_present){
-      document.getElementById('sd-badge').className='badge bg-success ms-auto';
+      document.getElementById('sd-badge').className='badge bg-success ms-2';
       document.getElementById('sd-badge').textContent='Presente';
       document.getElementById('sd-absent').classList.add('d-none');
       document.getElementById('sd-body').classList.remove('d-none');
@@ -249,7 +238,7 @@ function load(){
       document.getElementById('sd-free').textContent=fmtMB(sdFree);
       setBar('sd-bar',pct(sdUsed,sdTotal));
     } else {
-      document.getElementById('sd-badge').className='badge bg-secondary ms-auto';
+      document.getElementById('sd-badge').className='badge bg-secondary ms-2';
       document.getElementById('sd-badge').textContent='Assente';
       document.getElementById('sd-body').classList.add('d-none');
       document.getElementById('sd-absent').classList.remove('d-none');
