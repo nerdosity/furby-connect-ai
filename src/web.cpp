@@ -509,12 +509,18 @@ static void handleVadSave() {
         sttEnabled = (stt == "1");
         p.putBool("stt_en", sttEnabled);
     }
+    String mg = server.arg("mic_gain");
+    if (mg.length() > 0) {
+        setMicGain(constrain(mg.toInt(), 0, 14));
+        p.putInt("mic_gain", mic_gain);
+    }
     p.end();
     saveConfigBackup();
     server.send(200, "application/json",
         "{\"ok\":true,\"vad_enabled\":" + String(vadEnabled ? "true" : "false") +
         ",\"stt_enabled\":"             + String(sttEnabled ? "true" : "false") +
-        ",\"vad_threshold\":"           + String(vad_threshold) + "}");
+        ",\"vad_threshold\":"           + String(vad_threshold) +
+        ",\"mic_gain\":"                + String(mic_gain) + "}");
 }
 
 // ── /personalities/* ─────────────────────────────────────────────────────────
@@ -974,6 +980,7 @@ static void handleApiHome() {
     doc["sd_total_mb"]    = sdAvailable ? (int)(SD_MMC.totalBytes() / (1024*1024)) : 0;
     doc["vad_enabled"]    = vadEnabled;
     doc["vad_threshold"]  = vad_threshold;
+    doc["mic_gain"]       = mic_gain;
     doc["stt_enabled"]    = sttEnabled;
     doc["ble_svc_uuid"]        = ble_service_uuid;
     doc["ble_char_uuid"]       = ble_char_uuid_tx;

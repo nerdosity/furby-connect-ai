@@ -17,6 +17,7 @@ static void _writeBackupTo(File& f) {
     doc["ble_svc"]         = ble_service_uuid;
     doc["ble_char"]        = ble_char_uuid_tx;
     doc["vad_thr"]         = vad_threshold;
+    doc["mic_gain"]        = mic_gain;
     doc["vad_en"]          = vadEnabled;
     doc["stt_en"]          = sttEnabled;
     doc["cam_desc_prompt"] = gCamDescPrompt;
@@ -68,6 +69,7 @@ static bool _restoreFromFile(File& f) {
     _s("cam_desc_prompt", gCamDescPrompt,
         "Sei un Furby maleducato e cinico. Descrivi in modo sintetico e sgarbato quello che vedi nell'immagine.");
     _i("vad_thr",  vad_threshold, VAD_THRESHOLD_DEFAULT);
+    _i("mic_gain", mic_gain,      10);
     _b("vad_en",   vadEnabled,    true);
     _b("stt_en",   sttEnabled,    false);
     _i("cam_stq",  camStreamQuality, 12);

@@ -243,6 +243,7 @@ volatile bool gDryRun         = false;
 volatile int  currentAmplitude = 0;
 
 int  vad_threshold = VAD_THRESHOLD_DEFAULT;
+int  mic_gain      = 10; // 30dB default (ES7210: valore 0-14, step 3dB)
 bool vadEnabled    = true;
 volatile int  micRmsLive   = 0;
 volatile int  micRmsLive2  = 0;

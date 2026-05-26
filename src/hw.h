@@ -12,6 +12,7 @@ void es8311WriteReg(uint8_t reg, uint8_t val);
 void initES8311();
 void es7210WriteReg(uint8_t reg, uint8_t val);
 void initES7210();
+void setMicGain(int gain);
 void initI2S();
 
 bool camInit();

@@ -68,6 +68,7 @@ void setup() {
     serviceUUID      = BLEUUID(ble_service_uuid.c_str());
     charUUID_GPWrite = BLEUUID(ble_char_uuid_tx.c_str());
     vad_threshold   = preferences.getInt("vad_thr",  VAD_THRESHOLD_DEFAULT);
+    mic_gain        = preferences.getInt("mic_gain", 10);
     vadEnabled      = preferences.getBool("vad_en",  true);
     sttEnabled      = preferences.getBool("stt_en",  false);
     gCamDescPrompt  = preferences.getString("cam_desc_prompt",

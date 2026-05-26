@@ -250,10 +250,11 @@ void initES7210() {
     es7210WriteReg(ES7210_ANALOG_REG40,     0xC3);
     es7210WriteReg(ES7210_MIC12_BIAS_REG41, 0x70);
     es7210WriteReg(ES7210_MIC34_BIAS_REG42, 0x70);
-    es7210WriteReg(ES7210_MIC1_GAIN_REG43,  0x1A);
-    es7210WriteReg(ES7210_MIC2_GAIN_REG44,  0x1A);
-    es7210WriteReg(0x45, 0x1A);
-    es7210WriteReg(0x46, 0x1A);
+    uint8_t gv = 0x10 | constrain(mic_gain, 0, 14);
+    es7210WriteReg(ES7210_MIC1_GAIN_REG43, gv);
+    es7210WriteReg(ES7210_MIC2_GAIN_REG44, gv);
+    es7210WriteReg(0x45, gv);
+    es7210WriteReg(0x46, gv);
     es7210WriteReg(ES7210_MIC1_POWER_REG47, 0x08);
     es7210WriteReg(ES7210_MIC2_POWER_REG48, 0x08);
     es7210WriteReg(0x49, 0x08);
@@ -268,6 +269,16 @@ void initES7210() {
     es7210WriteReg(ES7210_RESET_REG00, 0x71);
     es7210WriteReg(ES7210_RESET_REG00, 0x41);
     Serial.println("ES7210: init OK");
+}
+
+void setMicGain(int gain) {
+    mic_gain = constrain(gain, 0, 14);
+    uint8_t gv = 0x10 | mic_gain;
+    es7210WriteReg(ES7210_MIC1_GAIN_REG43, gv);
+    es7210WriteReg(ES7210_MIC2_GAIN_REG44, gv);
+    es7210WriteReg(0x45, gv);
+    es7210WriteReg(0x46, gv);
+    Serial.printf("ES7210: mic gain set to %d (%ddB)\n", mic_gain, mic_gain * 3);
 }
 
 // ── I2S ──────────────────────────────────────────────────────────────────────

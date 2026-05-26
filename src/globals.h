@@ -330,6 +330,7 @@ extern volatile bool gDryRun;
 extern volatile int  currentAmplitude;
 
 extern int  vad_threshold;
+extern int  mic_gain;
 extern bool vadEnabled;
 extern volatile int  micRmsLive;
 extern volatile int  micRmsLive2;

@@ -303,6 +303,20 @@ function setLang(l){
 <div class="tab-pane fade" id="ft-control">
 <!-- TAB: Controllo -->
 <div>
+  <!-- Mic gain -->
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <h6 class="text-uppercase text-muted fw-bold small mb-2"><i class="bi bi-mic-fill"></i> Sensibilità microfono</h6>
+    <div class="d-flex align-items-center gap-2 mt-1 mb-2">
+      <span class="text-muted small">0 dB</span>
+      <input type="range" class="form-range flex-fill" id="home-mic-gain-slider" min="0" max="14" step="1" value="10" oninput="homeMicGainInput(this.value)">
+      <span class="text-muted small">37.5 dB</span>
+      <span class="fw-semibold small" id="home-mic-gain-label" style="min-width:4ch">30 dB</span>
+    </div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-primary px-3" onclick="homeMicGainSave()"><i class="bi bi-floppy"></i> Salva</button>
+    </div>
+    <div id="home-mic-gain-msg" class="small mt-1 text-muted"></div>
+  </div></div>
   <!-- LED -->
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="ctrl.rgb">Antenna LED (RGB)</h6>
@@ -1145,10 +1159,27 @@ function stopSensorsSse(){if(_sensorsEs){_sensorsEs.close();_sensorsEs=null;}}
 
 setLang(gLang);
 persLoad();
+var _homeMicGain=10;
+function _homeMicGainDb(g){var dbs=[0,3,6,9,12,15,18,21,24,27,30,33,34.5,36,37.5];return(dbs[g]!=null?dbs[g]:g*3)+' dB';}
+function homeMicGainInput(v){_homeMicGain=parseInt(v);document.getElementById('home-mic-gain-label').textContent=_homeMicGainDb(_homeMicGain);}
+function homeMicGainSave(){
+  var msg=document.getElementById('home-mic-gain-msg');
+  msg.className='small mt-1 text-muted';msg.textContent='...';
+  var fd=new FormData();fd.append('mic_gain',_homeMicGain);
+  fetch('/vad/save',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
+    msg.className='small mt-1 '+(d.ok?'text-success':'text-danger');
+    msg.textContent=d.ok?'Salvato':'Errore';
+    setTimeout(function(){msg.textContent='';msg.className='small mt-1 text-muted';},2000);
+  }).catch(function(){msg.className='small mt-1 text-danger';msg.textContent='Errore di connessione';});
+}
 fetch('/api/home').then(r=>r.json()).then(function(d){
   var hasLlm=!!(d.cur_key&&d.cur_key.length>0);
   llmMaskApply(hasLlm,!!(d.el_key&&d.el_key.length>0));
   if(!hasLlm){document.getElementById('dbg-skip-llm').checked=true;}
+  var mg=d.mic_gain!=null?d.mic_gain:10;
+  _homeMicGain=mg;
+  document.getElementById('home-mic-gain-slider').value=mg;
+  document.getElementById('home-mic-gain-label').textContent=_homeMicGainDb(mg);
 }).catch(function(){llmMaskApply(false,false);document.getElementById('dbg-skip-llm').checked=true;});
 
 </script>

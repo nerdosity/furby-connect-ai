@@ -183,6 +183,14 @@ function setLang(l){
       </div>
     </div>
     <hr class="my-3">
+    <label class="form-label small fw-semibold"><i class="bi bi-mic-fill"></i> Sensibilità microfono (gain ES7210)</label>
+    <div class="d-flex align-items-center gap-2 mt-1 mb-1">
+      <span class="text-muted small">0 dB</span>
+      <input type="range" class="form-range flex-fill" id="dbg-mic-gain-slider" min="0" max="14" step="1" value="10" oninput="dbgMicGainSliderInput(this.value)">
+      <span class="text-muted small">37.5 dB</span>
+      <span class="fw-semibold small" id="dbg-mic-gain-label" style="min-width:4ch">30 dB</span>
+    </div>
+    <hr class="my-3">
     <label class="form-label small fw-semibold" data-i18n="vad.label_thresh">Soglia VAD (RMS 0-32767, default 800)</label>
     <div class="d-flex align-items-center gap-2 mt-1 mb-2">
       <span class="text-muted small">0</span>
@@ -198,7 +206,7 @@ function setLang(l){
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
-    <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e"></canvas>
+    <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e;opacity:0.3;transition:opacity 0.4s"></canvas>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
     </div>
@@ -378,12 +386,19 @@ function sendRaw(ch){var hex=document.getElementById('raw-in').value.trim().spli
 
 var _bleConnected=false;
 var _vadThreshold=800;
+var _micGain=10;
+function _micGainDb(g){var dbs=[0,3,6,9,12,15,18,21,24,27,30,33,34.5,36,37.5];return(dbs[g]!=null?dbs[g]:g*3)+' dB';}
+function dbgMicGainSliderInput(v){_micGain=parseInt(v);document.getElementById('dbg-mic-gain-label').textContent=_micGainDb(_micGain);}
 function dbgVadLoad(){
   fetch('/api/home').then(r=>r.json()).then(function(d){
     var v=d.vad_threshold||800;
     _vadThreshold=v;
     document.getElementById('dbg-vad-slider').value=v;
     document.getElementById('dbg-vad-num').value=v;
+    var mg=d.mic_gain!=null?d.mic_gain:10;
+    _micGain=mg;
+    document.getElementById('dbg-mic-gain-slider').value=mg;
+    document.getElementById('dbg-mic-gain-label').textContent=_micGainDb(mg);
   }).catch(function(){});
 }
 function dbgVadSliderInput(v){document.getElementById('dbg-vad-num').value=v;}
@@ -393,7 +408,7 @@ function dbgVadSave(){
   if(isNaN(v)||v<0||v>32767)return;
   var msg=document.getElementById('dbg-vad-msg');
   msg.className='small mt-1 text-muted';msg.textContent=t('sending');
-  var fd=new FormData();fd.append('threshold',v);
+  var fd=new FormData();fd.append('threshold',v);fd.append('mic_gain',_micGain);
   fetch('/vad/save',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
     if(d.ok)_vadThreshold=v;
     msg.className='small mt-1 '+(d.ok?'text-success':'text-danger');
@@ -408,14 +423,22 @@ function tonePlay(freq){
   var res=document.getElementById('tone-result');res.textContent=t('aud.tone_sending');
   fetch('/debug/tone',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){res.textContent=d.ok?'OK - '+d.freq+'Hz per '+d.ms+'ms':'ERR: '+(d.error||'');}).catch(function(){res.textContent='errore di rete';});
 }
+var _recActive=false;
+function _scopeSetActive(on){
+  _recActive=on;
+  var c=document.getElementById('rms-scope');
+  if(c)c.style.opacity=on?'1':'0.3';
+}
 function micRecord(){
   var btn=document.getElementById('btn-rec'),res=document.getElementById('rec-result');
   btn.disabled=true;res.textContent=t('aud.rec_running');
+  _scopeSetActive(true);
   fetch('/debug/mic/record',{method:'POST'}).then(r=>r.json()).then(function(d){
     if(d.ok){
-      var countdown=d.duration||3,iv=setInterval(function(){res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;},3500);}},1000);
-    }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;}
-  }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
+      var duration=d.duration||3;
+      var countdown=duration,iv=setInterval(function(){res.textContent=t('aud.rec_countdown')+countdown+'s';countdown--;if(countdown<0){clearInterval(iv);res.textContent=t('aud.rec_playing');setTimeout(function(){res.textContent=t('aud.rec_done');btn.disabled=false;_scopeSetActive(false);},3500);}},1000);
+    }else{res.textContent='ERR: '+(d.error||'');btn.disabled=false;_scopeSetActive(false);}
+  }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;_scopeSetActive(false);});
 }
 var _micEs=null;
 var _scopeCtx=null,_scopeW=0,_scopeH=0;
@@ -436,7 +459,7 @@ function _scopePush(r1,r2,vad){
   _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
   _scopeCtx.putImageData(img,0,0);
   // disegna colonna destra
-  var MAX_RMS=8000;
+  var MAX_RMS=1500;
   var h1=Math.round(Math.min(1,r1/MAX_RMS)*_scopeH);
   var h2=Math.round(Math.min(1,r2/MAX_RMS)*_scopeH);
   var col=vad?'#22c55e':(r1>_vadThreshold||r2>_vadThreshold)?'#f59e0b':'#3b82f6';
