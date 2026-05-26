@@ -69,8 +69,17 @@ Il Furby ha una personalità deliberatamente maleducata e cinica, configurabile 
 - **Multi-WiFi** - fino a 5 reti in flash con priorità configurabile; mesh-compatible
 - **Web UI** - dashboard su `http://furby.local` con Bootstrap 5
 - **Captive portal** - AP `Furby_Config` al primo avvio per configurare WiFi e API key
-- **Behaviors** - sistema di trigger (VAD, tasto, sensori BLE) con conseguenze configurabili (azione Furby, TTS fisso, prompt LLM)
+- **Personalities** - sistema di personalità multiple con prompt, voce, lingua e behavior dedicati; salvate su SD card (fallback SPIFFS), persistenti ai flash del firmware
+- **Behaviors avanzati** - fino a 64 comportamenti per personalità; trigger su VAD, tasto o singolo sensore BLE; fino a 3 conseguenze in sequenza ordinabili; tipi: azione Furby diretta, TTS fisso, prompt fisso, LLM libero, LLM con scelta azione automatica
+- **LLM sceglie azione** - `CSQ_PROMPT_AUTO`: il modello sceglie autonomamente un'azione fisica tra quelle disponibili, con label localizzate nella lingua della personalità
+- **Simulatore behavior** - pannello debug con log completo: prompt inviato, risposta LLM, azione selezionata, TTS generato
 - **Flicker filter** - filtro anti-flicker 50/60 Hz per la camera OV2640
+- **Microfono oscilloscopio** - visualizzazione real-time del segnale mic nella pagina debug via SSE
+- **Controllo gain ADC** - sensibilità microfono e volume digitale configurabili dalla UI
+- **Monitoraggio batteria** - lettura tensione/percentuale, stato USB e di carica via CH32 visualizzati nella pagina info
+- **Backup configurazione** - snapshot su SPIFFS e SD card, ripristino automatico all'avvio se le preferenze sono vuote
+- **File manager** - browser unificato per SPIFFS e SD card nella pagina debug (upload, download, delete)
+- **NTP** - sincronizzazione orario di rete mostrata nella pagina info
 
 ## Architettura sorgente
 

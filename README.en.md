@@ -69,8 +69,17 @@ The Furby has a deliberately rude and cynical personality, fully configurable vi
 - **Multi-WiFi** - up to 5 networks in flash with configurable priority; mesh-compatible
 - **Web UI** - dashboard at `http://furby.local` with Bootstrap 5
 - **Captive portal** - AP `Furby_Config` on first boot to configure WiFi and API keys
-- **Behaviors** - trigger system (VAD, button, BLE sensors) with configurable consequences (Furby action, fixed TTS, LLM prompt)
+- **Personalities** - multiple personalities with dedicated prompt, voice, language and behaviors; saved on SD card (SPIFFS fallback), persistent across firmware flashes
+- **Advanced behaviors** - up to 64 behaviors per personality; triggers on VAD, button or single BLE sensor; up to 3 reorderable consequences in sequence; types: direct Furby action, fixed TTS, fixed prompt, free LLM, LLM with automatic action choice
+- **LLM picks action** - `CSQ_PROMPT_AUTO`: the model autonomously picks a physical action from the available ones, with labels localized in the personality's language
+- **Behavior simulator** - debug panel with full log: prompt sent, LLM response, selected action, generated TTS
 - **Flicker filter** - 50/60 Hz anti-flicker filter for the OV2640 camera
+- **Microphone oscilloscope** - real-time mic signal visualization on the debug page via SSE
+- **ADC gain control** - microphone sensitivity and digital volume configurable from the UI
+- **Battery monitor** - voltage/percentage, USB and charging status read via CH32, shown on the info page
+- **Config backup** - snapshot to SPIFFS and SD card, automatic restore at boot if preferences are empty
+- **File manager** - unified SPIFFS + SD card browser on the debug page (upload, download, delete)
+- **NTP** - network time sync displayed on the info page
 
 ## Source architecture
 
