@@ -165,7 +165,10 @@ function setLang(l){
     <div id="tone-result" class="small mt-2 text-muted"></div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.mic">Microfoni live</h6>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h6 class="text-uppercase text-muted fw-bold small mb-0" data-i18n="aud.mic">Microfoni live</h6>
+      <span id="vad-badge" class="badge bg-secondary"><i class="bi bi-mic-mute"></i> <span data-i18n="aud.vad_silence">Silenzio</span></span>
+    </div>
     <p class="text-muted small mb-2" data-i18n="aud.mic_desc">RMS live - L=MIC1, R=MIC2</p>
     <div class="row g-3 mb-2">
       <div class="col">
@@ -187,15 +190,15 @@ function setLang(l){
       <span class="text-muted small">32767</span>
       <input type="number" class="form-control form-control-sm" id="dbg-vad-num" min="0" max="32767" value="800" style="width:90px" oninput="dbgVadNumInput(this.value)">
     </div>
-    <div class="row g-2">
-      <div class="col-6"><button class="btn btn-secondary px-3 w-100 disabled" id="vad-badge"><i class="bi bi-mic-mute"></i> Silenzio</button></div>
-      <div class="col-6"><button class="btn btn-primary px-3 w-100" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva</button></div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+      <button class="btn btn-primary px-3" onclick="dbgVadSave()"><i class="bi bi-floppy"></i> Salva</button>
     </div>
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
     <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
+    <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e"></canvas>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
     </div>
@@ -415,15 +418,49 @@ function micRecord(){
   }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;});
 }
 var _micEs=null;
+var _scopeCtx=null,_scopeW=0,_scopeH=0;
+function _scopeInit(){
+  var c=document.getElementById('rms-scope');
+  if(!c)return;
+  c.width=c.offsetWidth||600;_scopeW=c.width;_scopeH=c.height;
+  _scopeCtx=c.getContext('2d');
+  _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
+}
+function _scopePush(r1,r2,vad){
+  if(!_scopeCtx){_scopeInit();if(!_scopeCtx)return;}
+  // ridimensiona se il canvas ha cambiato larghezza
+  var c=document.getElementById('rms-scope');
+  if(c&&c.offsetWidth!==_scopeW){_scopeW=c.offsetWidth;c.width=_scopeW;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
+  // scorri a sinistra di 2px
+  var img=_scopeCtx.getImageData(2,0,_scopeW-2,_scopeH);
+  _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
+  _scopeCtx.putImageData(img,0,0);
+  // disegna colonna destra
+  var MAX_RMS=8000;
+  var h1=Math.round(Math.min(1,r1/MAX_RMS)*_scopeH);
+  var h2=Math.round(Math.min(1,r2/MAX_RMS)*_scopeH);
+  var col=vad?'#22c55e':(r1>_vadThreshold||r2>_vadThreshold)?'#f59e0b':'#3b82f6';
+  // MIC1: barra dal centro verso l'alto
+  _scopeCtx.fillStyle=col;
+  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2)-h1,2,h1||1);
+  // MIC2: barra dal centro verso il basso, colore leggermente più scuro
+  _scopeCtx.globalAlpha=0.6;
+  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2),2,h2||1);
+  _scopeCtx.globalAlpha=1;
+  // linea centrale
+  _scopeCtx.fillStyle='#2d2d4e';
+  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2),2,1);
+}
 function _micApply(arr){
   var r1=arr[0],r2=arr[1],vad=!!arr[2];
   var p1=Math.min(100,Math.round(r1/5000*100)),p2=Math.min(100,Math.round(r2/5000*100));
   document.getElementById('rms-bar-l').style.width=p1+'%';document.getElementById('rms-bar-r').style.width=p2+'%';
   document.getElementById('rms-val-l').textContent=r1;document.getElementById('rms-val-r').textContent=r2;
   var badge=document.getElementById('vad-badge');
-  if(vad){badge.innerHTML='<i class="bi bi-mic-fill"></i> '+t('aud.vad_speech');badge.className='btn btn-success px-3 w-100 disabled';}
-  else if(r1>_vadThreshold||r2>_vadThreshold){badge.innerHTML='<i class="bi bi-soundwave"></i> '+t('aud.vad_noise');badge.className='btn btn-warning px-3 w-100 disabled';}
-  else{badge.innerHTML='<i class="bi bi-mic-mute"></i> '+t('aud.vad_silence');badge.className='btn btn-secondary px-3 w-100 disabled';}
+  if(vad){badge.innerHTML='<i class="bi bi-mic-fill"></i> '+t('aud.vad_speech');badge.className='badge bg-success';}
+  else if(r1>_vadThreshold||r2>_vadThreshold){badge.innerHTML='<i class="bi bi-soundwave"></i> '+t('aud.vad_noise');badge.className='badge bg-warning text-dark';}
+  else{badge.innerHTML='<i class="bi bi-mic-mute"></i> '+t('aud.vad_silence');badge.className='badge bg-secondary';}
+  _scopePush(r1,r2,vad);
 }
 function startMicPoll(){
   if(_micEs)return;

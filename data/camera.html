@@ -62,11 +62,11 @@
       <div class="d-flex align-items-center gap-2 mb-2">
         <label class="form-label mb-0 small text-muted" data-i18n="cam.snap_quality">qualità snapshot</label>
         <span class="text-muted small">1</span>
-        <input type="range" class="form-range flex-fill" id="snap-q-slider" min="1" max="10" step="1" value="8" oninput="onSnapQuality(this.value)">
+        <input type="range" class="form-range flex-fill" id="snap-q-slider" min="1" max="10" step="1" value="8" oninput="document.getElementById('snap-q-label').textContent=this.value">
         <span class="text-muted small">10</span>
         <span class="badge bg-secondary" id="snap-q-label" style="min-width:2rem">8</span>
       </div>
-      <select class="form-select form-select-sm" id="snap-size-sel" onchange="onSnapSize(this.value)">
+      <select class="form-select form-select-sm mb-2" id="snap-size-sel">
         <option value="QQVGA">QQVGA 160×120</option>
         <option value="QVGA">QVGA 320×240</option>
         <option value="VGA" selected>VGA 640×480</option>
@@ -75,6 +75,9 @@
         <option value="SXGA">SXGA 1280×1024</option>
         <option value="UXGA">UXGA 1600×1200</option>
       </select>
+      <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+        <button class="btn btn-primary px-3" onclick="saveSnapSettings()" data-i18n="cam.save_snap"><i class="bi bi-floppy"></i> Salva</button>
+      </div>
       <p class="text-muted small mb-0 mt-1" data-i18n="cam.snap_hint">Risoluzione e qualità usate per catturare il frame inviato all'LLM. Indipendenti dallo stream.</p>
     </div>
   </div>
@@ -184,17 +187,10 @@ function onStreamSize(v){
     if(running)setTimeout(function(){img.src='/camera/stream?t='+Date.now();},300);
   }).catch(function(){});
 }
-function onSnapQuality(v){
-  document.getElementById('snap-q-label').textContent=v;
-  clearTimeout(_snTimer);
-  _snTimer=setTimeout(function(){
-    var q=qualToJpeg(v);
-    var fd=new FormData();fd.append('snap_quality',q);
-    fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
-  },300);
-}
-function onSnapSize(v){
-  var fd=new FormData();fd.append('snap_size',v);
+function saveSnapSettings(){
+  var q=qualToJpeg(document.getElementById('snap-q-slider').value);
+  var s=document.getElementById('snap-size-sel').value;
+  var fd=new FormData();fd.append('snap_quality',q);fd.append('snap_size',s);
   fetch('/camera/settings',{method:'POST',body:fd}).catch(function(){});
 }
 function onFlicker(v){
