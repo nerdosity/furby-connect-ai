@@ -177,7 +177,7 @@ struct FurbyDevice {
     FurbyDevice(const String& n, const String& a, esp_ble_addr_type_t t) : name(n), addr(a), addrType(t) {}
 };
 
-struct FurbyActionDef { const char* id; const char* label; uint8_t cmd[6]; uint8_t len; };
+struct FurbyActionDef { const char* id; const char* label; const char* label_en; uint8_t cmd[6]; uint8_t len; };
 
 enum ConsequenceType : uint8_t {
     CSQ_NONE = 0, CSQ_FURBY_ACTION, CSQ_TTS_FIXED, CSQ_PROMPT_FIXED, CSQ_PROMPT_LLM, CSQ_PROMPT_AUTO

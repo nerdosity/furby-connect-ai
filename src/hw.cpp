@@ -179,12 +179,10 @@ int readChargingStat() {
 }
 
 int readBatteryMv() {
-    static bool batFailed = false;
-    if (batFailed) return -1;
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(0x06);
-    if (Wire.endTransmission(false) != 0) { batFailed = true; return -1; }
-    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) { batFailed = true; return -1; }
+    if (Wire.endTransmission(false) != 0) return -1;
+    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)2) != 2) return -1;
     uint8_t lo = Wire.read(), hi = Wire.read();
     uint16_t raw = (uint16_t)(hi << 8 | lo);
     // raw=0..1023 (ADC 10-bit CH32), Vref=3.3V

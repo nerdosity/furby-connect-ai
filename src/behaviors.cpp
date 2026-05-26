@@ -372,11 +372,13 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
                 userMsg = "[Sensore: " + String(sname) + "] " + userMsg;
             }
+            bool isEn = (gPersonalityLang == "en");
             String actionList;
             for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
-                actionList += String(FURBY_ACTIONS[i].id) + ": " + FURBY_ACTIONS[i].label + "\n";
-            String sys = gPersonalityPrompt +
-                " Scegli UNA SOLA azione da questo elenco e rispondi con SOLO il suo id, nient'altro:\n" + actionList;
+                actionList += String(FURBY_ACTIONS[i].id) + ": " + (isEn ? FURBY_ACTIONS[i].label_en : FURBY_ACTIONS[i].label) + "\n";
+            String sys = gPersonalityPrompt + (isEn
+                ? " Choose ONE action from this list and reply with ONLY its id, nothing else:\n"
+                : " Scegli UNA SOLA azione da questo elenco e rispondi con SOLO il suo id, nient'altro:\n") + actionList;
             String answer = callLLM(img, sys, userMsg);
             answer.trim();
             const FurbyActionDef* act = findFurbyAction(answer.c_str());
@@ -453,23 +455,6 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     if (sttText.length() > 0)
         L("[SIM] testo VAD simulato: \"" + sttText + "\"");
 
-    String base64Img;
-    if (camActive || camInit()) {
-        camTouch();
-        camApplySettings(camSnapSize, camSnapQuality);
-        camera_fb_t* fb = esp_camera_fb_get();
-        if (fb) {
-            base64Img = base64Encode(fb->buf, fb->len);
-            esp_camera_fb_return(fb);
-            L("[SIM] camera: frame catturato (" + String(base64Img.length()) + " char base64)");
-        } else {
-            L("[SIM] camera: esp_camera_fb_get() NULL, procedo senza immagine");
-        }
-        camApplySettings(camStreamSize, camStreamQuality);
-    } else {
-        L("[SIM] camera: non disponibile");
-    }
-
     EventBehavior* beh = nullptr;
     for (int i = 0; i < gEventBehaviorCount; i++) {
         EventBehavior& b = gEventBehaviors[i];
@@ -478,6 +463,32 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         beh = &b;
         L("[SIM] comportamento trovato: \"" + String(b.name) + "\" (" + String(b.consequence_count) + " conseguenze)");
         break;
+    }
+
+    // cattura camera solo se almeno una conseguenza la richiede
+    bool needsCam = false;
+    if (beh) { for (int c = 0; c < beh->consequence_count; c++) if (beh->consequences[c].snapshot) { needsCam = true; break; } }
+    else needsCam = true; // processStimulusDefault la usa sempre
+
+    String base64Img;
+    if (needsCam) {
+        if (camActive || camInit()) {
+            camTouch();
+            camApplySettings(camSnapSize, camSnapQuality);
+            camera_fb_t* fb = esp_camera_fb_get();
+            if (fb) {
+                base64Img = base64Encode(fb->buf, fb->len);
+                esp_camera_fb_return(fb);
+                L("[SIM] camera: frame catturato (" + String(base64Img.length()) + " char base64)");
+            } else {
+                L("[SIM] camera: esp_camera_fb_get() NULL, procedo senza immagine");
+            }
+            camApplySettings(camStreamSize, camStreamQuality);
+        } else {
+            L("[SIM] camera: non disponibile");
+        }
+    } else {
+        L("[SIM] camera: non richiesta da questo behavior");
     }
 
     if (!beh) {
@@ -493,8 +504,17 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
               + (csq.action_id[0] ? String(" action=") + csq.action_id : "")
               + (csq.text[0]      ? String(" testo=\"") + csq.text + "\"" : "")
               + (csq.snapshot     ? " [snapshot]" : ""));
-            if (isLlm && skipLlm)
-                L("[SIM] → LLM SKIPPATO - prompt sarebbe: \"" + String(csq.text) + "\"");
+            if (isLlm && skipLlm) {
+                String simMsg = sttText.length() > 0 ? sttText : String(csq.text);
+                if (simMsg.length() == 0) simMsg = "Reagisci allo stimolo ricevuto.";
+                if (csq.ctx_beh_name && beh->name[0])
+                    simMsg = "[Regola attiva: \"" + String(beh->name) + "\"] " + simMsg;
+                if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT) {
+                    const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
+                    simMsg = "[Sensore: " + String(sname) + "] " + simMsg;
+                }
+                L("[SIM] → LLM SKIPPATO - userMsg sarebbe: \"" + simMsg + "\"");
+            }
             else
                 executeConsequence(csq, base64Img, sttText, beh->name, sensorId);
         }
@@ -550,22 +570,6 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
         gSttLen = 0;
     }
 
-    String base64Img;
-    if (camActive || camInit()) {
-        camTouch();
-        camApplySettings(camSnapSize, camSnapQuality);
-        camera_fb_t* fb = esp_camera_fb_get();
-        if (fb) {
-            base64Img = base64Encode(fb->buf, fb->len);
-            esp_camera_fb_return(fb);
-        } else {
-            Serial.println("[STIMULUS] WARN: esp_camera_fb_get() restituito NULL");
-        }
-        camApplySettings(camStreamSize, camStreamQuality);
-    } else {
-        Serial.println("[STIMULUS] WARN: camera non disponibile, procedo senza immagine");
-    }
-
     EventBehavior* beh = nullptr;
     for (int i = 0; i < gEventBehaviorCount; i++) {
         EventBehavior& b = gEventBehaviors[i];
@@ -579,6 +583,24 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
         Serial.printf("[STIMULUS] nessun behavior per trigger=%d sensor=%d - skip\n", (int)trg, (int)sensorId);
         return;
     }
+
+    // cattura camera solo se almeno una conseguenza la richiede
+    String base64Img;
+    bool needsCam = false;
+    for (int c = 0; c < beh->consequence_count; c++) if (beh->consequences[c].snapshot) { needsCam = true; break; }
+    if (needsCam) {
+        if (camActive || camInit()) {
+            camTouch();
+            camApplySettings(camSnapSize, camSnapQuality);
+            camera_fb_t* fb = esp_camera_fb_get();
+            if (fb) { base64Img = base64Encode(fb->buf, fb->len); esp_camera_fb_return(fb); }
+            else Serial.println("[STIMULUS] WARN: esp_camera_fb_get() restituito NULL");
+            camApplySettings(camStreamSize, camStreamQuality);
+        } else {
+            Serial.println("[STIMULUS] WARN: camera non disponibile, procedo senza immagine");
+        }
+    }
+
     for (int c = 0; c < beh->consequence_count; c++)
         executeConsequence(beh->consequences[c], base64Img, sttText, beh->name, sensorId);
 }

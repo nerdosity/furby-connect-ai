@@ -187,10 +187,15 @@ const SENSOR_NAMES = [
   'In piedi','Capovolto','Su lato DX','Su lato SX',
   'Inclinato Indietro','Inclinato DX','Inclinato SX'
 ];
-const CSQ_LABELS = {
+const CSQ_LABELS_IT = {
   furby_action:'Azione Furby', tts_fixed:'TTS fisso', prompt_fixed:'Prompt fisso',
-  prompt_llm:'LLM', prompt_auto:'LLM automatico'
+  prompt_llm:'LLM', prompt_auto:'LLM sceglie azione automaticamente'
 };
+const CSQ_LABELS_EN = {
+  furby_action:'Furby Action', tts_fixed:'Fixed TTS', prompt_fixed:'Fixed Prompt',
+  prompt_llm:'LLM', prompt_auto:'LLM chooses action automatically'
+};
+function csqLabels() { return (localStorage.getItem('furby_lang')||'it')==='en' ? CSQ_LABELS_EN : CSQ_LABELS_IT; }
 // firmware serializza type come intero
 const CSQ_TYPE_TO_INT = { furby_action:1, tts_fixed:2, prompt_fixed:3, prompt_llm:4, prompt_auto:5 };
 const CSQ_INT_TO_TYPE = { 1:'furby_action', 2:'tts_fixed', 3:'prompt_fixed', 4:'prompt_llm', 5:'prompt_auto' };
@@ -467,7 +472,7 @@ function behRender() {
       b.consequences.forEach(c => {
         const cb = document.createElement('span');
         cb.className = 'badge bg-light text-dark border csq-badge';
-        cb.textContent = CSQ_LABELS[c.type] || c.type;
+        cb.textContent = csqLabels()[c.type] || c.type;
         csqDiv.appendChild(cb);
       });
       card.appendChild(csqDiv);
@@ -576,7 +581,7 @@ function renderCsqList() {
     const typeSel = document.createElement('select');
     typeSel.className = 'form-select form-select-sm';
     typeSel.style.maxWidth = '160px';
-    Object.entries(CSQ_LABELS).forEach(([k, v]) => {
+    Object.entries(csqLabels()).forEach(([k, v]) => {
       const opt = document.createElement('option');
       opt.value = k;
       opt.textContent = v;
