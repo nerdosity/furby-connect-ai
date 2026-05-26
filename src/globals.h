@@ -196,6 +196,8 @@ struct Consequence {
     char action_id[32]           = {};
     char text[256]               = {};
     bool snapshot                = false;
+    bool ctx_beh_name            = false;  // includi nome behavior nel prompt
+    bool ctx_sensor              = false;  // includi sensore stimolato nel prompt
     char reactions[MAX_REACTIONS][32] = {};
     uint8_t reaction_count       = 0;
 };

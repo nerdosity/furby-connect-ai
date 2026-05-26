@@ -14,10 +14,12 @@ static void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
     for (int c = 0; c < b.consequence_count; c++) {
         const Consequence& q = b.consequences[c];
         JsonObject co = cs.add<JsonObject>();
-        co["type"]      = (int)q.type;
-        co["action_id"] = q.action_id;
-        co["text"]      = q.text;
-        co["snapshot"]  = q.snapshot;
+        co["type"]         = (int)q.type;
+        co["action_id"]    = q.action_id;
+        co["text"]         = q.text;
+        co["snapshot"]     = q.snapshot;
+        co["ctx_beh_name"] = q.ctx_beh_name;
+        co["ctx_sensor"]   = q.ctx_sensor;
         JsonArray ra = co["reactions"].to<JsonArray>();
         for (int r = 0; r < q.reaction_count; r++) ra.add(q.reactions[r]);
     }
@@ -35,7 +37,9 @@ static void deserializeBehavior(EventBehavior& b, JsonObject bo) {
         q.type     = (ConsequenceType)(co["type"] | 0);
         strlcpy(q.action_id, co["action_id"] | "", sizeof(q.action_id));
         strlcpy(q.text,      co["text"]      | "", sizeof(q.text));
-        q.snapshot = co["snapshot"] | false;
+        q.snapshot     = co["snapshot"]     | false;
+        q.ctx_beh_name = co["ctx_beh_name"] | false;
+        q.ctx_sensor   = co["ctx_sensor"]   | false;
         q.reaction_count = 0;
         for (JsonVariant rv : co["reactions"].as<JsonArray>()) {
             if (q.reaction_count >= MAX_REACTIONS) break;
@@ -197,7 +201,13 @@ void loadPersonalities() {
             buildDefaultPersonality(*gpActivePers);
         } else {
             if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
-            deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
+            // salta eventuali null nell'array
+            while (gActivePersonality < (int)arr.size() && !arr[gActivePersonality].is<JsonObject>()) gActivePersonality++;
+            if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
+            if (arr[gActivePersonality].is<JsonObject>())
+                deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
+            else
+                buildDefaultPersonality(*gpActivePers);
         }
     }
 
@@ -216,7 +226,7 @@ void activatePersonality(int idx) {
     if (err != DeserializationError::Ok) return;
 
     JsonArray arr = doc["personalities"].as<JsonArray>();
-    if (idx < 0 || idx >= (int)arr.size()) return;
+    if (idx < 0 || idx >= (int)arr.size() || !arr[idx].is<JsonObject>()) return;
 
     freeActivePers();
     gpActivePers = allocPersonalityPSRAM();
@@ -266,7 +276,7 @@ void speakText(const String& text) {
 }
 
 // ── Esecuzione conseguenza ────────────────────────────────────────────────────
-void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText) {
+void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText, const char* behName, uint8_t sensorId) {
     Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
     switch (csq.type) {
         case CSQ_FURBY_ACTION: {
@@ -297,6 +307,11 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 userMsg = sttText.length() > 0
                     ? "L'utente ha detto: \"" + sttText + "\". " + String(csq.text)
                     : String(csq.text);
+            // contesto aggiuntivo richiesto dalla regola
+            if (csq.ctx_beh_name && behName && behName[0])
+                userMsg = "[Regola attiva: \"" + String(behName) + "\"] " + userMsg;
+            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT)
+                userMsg = "[Sensore stimolato: " + String(SENSOR_NAMES[sensorId]) + "] " + userMsg;
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
                 if (answer.length() > 0) speakText(answer);
@@ -337,6 +352,10 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             String img = csq.snapshot ? base64Img : "";
             String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
             if (userMsg.length() == 0) userMsg = "Reagisci allo stimolo ricevuto.";
+            if (csq.ctx_beh_name && behName && behName[0])
+                userMsg = "[Regola attiva: \"" + String(behName) + "\"] " + userMsg;
+            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT)
+                userMsg = "[Sensore stimolato: " + String(SENSOR_NAMES[sensorId]) + "] " + userMsg;
             String actionList;
             for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
                 actionList += String(FURBY_ACTIONS[i].id) + ": " + FURBY_ACTIONS[i].label + "\n";
@@ -461,7 +480,7 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
             if (isLlm && skipLlm)
                 L("[SIM] → LLM SKIPPATO - prompt sarebbe: \"" + String(csq.text) + "\"");
             else
-                executeConsequence(csq, base64Img, sttText);
+                executeConsequence(csq, base64Img, sttText, beh->name, sensorId);
         }
     }
 
@@ -541,13 +560,9 @@ void processStimulus(TriggerType trg, uint8_t sensorId) {
     }
 
     if (!beh) {
-        if (gPersonalityPrompt.length() == 0) {
-            Serial.println("[STIMULUS] skip - nessuna personalità configurata");
-            return;
-        }
-        processStimulusDefault(base64Img);
+        Serial.printf("[STIMULUS] nessun behavior per trigger=%d sensor=%d - skip\n", (int)trg, (int)sensorId);
         return;
     }
     for (int c = 0; c < beh->consequence_count; c++)
-        executeConsequence(beh->consequences[c], base64Img, sttText);
+        executeConsequence(beh->consequences[c], base64Img, sttText, beh->name, sensorId);
 }

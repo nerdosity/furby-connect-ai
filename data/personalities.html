@@ -500,7 +500,7 @@ function csqNormType(t) {
 }
 
 function csqRender(list) {
-  csqData = list.map(c => Object.assign({}, c, { type: csqNormType(c.type) }));
+  csqData = list.map(c => Object.assign({ snapshot: false, ctx_beh_name: false, ctx_sensor: false }, c, { type: csqNormType(c.type) }));
   renderCsqList();
 }
 
@@ -546,6 +546,29 @@ function renderCsqList() {
   });
 }
 
+function mkChk(id, label, checked, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'form-check form-check-inline';
+  const inp = document.createElement('input');
+  inp.type = 'checkbox'; inp.className = 'form-check-input';
+  inp.id = id; inp.checked = !!checked;
+  inp.onchange = onChange;
+  const lbl = document.createElement('label');
+  lbl.className = 'form-check-label small'; lbl.htmlFor = id;
+  lbl.textContent = label;
+  wrap.appendChild(inp); wrap.appendChild(lbl);
+  return wrap;
+}
+
+function mkCtxChecks(ci, src) {
+  const wrap = document.createElement('div');
+  wrap.className = 'd-flex flex-wrap gap-2 mt-1';
+  wrap.appendChild(mkChk('csq-snap-'+ci,    'Snapshot camera',      src.snapshot,     () => { csqData[ci].snapshot     = document.getElementById('csq-snap-'+ci).checked; }));
+  wrap.appendChild(mkChk('csq-behname-'+ci, 'Includi nome regola',  src.ctx_beh_name, () => { csqData[ci].ctx_beh_name = document.getElementById('csq-behname-'+ci).checked; }));
+  wrap.appendChild(mkChk('csq-sensor-'+ci,  'Includi sensore',      src.ctx_sensor,   () => { csqData[ci].ctx_sensor   = document.getElementById('csq-sensor-'+ci).checked; }));
+  return wrap;
+}
+
 function csqTypeChange(ci, card, initial) {
   const c = csqData[ci];
   const type = c.type || 'prompt_llm';
@@ -580,36 +603,25 @@ function csqTypeChange(ci, card, initial) {
     detail.appendChild(sel);
   } else if (type === 'tts_fixed' || type === 'prompt_fixed') {
     const ta = document.createElement('textarea');
-    ta.className = 'form-control form-control-sm';
+    ta.className = 'form-control form-control-sm mb-1';
     ta.rows = 2;
     ta.maxLength = 255;
     ta.placeholder = type === 'tts_fixed' ? 'Testo da riprodurre…' : 'Prompt da inviare…';
     ta.value = (initial || c).text || '';
     ta.oninput = () => { csqData[ci].text = ta.value; };
     detail.appendChild(ta);
-  } else if (type === 'prompt_llm') {
-    const chk = document.createElement('div');
-    chk.className = 'form-check form-check-inline';
-    const inp = document.createElement('input');
-    inp.type = 'checkbox';
-    inp.className = 'form-check-input';
-    inp.id = 'csq-snap-' + ci;
-    inp.checked = !!(initial || c).snapshot;
-    inp.onchange = () => { csqData[ci].snapshot = inp.checked; };
-    const lbl = document.createElement('label');
-    lbl.className = 'form-check-label small';
-    lbl.htmlFor = inp.id;
-    lbl.textContent = 'Con snapshot camera';
-    chk.appendChild(inp);
-    chk.appendChild(lbl);
-    detail.appendChild(chk);
+    if (type === 'prompt_fixed') {
+      detail.appendChild(mkCtxChecks(ci, initial || c));
+    }
+  } else if (type === 'prompt_llm' || type === 'prompt_auto') {
+    detail.appendChild(mkCtxChecks(ci, initial || c));
   }
 
   card.appendChild(detail);
 }
 
 function csqAdd() {
-  csqData.push({ type: 'prompt_llm', text: '', action_id: '', snapshot: false });
+  csqData.push({ type: 'prompt_llm', text: '', action_id: '', snapshot: false, ctx_beh_name: false, ctx_sensor: false });
   renderCsqList();
 }
 
@@ -617,8 +629,9 @@ function csqCollect() {
   return csqData.map(c => {
     const out = { type: CSQ_TYPE_TO_INT[c.type] || 4 };
     if (c.type === 'furby_action') out.action_id = c.action_id || '';
-    else if (c.type === 'tts_fixed' || c.type === 'prompt_fixed') out.text = c.text || '';
-    else if (c.type === 'prompt_llm' || c.type === 'prompt_auto') out.snapshot = !!c.snapshot;
+    else if (c.type === 'tts_fixed') { out.text = c.text || ''; }
+    else if (c.type === 'prompt_fixed') { out.text = c.text || ''; out.ctx_beh_name = !!c.ctx_beh_name; out.ctx_sensor = !!c.ctx_sensor; }
+    else if (c.type === 'prompt_llm' || c.type === 'prompt_auto') { out.snapshot = !!c.snapshot; out.ctx_beh_name = !!c.ctx_beh_name; out.ctx_sensor = !!c.ctx_sensor; }
     return out;
   });
 }
