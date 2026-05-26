@@ -196,11 +196,11 @@ function load(){
     } else { usbEl.textContent='-'; }
 
     var chgEl=document.getElementById('chg-status');
-    if(d.chg_stat===0){
+    if(d.chg_stat===1){
       chgEl.innerHTML='<span class="badge bg-warning text-dark"><i class="bi bi-battery-charging"></i> In carica</span>';
     } else if(d.usb_connected===false){
       chgEl.innerHTML='<span class="badge bg-danger"><i class="bi bi-battery-half"></i> In uso (batteria)</span>';
-    } else if(d.chg_stat===1){
+    } else if(d.chg_stat===0){
       chgEl.innerHTML='<span class="badge bg-success"><i class="bi bi-battery-full"></i> Carica completa</span>';
     } else { chgEl.textContent='-'; }
 

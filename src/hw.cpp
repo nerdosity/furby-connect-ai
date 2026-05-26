@@ -133,13 +133,18 @@ void ch32Init() {
 }
 
 
-// Legge il registro input del CH32 (0x04) una volta sola
 static int ch32ReadInput() {
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(0x04);
     if (Wire.endTransmission(false) != 0) return -1;
     if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)1) != 1) return -1;
-    return Wire.read();
+    int v = Wire.read();
+    static int lastV = -999;
+    if (v != lastV) {
+        Serial.printf("CH32 input reg: 0x%02X (USB=%d CHG=%d)\n", v, (v>>7)&1, (v>>3)&1);
+        lastV = v;
+    }
+    return v;
 }
 
 // CHG_DET → EXIO7 (bit 7): HIGH = USB connessa
@@ -148,8 +153,10 @@ bool readUsbConnected() {
     return v >= 0 && (v & (1 << 7)) != 0;
 }
 
-// CHG_STAT → EXIO3 (bit 3): LOW = in carica (active-low, open-drain)
-// -1 = lettura fallita, 0 = in carica, 1 = non in carica / carica completa
+// CHG_STAT → Q1 BSS84W P-MOSFET → EXIO3 (bit 3)
+// STAT LOW (charging) → Q1 ON → EXIO3 HIGH (bit3=1) = in carica
+// STAT HIGH (done/idle) → Q1 OFF → EXIO3 LOW (bit3=0) = non in carica
+// -1 = lettura fallita, 0 = non in carica, 1 = in carica
 int readChargingStat() {
     int v = ch32ReadInput();
     if (v < 0) return -1;
