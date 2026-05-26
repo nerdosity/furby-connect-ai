@@ -176,6 +176,9 @@ const CSQ_LABELS = {
   furby_action:'Azione Furby', tts_fixed:'TTS fisso', prompt_fixed:'Prompt fisso',
   prompt_llm:'LLM', prompt_auto:'LLM automatico'
 };
+// firmware serializza type come intero
+const CSQ_TYPE_TO_INT = { furby_action:1, tts_fixed:2, prompt_fixed:3, prompt_llm:4, prompt_auto:5 };
+const CSQ_INT_TO_TYPE = { 1:'furby_action', 2:'tts_fixed', 3:'prompt_fixed', 4:'prompt_llm', 5:'prompt_auto' };
 
 /* ── init ── */
 behModal = new bootstrap.Modal(document.getElementById('behModal'));
@@ -286,7 +289,7 @@ function persNew() {
     .then(r => r.json())
     .then(d => {
       nameEl.value = '';
-      if (d.ok) persLoad(() => persEdit(d.idx));
+      if (d.ok) persLoad(() => persEdit(personalities.length - 1));
       else persLoad();
     })
     .catch(e => console.error('persNew', e));
@@ -298,10 +301,11 @@ function persSave() {
   p.name = document.getElementById('ed-name').value.trim();
   p.prompt = document.getElementById('ed-prompt').value;
   p.voice_id = document.getElementById('ed-voice').value;
+  if (!p.id) p.id = 'p' + Date.now();
   fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ personalities: personalities })
+    body: JSON.stringify({ active: editIdx, personalities: personalities })
   })
   .then(r => r.json())
   .then(() => persRender())
@@ -313,10 +317,11 @@ function persDel(i) {
   personalities.splice(i, 1);
   if (editIdx === i) editorClose();
   else if (editIdx > i) editIdx--;
+  const newActive = Math.max(0, Math.min(editIdx, personalities.length - 1));
   fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ personalities: personalities })
+    body: JSON.stringify({ active: newActive, personalities: personalities })
   })
   .then(() => persRender())
   .catch(e => console.error('persDel', e));
@@ -470,8 +475,11 @@ function behSave() {
   const trigger = parseInt(document.getElementById('beh-trg').value);
   const sensor_id = trigger === 2 ? parseInt(document.getElementById('beh-sensor').value) : 0;
   const consequences = csqCollect();
-  const b = { name, trigger, sensor_id, consequences };
+  const existing = editBehIdx >= 0 ? personalities[editIdx].behaviors[editBehIdx] : null;
+  const id = (existing && existing.id) ? existing.id : ('b' + Date.now());
+  const b = { id, name, trigger, sensor_id, consequences };
   const p = personalities[editIdx];
+  if (!p.behaviors) p.behaviors = [];
   if (editBehIdx < 0) p.behaviors.push(b);
   else p.behaviors[editBehIdx] = b;
   behModal.hide();
@@ -483,8 +491,14 @@ function behSave() {
 /* ── consequences ── */
 let csqData = [];
 
+function csqNormType(t) {
+  // normalizza: intero → stringa chiave
+  if (typeof t === 'number') return CSQ_INT_TO_TYPE[t] || 'prompt_llm';
+  return t || 'prompt_llm';
+}
+
 function csqRender(list) {
-  csqData = list.map(c => Object.assign({}, c));
+  csqData = list.map(c => Object.assign({}, c, { type: csqNormType(c.type) }));
   renderCsqList();
 }
 
@@ -583,10 +597,10 @@ function csqAdd() {
 
 function csqCollect() {
   return csqData.map(c => {
-    const out = { type: c.type };
+    const out = { type: CSQ_TYPE_TO_INT[c.type] || 4 };
     if (c.type === 'furby_action') out.action_id = c.action_id || '';
     else if (c.type === 'tts_fixed' || c.type === 'prompt_fixed') out.text = c.text || '';
-    else if (c.type === 'prompt_llm') out.snapshot = !!c.snapshot;
+    else if (c.type === 'prompt_llm' || c.type === 'prompt_auto') out.snapshot = !!c.snapshot;
     return out;
   });
 }
