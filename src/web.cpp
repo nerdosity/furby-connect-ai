@@ -912,8 +912,8 @@ static void handleBleReset() {
 
 static void handleSysInfo() {
     auto kb = [](size_t b) -> size_t { return b / 1024; };
-    size_t sramTotal  = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
-    size_t sramFree   = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    size_t sramTotal  = heap_caps_get_total_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    size_t sramFree   = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     size_t psramTotal = psramFound() ? heap_caps_get_total_size(MALLOC_CAP_SPIRAM) : 0;
     size_t psramFree  = psramFound() ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM)  : 0;
     size_t sketchKb   = kb(ESP.getSketchSize());
