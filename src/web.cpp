@@ -928,6 +928,8 @@ static void handleSysInfo() {
     d["flash_free_kb"]= ESP.getFlashChipSize() / 1024 - sketchKb - spiffsKb;
     d["uptime_s"]     = millis() / 1000;
     d["bat_mv"]       = readBatteryMv();
+    d["usb_connected"] = readUsbConnected();
+    d["chg_stat"]      = readChargingStat();
     d["chip_temp_c"]  = (int)temperatureRead();
     d["fw_version"]   = spiffsVersion();
     d["ip"]           = isConfigMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();

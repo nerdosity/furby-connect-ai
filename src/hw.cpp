@@ -132,6 +132,29 @@ void ch32Init() {
 }
 
 
+// Legge il registro input del CH32 (0x04) una volta sola
+static int ch32ReadInput() {
+    Wire.beginTransmission(CH32_ADDR);
+    Wire.write(0x04);
+    if (Wire.endTransmission(false) != 0) return -1;
+    if (Wire.requestFrom((uint8_t)CH32_ADDR, (uint8_t)1) != 1) return -1;
+    return Wire.read();
+}
+
+// CHG_DET → EXIO7 (bit 7): HIGH = USB connessa
+bool readUsbConnected() {
+    int v = ch32ReadInput();
+    return v >= 0 && (v & (1 << 7)) != 0;
+}
+
+// CHG_STAT → EXIO3 (bit 3): LOW = in carica (active-low, open-drain)
+// -1 = lettura fallita, 0 = in carica, 1 = non in carica / carica completa
+int readChargingStat() {
+    int v = ch32ReadInput();
+    if (v < 0) return -1;
+    return (v & (1 << 3)) ? 1 : 0;
+}
+
 int readBatteryMv() {
     static bool batFailed = false;
     if (batFailed) return -1;

@@ -4,6 +4,8 @@
 void ch32WritePort(uint8_t value);
 void ch32SetBit(uint8_t bit, bool val);
 void ch32Init();
+bool readUsbConnected();
+int  readChargingStat();
 int  readBatteryMv();
 
 void es8311WriteReg(uint8_t reg, uint8_t val);
