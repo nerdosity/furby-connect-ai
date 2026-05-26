@@ -3,6 +3,7 @@
 
 void savePersonalities();
 void loadPersonalities();
+bool writePersFile(const String& out);
 void activatePersonality(int idx);
 void applyActivePersonality();
 void serializeActivePersonalityTo(JsonObject po);

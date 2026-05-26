@@ -526,7 +526,9 @@ static void handleVadSave() {
 // ── /personalities/* ─────────────────────────────────────────────────────────
 
 static void handlePersonalitiesList() {
-    if (!SPIFFS.exists("/personalities.json")) {
+    File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
+    if (!f) f = SPIFFS.open("/personalities.json", "r");
+    if (!f) {
         auto doc = JsonDocPsram();
         doc["active"] = 0;
         JsonArray arr = doc["personalities"].to<JsonArray>();
@@ -536,8 +538,6 @@ static void handlePersonalitiesList() {
         server.send(200, "application/json", out);
         return;
     }
-    File f = SPIFFS.open("/personalities.json", "r");
-    if (!f) { server.send(500, "application/json", "{\"error\":\"file non trovato\"}"); return; }
     auto doc = JsonDocPsram();
     if (deserializeJson(doc, f) != DeserializationError::Ok) {
         f.close(); server.send(500, "application/json", "{\"error\":\"JSON corrotto\"}"); return;
@@ -560,19 +560,16 @@ static void handlePersonalitiesNew() {
     HTTP_LOG();
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Nuova";
 
-    // legge JSON, aggiunge entry, riscrive
     auto doc = JsonDocPsram();
-    if (SPIFFS.exists("/personalities.json")) {
-        File f = SPIFFS.open("/personalities.json", "r");
-        if (f) { deserializeJson(doc, f); f.close(); }
-    }
+    { File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
+      if (!f) f = SPIFFS.open("/personalities.json", "r");
+      if (f) { deserializeJson(doc, f); f.close(); } }
     JsonArray arr = doc["personalities"].is<JsonArray>()
         ? doc["personalities"].as<JsonArray>()
         : doc["personalities"].to<JsonArray>();
 
     JsonObject po = arr.add<JsonObject>();
-    String id = "p" + String(millis());
-    po["id"]       = id;
+    po["id"]       = "p" + String(millis());
     po["name"]     = nm;
     po["prompt"]   = gpActivePers ? String(gpActivePers->prompt) : gPersonalityPrompt;
     po["voice_id"] = gpActivePers ? String(gpActivePers->voice_id) : gPersonalityVoiceId;
@@ -580,10 +577,7 @@ static void handlePersonalitiesNew() {
     int newIdx = (int)arr.size() - 1;
 
     String out; serializeJson(doc, out);
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(out); f.close();
-
+    if (!writePersFile(out)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
     server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(newIdx) + "}");
 }
 
@@ -592,10 +586,9 @@ static void handlePersonalitiesDel() {
     int idx = server.arg("idx").toInt();
 
     auto doc = JsonDocPsram();
-    if (SPIFFS.exists("/personalities.json")) {
-        File f = SPIFFS.open("/personalities.json", "r");
-        if (f) { deserializeJson(doc, f); f.close(); }
-    }
+    { File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
+      if (!f) f = SPIFFS.open("/personalities.json", "r");
+      if (f) { deserializeJson(doc, f); f.close(); } }
     JsonArray arr = doc["personalities"].as<JsonArray>();
     if (idx < 0 || idx >= (int)arr.size() || (int)arr.size() <= 1) {
         server.send(400, "application/json", "{\"ok\":false}"); return;
@@ -606,10 +599,7 @@ static void handlePersonalitiesDel() {
     doc["active"] = newActive;
 
     String out; serializeJson(doc, out);
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(out); f.close();
-
+    if (!writePersFile(out)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
     activatePersonality(newActive);
     server.send(200, "application/json", "{\"ok\":true}");
 }
@@ -622,21 +612,15 @@ static void handlePersonalitiesSave() {
     if (deserializeJson(doc, body) != DeserializationError::Ok) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
     }
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(body); f.close();
-    if (sdAvailable) {
-        File sd = SD_MMC.open("/personalities.json", FILE_WRITE);
-        if (sd) { sd.print(body); sd.close(); }
-    }
+    if (!writePersFile(body)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
     loadPersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalitiesExport() {
     HTTP_LOG();
-    if (!SPIFFS.exists("/personalities.json")) { server.send(404, "text/plain", "not found"); return; }
-    File f = SPIFFS.open("/personalities.json", "r");
+    File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
+    if (!f) f = SPIFFS.open("/personalities.json", "r");
     if (!f) { server.send(404, "text/plain", "not found"); return; }
     server.sendHeader("Content-Disposition", "attachment; filename=personalities.json");
     server.streamFile(f, "application/json"); f.close();
@@ -650,13 +634,7 @@ static void handlePersonalitiesImport() {
     if (deserializeJson(doc, body) != DeserializationError::Ok) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
     }
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
-    f.print(body); f.close();
-    if (sdAvailable) {
-        File sd = SD_MMC.open("/personalities.json", FILE_WRITE);
-        if (sd) { sd.print(body); sd.close(); }
-    }
+    if (!writePersFile(body)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
     loadPersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }

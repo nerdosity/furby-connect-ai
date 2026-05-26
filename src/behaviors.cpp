@@ -127,22 +127,38 @@ void serializeActivePersonalityTo(JsonObject po) {
 }
 
 // ── savePersonalities: legge tutto il JSON, aggiorna entry attiva, riscrive ───
+// apre /personalities.json con priorità SD → SPIFFS (read-only)
+static File openPersFile() {
+    if (sdAvailable) {
+        File f = SD_MMC.open("/personalities.json", FILE_READ);
+        if (f) return f;
+    }
+    return SPIFFS.open("/personalities.json", "r");
+}
+
+// scrive /personalities.json su SD se disponibile, altrimenti SPIFFS
+bool writePersFile(const String& out) {
+    if (sdAvailable) {
+        File f = SD_MMC.open("/personalities.json", FILE_WRITE);
+        if (f) { f.print(out); f.close(); return true; }
+    }
+    File f = SPIFFS.open("/personalities.json", "w");
+    if (f) { f.print(out); f.close(); return true; }
+    return false;
+}
+
 void savePersonalities() {
     if (!gpActivePers) return;
 
     auto doc = JsonDocPsram();
-    if (SPIFFS.exists("/personalities.json")) {
-        File f = SPIFFS.open("/personalities.json", "r");
-        if (f) { deserializeJson(doc, f); f.close(); }
-    }
+    File rf = openPersFile();
+    if (rf) { deserializeJson(doc, rf); rf.close(); }
 
     doc["active"] = gActivePersonality;
     JsonArray arr = doc["personalities"].is<JsonArray>()
         ? doc["personalities"].as<JsonArray>()
         : doc["personalities"].to<JsonArray>();
 
-    // aggiorna o aggiunge l'entry all'indice gActivePersonality
-    // non creare buchi: se l'indice è oltre la fine, append in coda
     if (gActivePersonality > (int)arr.size()) gActivePersonality = (int)arr.size();
     if (gActivePersonality == (int)arr.size()) arr.add(JsonObject{});
     JsonObject po = arr[gActivePersonality].as<JsonObject>();
@@ -158,34 +174,27 @@ void savePersonalities() {
     }
 
     String out; serializeJson(doc, out);
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (f) { f.print(out); f.close(); }
+    if (writePersFile(out))
+        Serial.printf("[PERS] salvato su %s\n", sdAvailable ? "SD" : "SPIFFS");
+    else
+        Serial.println("[PERS] ERRORE: impossibile salvare personalities");
 }
 
 // ── loadPersonalities: alloca in PSRAM solo quella attiva ─────────────────────
 void loadPersonalities() {
     gActivePersonality = 0;
 
-    if (!SPIFFS.exists("/personalities.json")) {
-        freeActivePers();
-        gpActivePers = allocPersonalityPSRAM();
-        if (!gpActivePers) return;
-        buildDefaultPersonality(*gpActivePers);
-        applyActivePersonality();
-        Serial.println("[PERS] nessun file - personalità default in RAM");
-        return;
-    }
-
-    File f = SPIFFS.open("/personalities.json", "r");
+    File f = openPersFile();
     if (!f) {
-        Serial.println("[PERS] ERRORE: impossibile aprire file, uso default in RAM");
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
         buildDefaultPersonality(*gpActivePers);
         applyActivePersonality();
+        Serial.println("[PERS] nessun file trovato (SD né SPIFFS) - personalità default in RAM");
         return;
     }
+    Serial.printf("[PERS] carico da %s\n", sdAvailable ? "SD" : "SPIFFS");
 
     auto doc = JsonDocPsram();
     DeserializationError err = deserializeJson(doc, f);
@@ -233,7 +242,7 @@ void loadPersonalities() {
 
 // ── activatePersonality: switcha personalità senza ricaricare tutto ───────────
 void activatePersonality(int idx) {
-    File f = SPIFFS.open("/personalities.json", "r");
+    File f = openPersFile();
     if (!f) return;
     auto doc = JsonDocPsram();
     DeserializationError err = deserializeJson(doc, f);
