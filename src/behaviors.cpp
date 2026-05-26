@@ -109,6 +109,20 @@ void applyActivePersonality() {
         gEventBehaviors[i] = gpActivePers->behaviors[i];
 }
 
+void serializeActivePersonalityTo(JsonObject po) {
+    if (!gpActivePers) return;
+    po["id"]       = gpActivePers->id;
+    po["name"]     = gpActivePers->name;
+    po["prompt"]   = gpActivePers->prompt;
+    po["voice_id"] = gpActivePers->voice_id;
+    po["lang"]     = gpActivePers->lang[0] ? gpActivePers->lang : "it";
+    JsonArray ba = po["behaviors"].to<JsonArray>();
+    for (int b = 0; b < gpActivePers->behavior_count; b++) {
+        JsonObject bo = ba.add<JsonObject>();
+        serializeBehavior(bo, gpActivePers->behaviors[b]);
+    }
+}
+
 // ── savePersonalities: legge tutto il JSON, aggiorna entry attiva, riscrive ───
 void savePersonalities() {
     if (!gpActivePers) return;

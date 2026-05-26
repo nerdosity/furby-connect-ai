@@ -187,7 +187,7 @@ enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
 
 #define MAX_REACTIONS        3
 #define MAX_CONSEQUENCES     3
-#define MAX_EVENT_BEHAVIORS  16
+#define MAX_EVENT_BEHAVIORS  64
 #define MAX_FURBY_SCAN       8
 #define STT_BUF_MAX_SAMPLES  128000
 

@@ -139,7 +139,7 @@ function setLang(l){
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-raw" data-i18n="tab.raw">Raw / Log</a></li>
   <li class="nav-item"><a class="nav-link small text-nowrap" data-bs-toggle="tab" href="#t-files" data-i18n="tab.files">File manager</a></li>
 </ul>
-<div class="container-fluid px-3 px-xl-5 py-3">
+<div class="container py-3 fb-page">
 <div class="tab-content">
 
 <!-- TAB: Audio -->
@@ -291,6 +291,8 @@ document.querySelectorAll('#debugTabs [data-bs-toggle="tab"]').forEach(function(
     if(id==='t-files')fmRefresh();
   });
 });
+// tab audio è attivo di default — shown.bs.tab non scatta al caricamento
+startMicPoll();dbgVadLoad();
 var BLE_TIP_IT='Furby non connesso via BLE - usa la barra in alto per cercarlo e connetterlo.';
 var BLE_TIP_EN='Furby not connected via BLE - use the bar above to scan and connect.';
 function bleTip(){return gLang==='en'?BLE_TIP_EN:BLE_TIP_IT;}

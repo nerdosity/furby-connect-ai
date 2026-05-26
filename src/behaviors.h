@@ -5,6 +5,7 @@ void savePersonalities();
 void loadPersonalities();
 void activatePersonality(int idx);
 void applyActivePersonality();
+void serializeActivePersonalityTo(JsonObject po);
 
 // legacy compat
 void saveEventBehaviors();

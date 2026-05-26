@@ -527,8 +527,13 @@ static void handleVadSave() {
 
 static void handlePersonalitiesList() {
     if (!SPIFFS.exists("/personalities.json")) {
-        server.send(200, "application/json",
-            "{\"active\":0,\"personalities\":[]}");
+        auto doc = JsonDocPsram();
+        doc["active"] = 0;
+        JsonArray arr = doc["personalities"].to<JsonArray>();
+        JsonObject po = arr.add<JsonObject>();
+        serializeActivePersonalityTo(po);
+        String out; serializeJson(doc, out);
+        server.send(200, "application/json", out);
         return;
     }
     File f = SPIFFS.open("/personalities.json", "r");

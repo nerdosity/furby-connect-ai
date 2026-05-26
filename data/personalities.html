@@ -19,9 +19,9 @@
 <body>
 <script src="/shared.js"></script>
 <script>renderNav('personalities');</script>
-<div class="container-fluid px-3 px-xl-5 py-3 fb-page">
+<div class="container py-3 fb-page">
   <div class="d-flex align-items-center gap-2 mb-3">
-    <h4 class="mb-0">Personalità</h4>
+    <div class="fb-sec" style="margin:0"><i class="bi bi-person-lines-fill"></i> <span>Personalità</span></div>
     <div class="ms-auto d-flex gap-2 align-items-center">
       <input id="pers-new-name" class="form-control form-control-sm" style="width:160px" placeholder="Nome nuova…" maxlength="47">
       <button class="btn btn-primary btn-sm px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
@@ -410,6 +410,8 @@ function voiceLoad(onDone, forceReload) {
 function behRender() {
   if (editIdx < 0) return;
   const p = personalities[editIdx];
+  const btnAdd = document.querySelector('[onclick="behAdd()"]');
+  if (btnAdd) btnAdd.disabled = (p.behaviors || []).length >= 64;
   const list = document.getElementById('beh-list');
   list.innerHTML = '';
   if (!(p.behaviors || []).length) {
@@ -477,6 +479,7 @@ function behRender() {
 
 function behAdd() {
   if (editIdx < 0) return;
+  if ((personalities[editIdx].behaviors || []).length >= 64) return;
   editBehIdx = -1;
   openBehModal({ name: '', trigger: 0, sensor_id: 0, consequences: [] });
 }
