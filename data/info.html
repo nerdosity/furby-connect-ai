@@ -22,6 +22,7 @@
           <tr><td class="text-muted ps-3">Chip</td><td id="chip-model" class="align-middle">ESP32-S3</td></tr>
           <tr><td class="text-muted ps-3">Temperatura chip</td><td id="chip-temp" class="align-middle">-</td></tr>
           <tr><td class="text-muted ps-3">Uptime</td><td id="uptime" class="align-middle">-</td></tr>
+          <tr><td class="text-muted ps-3">Ora (NTP)</td><td id="ntp-time" class="align-middle">-</td></tr>
           <tr><td class="text-muted ps-3">Indirizzo IP</td><td id="ip-addr" class="align-middle">-</td></tr>
         </tbody>
       </table>
@@ -183,6 +184,7 @@ function load(){
     if(d.fw_version) renderFwBadge(d.fw_version);
     document.getElementById('chip-temp').textContent=(d.chip_temp_c!=null?d.chip_temp_c+'°C':'-');
     document.getElementById('uptime').textContent=fmtSec(d.uptime_s||0);
+    document.getElementById('ntp-time').textContent=(d.now_ts>0)?new Date(d.now_ts*1000).toLocaleString():'-';
     document.getElementById('ip-addr').textContent=d.ip||'-';
 
     if(d.bat_mv>0) updateBat(d.bat_mv);
