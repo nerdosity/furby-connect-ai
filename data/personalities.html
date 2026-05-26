@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Personalità – Furby LLM</title>
+<!DOCTYPE html><html lang="it"><head>
+<meta charset="UTF-8"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FurbyMind – Personalità</title>
 <link rel="stylesheet" href="/bootstrap.min.css">
 <link rel="stylesheet" href="/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/shared.css">
 <style>
 .pers-row{cursor:pointer;transition:background .15s}
 .pers-row:hover{background:rgba(0,0,0,.04)}
@@ -19,8 +17,9 @@
 </style>
 </head>
 <body>
-<div id="nav-placeholder"></div>
-<div class="container py-3">
+<script src="/shared.js"></script>
+<script>renderNav('personalities');</script>
+<div class="container py-3 fb-page">
   <div class="d-flex align-items-center gap-2 mb-3">
     <h4 class="mb-0">Personalità</h4>
     <div class="ms-auto d-flex gap-2 align-items-center">
@@ -157,7 +156,6 @@
 </div>
 
 <script src="/bootstrap.bundle.min.js"></script>
-<script src="/shared.js"></script>
 <script>
 /* ── state ── */
 let personalities = [];
@@ -180,18 +178,15 @@ const CSQ_LABELS = {
 };
 
 /* ── init ── */
-document.addEventListener('DOMContentLoaded', () => {
-  renderNav('personalities');
-  behModal = new bootstrap.Modal(document.getElementById('behModal'));
-  persLoad();
-});
+behModal = new bootstrap.Modal(document.getElementById('behModal'));
+persLoad();
 
 /* ── personalities ── */
 function persLoad(onDone) {
   fetch('/personalities')
     .then(r => r.json())
     .then(data => {
-      personalities = data.personalities || [];
+      personalities = (data.personalities || []).filter(p => p != null);
       persRender();
       if (onDone) onDone();
     })
