@@ -331,7 +331,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             }
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
-                if (answer.length() > 0) { SIMLOG("[CSQ] LLM risposta: \"" + answer + "\""); speakText(answer); }
+                if (answer.length() > 0) speakText(answer);
                 else SIMLOG("[CSQ] ERRORE: LLM risposta vuota");
             } else {
                 String reactList;
@@ -447,6 +447,8 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     if (!debugPers) {
         L("[SIM] personalità: \"" + String(gpActivePers ? gpActivePers->name : "?") + "\" (attiva)");
     }
+    L("[SIM] prompt: \"" + gPersonalityPrompt + "\"");
+    L("[SIM] lingua: " + gPersonalityLang + " | voice: " + gPersonalityVoiceId);
 
     if (skipLlm)       L("[SIM] skip-LLM attivo - chiamate LLM simulate");
     if (gSimSkipTts)   L("[SIM] skip-TTS attivo - audio non riprodotto");

@@ -20,15 +20,14 @@
 <script src="/shared.js"></script>
 <script>renderNav('personalities');</script>
 <div class="container py-3 fb-page">
-  <div class="d-flex align-items-center gap-2 mb-3">
-    <div class="fb-sec" style="margin:0"><i class="bi bi-person-lines-fill"></i> <span>Personalità</span></div>
-    <div class="ms-auto d-flex gap-2 align-items-center">
-      <input id="pers-new-name" class="form-control form-control-sm" style="width:160px" placeholder="Nome nuova…" maxlength="47">
-      <button class="btn btn-primary btn-sm px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
-    </div>
-  </div>
-
   <div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2 py-2">
+      <div class="fb-sec" style="margin:0"><i class="bi bi-person-lines-fill"></i> <span>Personalità</span></div>
+      <div class="ms-auto d-flex gap-2 align-items-center">
+        <input id="pers-new-name" class="form-control form-control-sm" style="width:160px" placeholder="Nome nuova…" maxlength="47">
+        <button class="btn btn-primary btn-sm px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
+      </div>
+    </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover mb-0" id="pers-table">
         <thead class="table-light">
@@ -71,7 +70,7 @@
       <textarea id="ed-prompt" class="form-control form-control-sm" rows="4" maxlength="4095" style="font-family:monospace;font-size:.8rem"></textarea>
     </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2 mb-3">
-      <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva personalità</button>
+      <button class="btn btn-success px-3" id="btn-save-pers" onclick="persSave()"><i class="bi bi-floppy"></i> Salva personalità</button>
       <button class="btn btn-outline-success px-3" id="btn-set-active" onclick="persSetActive()"><i class="bi bi-check-circle"></i> Imposta attiva</button>
       <button class="btn btn-secondary px-3" onclick="editorClose()"><i class="bi bi-x-lg"></i> Chiudi</button>
     </div>
@@ -350,7 +349,7 @@ function persNew() {
     .catch(e => console.error('persNew', e));
 }
 
-function persSave() {
+function persSave(silent) {
   if (editIdx < 0) return;
   const p = personalities[editIdx];
   p.name = document.getElementById('ed-name').value.trim();
@@ -364,7 +363,18 @@ function persSave() {
     body: JSON.stringify({ active: activeIdx, personalities: personalities })
   })
   .then(r => r.json())
-  .then(() => persRender())
+  .then(() => {
+    persRender();
+    if (!silent) {
+      const btn = document.getElementById('btn-save-pers');
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Salvato';
+        btn.disabled = true;
+        setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1500);
+      }
+    }
+  })
   .catch(e => console.error('persSave', e));
 }
 
@@ -500,7 +510,7 @@ function behDel(bi) {
   personalities[editIdx].behaviors.splice(bi, 1);
   behRender();
   simBehSel();
-  persSave();
+  persSave(true);
 }
 
 function openBehModal(b) {
@@ -544,7 +554,7 @@ function behSave() {
   behModal.hide();
   behRender();
   simBehSel();
-  persSave();
+  persSave(true);
 }
 
 /* ── consequences ── */
@@ -591,8 +601,22 @@ function renderCsqList() {
     typeSel.onchange = () => { csqData[ci].type = typeSel.value; csqTypeChange(ci, card); };
     row.appendChild(typeSel);
 
+    const upBtn = document.createElement('button');
+    upBtn.className = 'btn btn-sm btn-outline-secondary ms-auto';
+    upBtn.innerHTML = '▲';
+    upBtn.disabled = ci === 0;
+    upBtn.onclick = () => { if (ci > 0) { [csqData[ci-1], csqData[ci]] = [csqData[ci], csqData[ci-1]]; renderCsqList(); } };
+    row.appendChild(upBtn);
+
+    const dnBtn = document.createElement('button');
+    dnBtn.className = 'btn btn-sm btn-outline-secondary';
+    dnBtn.innerHTML = '▼';
+    dnBtn.disabled = ci === csqData.length - 1;
+    dnBtn.onclick = () => { if (ci < csqData.length - 1) { [csqData[ci], csqData[ci+1]] = [csqData[ci+1], csqData[ci]]; renderCsqList(); } };
+    row.appendChild(dnBtn);
+
     const delBtn = document.createElement('button');
-    delBtn.className = 'btn btn-sm btn-outline-danger ms-auto';
+    delBtn.className = 'btn btn-sm btn-outline-danger';
     delBtn.innerHTML = '<i class="bi bi-trash"></i>';
     delBtn.onclick = () => { csqData.splice(ci, 1); renderCsqList(); };
     row.appendChild(delBtn);
