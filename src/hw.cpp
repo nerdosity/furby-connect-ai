@@ -118,7 +118,8 @@ void ch32SetBit(uint8_t bit, bool val) {
 }
 
 void ch32Init() {
-    uint8_t modeData[2] = {0x02, 0xFF};
+    // IO3=CHG_STAT, IO7=CHG_DET: input (bit=0). Tutti gli altri: output (bit=1).
+    uint8_t modeData[2] = {0x02, 0xFF & ~(1<<3) & ~(1<<7)};
     Wire.beginTransmission(CH32_ADDR);
     Wire.write(modeData, 2);
     uint8_t err = Wire.endTransmission();
