@@ -65,6 +65,7 @@
     </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2 mb-3">
       <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva personalità</button>
+      <button class="btn btn-outline-success px-3" id="btn-set-active" onclick="persSetActive()"><i class="bi bi-check-circle"></i> Imposta attiva</button>
       <button class="btn btn-secondary px-3" onclick="editorClose()"><i class="bi bi-x-lg"></i> Chiudi</button>
     </div>
 
@@ -159,6 +160,7 @@
 <script>
 /* ── state ── */
 let personalities = [];
+let activeIdx = 0;
 let editIdx = -1;
 let editBehIdx = -1;
 let voices = [];
@@ -192,6 +194,7 @@ function persLoad(onDone) {
     .then(r => r.json())
     .then(data => {
       personalities = (data.personalities || []).filter(p => p != null);
+      activeIdx = data.active || 0;
       persRender();
       if (onDone) onDone();
     })
@@ -218,7 +221,15 @@ function persRender() {
 
     const tdName = document.createElement('td');
     tdName.className = 'align-middle';
-    tdName.textContent = p.name || '(senza nome)';
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name || '(senza nome)';
+    tdName.appendChild(nameSpan);
+    if (i === activeIdx) {
+      const ab = document.createElement('span');
+      ab.className = 'badge bg-success ms-2';
+      ab.textContent = 'Attiva';
+      tdName.appendChild(ab);
+    }
     tr.appendChild(tdName);
 
     const tdVoice = document.createElement('td');
@@ -272,7 +283,30 @@ function persEdit(i) {
   behRender();
   simBehSel();
   persRender();
+  updateActiveBtnState();
   wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function persSetActive() {
+  if (editIdx < 0) return;
+  const fd = new FormData();
+  fd.append('idx', editIdx);
+  fetch('/personalities/activate', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => { if (d.ok) { activeIdx = editIdx; persRender(); updateActiveBtnState(); } })
+    .catch(e => console.error('persSetActive', e));
+}
+
+function updateActiveBtnState() {
+  const btn = document.getElementById('btn-set-active');
+  if (!btn) return;
+  if (editIdx === activeIdx) {
+    btn.classList.replace('btn-outline-success', 'btn-success');
+    btn.disabled = true;
+  } else {
+    btn.classList.replace('btn-success', 'btn-outline-success');
+    btn.disabled = false;
+  }
 }
 
 function editorClose() {
@@ -307,7 +341,7 @@ function persSave() {
   fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: editIdx, personalities: personalities })
+    body: JSON.stringify({ active: activeIdx, personalities: personalities })
   })
   .then(r => r.json())
   .then(() => persRender())
@@ -319,11 +353,11 @@ function persDel(i) {
   personalities.splice(i, 1);
   if (editIdx === i) editorClose();
   else if (editIdx > i) editIdx--;
-  const newActive = Math.max(0, Math.min(editIdx, personalities.length - 1));
+  if (activeIdx >= i) activeIdx = Math.max(0, activeIdx - 1);
   fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: newActive, personalities: personalities })
+    body: JSON.stringify({ active: activeIdx, personalities: personalities })
   })
   .then(() => persRender())
   .catch(e => console.error('persDel', e));

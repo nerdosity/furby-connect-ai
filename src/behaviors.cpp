@@ -119,7 +119,9 @@ void savePersonalities() {
         : doc["personalities"].to<JsonArray>();
 
     // aggiorna o aggiunge l'entry all'indice gActivePersonality
-    while ((int)arr.size() <= gActivePersonality) arr.add(JsonObject{});
+    // non creare buchi: se l'indice è oltre la fine, append in coda
+    if (gActivePersonality > (int)arr.size()) gActivePersonality = (int)arr.size();
+    if (gActivePersonality == (int)arr.size()) arr.add(JsonObject{});
     JsonObject po = arr[gActivePersonality].as<JsonObject>();
     po["id"]       = gpActivePers->id;
     po["name"]     = gpActivePers->name;
@@ -156,6 +158,7 @@ void loadPersonalities() {
     const char* src = migrateFromOld ? "/behaviors.json" : "/personalities.json";
     File f = SPIFFS.open(src, "r");
     if (!f) {
+        Serial.println("[PERS] WARN: impossibile aprire file, uso default in RAM");
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
@@ -169,6 +172,7 @@ void loadPersonalities() {
     f.close();
 
     if (err != DeserializationError::Ok) {
+        Serial.println("[PERS] WARN: JSON corrotto, uso default in RAM senza sovrascrivere");
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
