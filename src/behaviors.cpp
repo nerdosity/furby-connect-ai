@@ -74,7 +74,7 @@ static Personality* allocPersonalityPSRAM() {
 }
 
 static void freeActivePers() {
-    if (gpActivePers) { free(gpActivePers); gpActivePers = nullptr; }
+    if (gpActivePers) { heap_caps_free(gpActivePers); gpActivePers = nullptr; }
 }
 
 static void buildDefaultPersonality(Personality& p) {

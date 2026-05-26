@@ -225,9 +225,6 @@ struct Personality {
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
 
 // ── ArduinoJson PSRAM allocator ───────────────────────────────────────────────
-// heap_caps_malloc/realloc/free gestiscono correttamente PSRAM e heap interno —
-// usano il gestore appropriato in base all'indirizzo del puntatore.
-// MALLOC_CAP_SPIRAM|8BIT preferisce PSRAM, fallback automatico a heap interno.
 class SpiRamAllocator : public ArduinoJson::Allocator {
 public:
     void* allocate(size_t size) override {
@@ -239,9 +236,7 @@ public:
         heap_caps_free(ptr);
     }
     void* reallocate(void* ptr, size_t new_size) override {
-        // se il ptr viene da PSRAM, heap_caps_realloc lo gestisce correttamente;
-        // se viene dall'heap interno (fallback), idem — heap_caps_free/realloc
-        // usa il gestore corretto in base all'indirizzo.
+        // heap_caps_realloc: semantica POSIX, ptr rimane valido se fallisce.
         void* p = heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         if (!p) p = heap_caps_realloc(ptr, new_size, MALLOC_CAP_8BIT);
         return p;
