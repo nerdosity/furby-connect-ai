@@ -20,7 +20,7 @@
 </head>
 <body>
 <div id="nav-placeholder"></div>
-<div class="container-fluid py-3">
+<div class="container py-3">
   <div class="d-flex align-items-center gap-2 mb-3">
     <h4 class="mb-0">Personalità</h4>
     <div class="ms-auto d-flex gap-2 align-items-center">
@@ -147,7 +147,7 @@
         <div id="csq-list" class="d-flex flex-column gap-2"></div>
       </div>
       <div class="modal-footer">
-        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end w-100">
+        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end" style="width:100%">
           <button class="btn btn-success px-3" onclick="behSave()"><i class="bi bi-floppy"></i> Salva</button>
           <button class="btn btn-secondary px-3" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Annulla</button>
         </div>
@@ -187,12 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ── personalities ── */
-function persLoad() {
-  fetch('/api/personalities')
+function persLoad(onDone) {
+  fetch('/personalities')
     .then(r => r.json())
     .then(data => {
       personalities = data.personalities || [];
       persRender();
+      if (onDone) onDone();
     })
     .catch(e => console.error('persLoad', e));
 }
@@ -284,12 +285,16 @@ function persNew() {
   const nameEl = document.getElementById('pers-new-name');
   const name = nameEl.value.trim();
   if (!name) { nameEl.focus(); return; }
-  const p = { name: name, prompt: '', voice_id: '', behaviors: [] };
-  personalities.push(p);
-  nameEl.value = '';
-  editIdx = personalities.length - 1;
-  persRender();
-  persEdit(editIdx);
+  const fd = new FormData();
+  fd.append('name', name);
+  fetch('/personalities/new', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      nameEl.value = '';
+      if (d.ok) persLoad(() => persEdit(d.idx));
+      else persLoad();
+    })
+    .catch(e => console.error('persNew', e));
 }
 
 function persSave() {
@@ -298,7 +303,7 @@ function persSave() {
   p.name = document.getElementById('ed-name').value.trim();
   p.prompt = document.getElementById('ed-prompt').value;
   p.voice_id = document.getElementById('ed-voice').value;
-  fetch('/api/personalities', {
+  fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ personalities: personalities })
@@ -313,7 +318,7 @@ function persDel(i) {
   personalities.splice(i, 1);
   if (editIdx === i) editorClose();
   else if (editIdx > i) editIdx--;
-  fetch('/api/personalities', {
+  fetch('/personalities/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ personalities: personalities })
@@ -329,10 +334,10 @@ function voiceLoad(onDone, forceReload) {
     return;
   }
   const sel = document.getElementById('ed-voice');
-  fetch('/api/tts/voices')
+  fetch('/api/voices')
     .then(r => r.json())
     .then(data => {
-      voices = data.voices || [];
+      voices = Array.isArray(data) ? data : [];
       sel.innerHTML = '';
       const blank = document.createElement('option');
       blank.value = '';
@@ -340,7 +345,7 @@ function voiceLoad(onDone, forceReload) {
       sel.appendChild(blank);
       voices.forEach(v => {
         const opt = document.createElement('option');
-        opt.value = v.voice_id;
+        opt.value = v.id;
         opt.textContent = v.name;
         sel.appendChild(opt);
       });
