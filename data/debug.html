@@ -445,15 +445,17 @@ var _scopeCtx=null,_scopeW=0,_scopeH=0;
 function _scopeInit(){
   var c=document.getElementById('rms-scope');
   if(!c)return;
-  c.width=c.offsetWidth||600;_scopeW=c.width;_scopeH=c.height;
   _scopeCtx=c.getContext('2d');
-  _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
+  _scopeH=c.height;
+  var ow=c.offsetWidth;
+  if(ow>0){c.width=ow;_scopeW=ow;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
 }
 function _scopePush(r1,r2,vad){
   if(!_scopeCtx){_scopeInit();if(!_scopeCtx)return;}
-  // ridimensiona se il canvas ha cambiato larghezza
   var c=document.getElementById('rms-scope');
-  if(c&&c.offsetWidth!==_scopeW){_scopeW=c.offsetWidth;c.width=_scopeW;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
+  var ow=c?c.offsetWidth:0;
+  if(ow>0&&ow!==_scopeW){_scopeW=ow;c.width=_scopeW;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
+  if(_scopeW<=0)return;
   // scorri a sinistra di 2px
   var img=_scopeCtx.getImageData(2,0,_scopeW-2,_scopeH);
   _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);

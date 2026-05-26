@@ -1643,6 +1643,12 @@ static void micRecordTask(void*) {
     while (totalRead < TOTAL_BYTES) {
         int toRead = min(512 * 2, TOTAL_BYTES - totalRead);
         i2s_read(I2S_MIC_NUM, (uint8_t*)recBuf + totalRead, toRead, &bytesRead, portMAX_DELAY);
+        // aggiorna RMS live per l'oscilloscopio
+        int n = (int)bytesRead / (int)sizeof(int16_t);
+        int16_t* chunk = recBuf + totalRead / sizeof(int16_t);
+        int64_t sL = 0, sR = 0;
+        for (int i = 0; i + 1 < n; i += 2) { sL += (int64_t)chunk[i]*chunk[i]; sR += (int64_t)chunk[i+1]*chunk[i+1]; }
+        int half = n / 2; if (half > 0) { micRmsLive = (int)sqrt((double)sL/half); micRmsLive2 = (int)sqrt((double)sR/half); }
         totalRead += bytesRead;
     }
     micTestActive = false;

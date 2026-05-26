@@ -255,6 +255,11 @@ void initES7210() {
     es7210WriteReg(ES7210_MIC2_GAIN_REG44, gv);
     es7210WriteReg(0x45, gv);
     es7210WriteReg(0x46, gv);
+    // volume digitale ADC: 191 + vol_db*2, 40dB = 0xFF (da sketch ufficiale 06_esp_sr)
+    es7210WriteReg(ES7210_ADC1_VOL_REG1B, 0xFF);
+    es7210WriteReg(ES7210_ADC2_VOL_REG1C, 0xFF);
+    es7210WriteReg(ES7210_ADC3_VOL_REG1D, 0xFF);
+    es7210WriteReg(ES7210_ADC4_VOL_REG1E, 0xFF);
     es7210WriteReg(ES7210_MIC1_POWER_REG47, 0x08);
     es7210WriteReg(ES7210_MIC2_POWER_REG48, 0x08);
     es7210WriteReg(0x49, 0x08);
@@ -278,6 +283,10 @@ void setMicGain(int gain) {
     es7210WriteReg(ES7210_MIC2_GAIN_REG44, gv);
     es7210WriteReg(0x45, gv);
     es7210WriteReg(0x46, gv);
+    es7210WriteReg(ES7210_ADC1_VOL_REG1B, 0xFF);
+    es7210WriteReg(ES7210_ADC2_VOL_REG1C, 0xFF);
+    es7210WriteReg(ES7210_ADC3_VOL_REG1D, 0xFF);
+    es7210WriteReg(ES7210_ADC4_VOL_REG1E, 0xFF);
     Serial.printf("ES7210: mic gain set to %d (%ddB)\n", mic_gain, mic_gain * 3);
 }
 

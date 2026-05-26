@@ -76,19 +76,21 @@
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
-          <tr><th class="ps-3">Tipo</th><th>Libera</th><th>Totale</th><th>Uso</th></tr>
+          <tr><th class="ps-3">Tipo</th><th>Usata</th><th>Totale</th><th>Libera</th><th>Uso</th></tr>
         </thead>
         <tbody>
           <tr>
             <td class="ps-3 align-middle">SRAM interna</td>
-            <td class="align-middle" id="heap-free">-</td>
+            <td class="align-middle" id="heap-used">-</td>
             <td class="align-middle" id="heap-total">-</td>
+            <td class="align-middle" id="heap-free">-</td>
             <td class="align-middle" style="min-width:90px"><div class="progress" style="height:10px"><div id="heap-bar" class="progress-bar bg-info" role="progressbar" style="width:0%"></div></div></td>
           </tr>
           <tr>
             <td class="ps-3 align-middle">PSRAM</td>
-            <td class="align-middle" id="psram-free">-</td>
+            <td class="align-middle" id="psram-used">-</td>
             <td class="align-middle" id="psram-total">-</td>
+            <td class="align-middle" id="psram-free">-</td>
             <td class="align-middle"><div class="progress" style="height:10px"><div id="psram-bar" class="progress-bar bg-success" role="progressbar" style="width:0%"></div></div></td>
           </tr>
         </tbody>
@@ -136,11 +138,12 @@
     <div id="sd-body" class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
-          <tr><th class="ps-3">Usata</th><th>Totale</th><th>Libera</th><th>Uso</th></tr>
+          <tr><th class="ps-3">Tipo</th><th>Usata</th><th>Totale</th><th>Libera</th><th>Uso</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td class="ps-3 align-middle" id="sd-used">-</td>
+            <td class="ps-3 align-middle">SD card</td>
+            <td class="align-middle" id="sd-used">-</td>
             <td class="align-middle" id="sd-total">-</td>
             <td class="align-middle" id="sd-free">-</td>
             <td class="align-middle" style="min-width:90px"><div class="progress" style="height:10px"><div id="sd-bar" class="progress-bar bg-secondary" role="progressbar" style="width:0%"></div></div></td>
@@ -203,15 +206,19 @@ function load(){
     }
 
     // SRAM
-    document.getElementById('heap-free').textContent=fmtKB(d.heap_free||0);
+    var hUsed=(d.heap_total||0)-(d.heap_free||0);
+    document.getElementById('heap-used').textContent=fmtKB(hUsed);
     document.getElementById('heap-total').textContent=fmtKB(d.heap_total||0);
-    var hp=pct((d.heap_total||0)-(d.heap_free||0),d.heap_total||1);
+    document.getElementById('heap-free').textContent=fmtKB(d.heap_free||0);
+    var hp=pct(hUsed,d.heap_total||1);
     setBar('heap-bar',hp);
 
     // PSRAM
-    document.getElementById('psram-free').textContent=fmtKB(d.psram_free||0);
+    var pUsed=(d.psram_total||0)-(d.psram_free||0);
+    document.getElementById('psram-used').textContent=fmtKB(pUsed);
     document.getElementById('psram-total').textContent=fmtKB(d.psram_total||0);
-    var pp=pct((d.psram_total||0)-(d.psram_free||0),d.psram_total||1);
+    document.getElementById('psram-free').textContent=fmtKB(d.psram_free||0);
+    var pp=pct(pUsed,d.psram_total||1);
     setBar('psram-bar',pp);
 
     // Sketch
