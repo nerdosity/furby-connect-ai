@@ -482,11 +482,12 @@ function fmLoadDir(dir){
       } else {
         var filePath=(fmSource==='spiffs')?f.name:(dir==='/'?'':dir)+'/'+f.name;
         var ro=fmSource==='spiffs'&&(/\.(html|htm|css|js|woff2|png)$/.test(f.name)||f.name==='/version.txt');
+        var editable=!ro&&/\.(json|txt|md|sh|conf|config|cfg|ini|yaml|yml|log|csv|xml|html|htm|js|css|py|lua|c|cpp|h|ino)$/i.test(f.name);
         var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath:'/sd/get?path='+encodeURIComponent(filePath);
         rows+='<tr>'
           +'<td class="font-monospace small text-break">'+(fmSource==='sd'?'<i class="bi bi-file-earmark me-1 text-muted"></i>':'')+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
           +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
-          +'<td class="text-end">'+(ro||fmSource==='sd'?'':'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+filePath.replace(/'/g,"\\'")+'\')"><i class="bi bi-pencil"></i></button>')
+          +'<td class="text-end">'+(editable?'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+filePath.replace(/'/g,"\\'")+'\')"><i class="bi bi-pencil"></i></button>':'')
           +'<a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="'+dlHref+'" download>↓</a>'
           +(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+filePath.replace(/'/g,"\\'")+'\')"><i class="bi bi-trash3"></i></button>')
           +'</td></tr>';
@@ -505,7 +506,8 @@ function fmEdit(path){
   fmCurrentPath=path;document.getElementById('fm-editor-card').style.display='';
   document.getElementById('fm-editor-title').textContent='Editor: '+path;
   document.getElementById('fm-editor-msg').textContent=t('fm.loading');document.getElementById('fm-editor-ta').value='';
-  fetch('/fs/get'+path).then(r=>r.text()).then(function(txt){document.getElementById('fm-editor-ta').value=txt;document.getElementById('fm-editor-msg').textContent='';}).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
+  var url=(fmSource==='spiffs')?'/fs/get'+path:'/sd/get?path='+encodeURIComponent(path);
+  fetch(url).then(r=>r.text()).then(function(txt){document.getElementById('fm-editor-ta').value=txt;document.getElementById('fm-editor-msg').textContent='';}).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
 }
 function fmEditorClose(){document.getElementById('fm-editor-card').style.display='none';fmCurrentPath='';}
 function fmSave(){
@@ -513,7 +515,8 @@ function fmSave(){
   var content=document.getElementById('fm-editor-ta').value,fd=new FormData(),msg=document.getElementById('fm-editor-msg');
   fd.append('path',fmCurrentPath);fd.append('content',new Blob([content],{type:'text/plain'}),fmCurrentPath.split('/').pop());
   msg.textContent=t('fm.saving');
-  fetch('/fs/put',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmRefresh();}).catch(function(){msg.textContent=t('fm.net_err2');});
+  var url=(fmSource==='spiffs')?'/fs/put':'/sd/put';
+  fetch(url,{method:'POST',body:fd}).then(r=>r.json()).then(function(d){msg.textContent=d.ok?t('saved'):'ERR: '+(d.error||'');fmRefresh();}).catch(function(){msg.textContent=t('fm.net_err2');});
 }
 function fmDel(path){
   if(!confirm(t('fm.del_confirm')+' '+path+'?'))return;
