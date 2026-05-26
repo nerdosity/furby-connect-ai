@@ -15,10 +15,10 @@ var TRANSLATIONS={
     'aud.mic':'Microfoni live','aud.mic_desc':'RMS live - L=MIC1, R=MIC2',
     'vad.label_thresh':'Soglia VAD (RMS 0-32767, default 800)',
     'aud.vad_speech':'Parlato rilevato','aud.vad_noise':'Rumore','aud.vad_silence':'Silenzio',
-    'aud.rec':'Registra e riproduci (3 secondi)',
-    'aud.rec_desc':'Parla per 3 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
-    'aud.rec_btn':'<i class="bi bi-mic"></i> Registra 3s e riproduci',
-    'aud.rec_running':'Registrazione 3s in corso...','aud.rec_countdown':'Registrazione... ',
+    'aud.rec':'Registra e riproduci (5 secondi)',
+    'aud.rec_desc':'Parla per 5 secondi. L\'ESP32 registra e riproduce sulle casse (mix MIC1+MIC2).',
+    'aud.rec_btn':'<i class="bi bi-mic"></i> Registra 5s e riproduci',
+    'aud.rec_running':'Registrazione 5s in corso...','aud.rec_countdown':'Registrazione... ',
     'aud.rec_playing':'Riproduzione in corso...','aud.rec_done':'Fatto.',
     'aud.tone_sending':'Invio tono...',
     'aud.el_nokey':'API key ElevenLabs non configurata.',
@@ -53,10 +53,10 @@ var TRANSLATIONS={
     'aud.mic':'Live microphones','aud.mic_desc':'Live RMS - L=MIC1, R=MIC2',
     'vad.label_thresh':'Sensitivity threshold (RMS 0-32767, default 800)',
     'aud.vad_speech':'Speech detected','aud.vad_noise':'Noise','aud.vad_silence':'Silence',
-    'aud.rec':'Record and play back (3 seconds)',
-    'aud.rec_desc':'Speak for 3 seconds. The ESP32 records and plays back through speakers (MIC1+MIC2 mix).',
-    'aud.rec_btn':'<i class="bi bi-mic"></i> Record 3s and play',
-    'aud.rec_running':'Recording 3s...','aud.rec_countdown':'Recording... ',
+    'aud.rec':'Record and play back (5 seconds)',
+    'aud.rec_desc':'Speak for 5 seconds. The ESP32 records and plays back through speakers (MIC1+MIC2 mix).',
+    'aud.rec_btn':'<i class="bi bi-mic"></i> Record 5s and play',
+    'aud.rec_running':'Recording 5s...','aud.rec_countdown':'Recording... ',
     'aud.rec_playing':'Playing back...','aud.rec_done':'Done.',
     'aud.tone_sending':'Sending tone...',
     'aud.el_nokey':'ElevenLabs API key not configured.',
@@ -204,11 +204,11 @@ function setLang(l){
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
   <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (3s)</h6>
-    <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 3 secondi. L'ESP32 registra e riproduce sulle casse.</p>
+    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (5s)</h6>
+    <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 5 secondi. L'ESP32 registra e riproduce sulle casse.</p>
     <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e;opacity:0.3;transition:opacity 0.4s"></canvas>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
-      <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 3s e riproduci</button>
+      <button class="btn btn-warning px-3" id="btn-rec" onclick="micRecord()" data-i18n="aud.rec_btn"><i class="bi bi-mic"></i> Registra 5s e riproduci</button>
     </div>
     <div id="rec-result" class="small mt-2 text-muted"></div>
   </div></div>
@@ -441,40 +441,37 @@ function micRecord(){
   }).catch(function(){res.textContent=t('error_conn');btn.disabled=false;_scopeSetActive(false);});
 }
 var _micEs=null;
-var _scopeCtx=null,_scopeW=0,_scopeH=0;
-function _scopeInit(){
+var _scopeCtx=null,_scopeW=0,_scopeH=56;
+function _scopeResize(){
   var c=document.getElementById('rms-scope');
   if(!c)return;
-  _scopeCtx=c.getContext('2d');
-  _scopeH=c.height;
-  var ow=c.offsetWidth;
-  if(ow>0){c.width=ow;_scopeW=ow;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
+  var ow=c.parentElement?c.parentElement.clientWidth:c.offsetWidth;
+  if(ow<=0)return;
+  if(!_scopeCtx)_scopeCtx=c.getContext('2d');
+  _scopeH=c.height||56;
+  if(ow!==_scopeW){
+    _scopeW=ow;c.width=_scopeW;
+    _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
+  }
 }
 function _scopePush(r1,r2,vad){
-  if(!_scopeCtx){_scopeInit();if(!_scopeCtx)return;}
-  var c=document.getElementById('rms-scope');
-  var ow=c?c.offsetWidth:0;
-  if(ow>0&&ow!==_scopeW){_scopeW=ow;c.width=_scopeW;_scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);}
-  if(_scopeW<=0)return;
-  // scorri a sinistra di 2px
+  _scopeResize();
+  if(!_scopeCtx||_scopeW<=0)return;
   var img=_scopeCtx.getImageData(2,0,_scopeW-2,_scopeH);
   _scopeCtx.fillStyle='#1a1a2e';_scopeCtx.fillRect(0,0,_scopeW,_scopeH);
   _scopeCtx.putImageData(img,0,0);
-  // disegna colonna destra
   var MAX_RMS=1500;
-  var h1=Math.round(Math.min(1,r1/MAX_RMS)*_scopeH);
-  var h2=Math.round(Math.min(1,r2/MAX_RMS)*_scopeH);
+  var mid=Math.floor(_scopeH/2);
+  var h1=Math.round(Math.min(1,r1/MAX_RMS)*mid);
+  var h2=Math.round(Math.min(1,r2/MAX_RMS)*mid);
   var col=vad?'#22c55e':(r1>_vadThreshold||r2>_vadThreshold)?'#f59e0b':'#3b82f6';
-  // MIC1: barra dal centro verso l'alto
   _scopeCtx.fillStyle=col;
-  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2)-h1,2,h1||1);
-  // MIC2: barra dal centro verso il basso, colore leggermente più scuro
+  _scopeCtx.fillRect(_scopeW-2,mid-h1,2,h1||1);
   _scopeCtx.globalAlpha=0.6;
-  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2),2,h2||1);
+  _scopeCtx.fillRect(_scopeW-2,mid,2,h2||1);
   _scopeCtx.globalAlpha=1;
-  // linea centrale
   _scopeCtx.fillStyle='#2d2d4e';
-  _scopeCtx.fillRect(_scopeW-2,Math.floor(_scopeH/2),2,1);
+  _scopeCtx.fillRect(_scopeW-2,mid,2,1);
 }
 function _micApply(arr){
   var r1=arr[0],r2=arr[1],vad=!!arr[2];

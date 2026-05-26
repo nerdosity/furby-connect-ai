@@ -1,6 +1,7 @@
 #include "config_backup.h"
 #include "globals.h"
 #include "hw.h"
+#include <sys/time.h>
 
 #define BACKUP_PATH_SPIFFS "/config_bak.json"
 #define BACKUP_PATH_SD     "/config_bak.json"
@@ -37,6 +38,8 @@ static void _writeBackupTo(File& f) {
         n["pass"] = wifiNets[i].pass;
     }
     doc["wifi_count"] = wifiNetCount;
+    time_t now = time(nullptr);
+    if (now > 1000000000) doc["last_ts"] = (long)now;
     serializeJson(doc, f);
 }
 
@@ -80,6 +83,18 @@ static bool _restoreFromFile(File& f) {
     _i("cam_gc",   camGainCeiling, 0);
     _i("cam_br",   camBrightness,  0);
     _i("cam_agc",  camAgc,         1);
+    // Timestamp: ripristina orologio se più recente di quello attuale
+    if (!doc["last_ts"].isNull()) {
+        long saved_ts = doc["last_ts"].as<long>();
+        if (saved_ts > 1000000000) {
+            time_t cur = time(nullptr);
+            if (cur < 1000000000) {
+                struct timeval tv = { .tv_sec = (time_t)saved_ts, .tv_usec = 0 };
+                settimeofday(&tv, nullptr);
+                Serial.printf("[CFG] ora ripristinata da backup: %ld\n", saved_ts);
+            }
+        }
+    }
     // WiFi
     JsonArray nets = doc["wifi_nets"].as<JsonArray>();
     if (nets) {

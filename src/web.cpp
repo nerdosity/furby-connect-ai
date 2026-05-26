@@ -1632,7 +1632,7 @@ static void handleDebugTone() {
 
 static void micRecordTask(void*) {
     const int RATE      = 16000;
-    const int SECS      = 3;
+    const int SECS      = 5;
     const int TOTAL_SAMP_STEREO = RATE * SECS * 2;
     const int TOTAL_BYTES       = TOTAL_SAMP_STEREO * sizeof(int16_t);
     int16_t* recBuf = (int16_t*)heap_caps_malloc(TOTAL_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -1676,7 +1676,7 @@ static void handleDebugMicRecord() {
     if (micTestActive) { server.send(503, "application/json", "{\"ok\":false,\"error\":\"test gia in corso\"}"); return; }
     micTestActive = true;
     xTaskCreatePinnedToCore(micRecordTask, "MicTest", 4096, NULL, 1, NULL, 1);
-    server.send(200, "application/json", "{\"ok\":true,\"duration\":3}");
+    server.send(200, "application/json", "{\"ok\":true,\"duration\":5}");
 }
 
 static void handleCamDescPromptGet() {

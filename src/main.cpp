@@ -1,5 +1,7 @@
 #include <math.h>
 #include <time.h>
+#include <sys/time.h>
+#include <esp_sntp.h>
 #include "globals.h"
 #include "hw.h"
 #include "audio.h"
@@ -84,6 +86,14 @@ void setup() {
     Serial.printf("[NVS] entry usate: %u/128%s\n",
         preferences.freeEntries() < 128 ? 128 - preferences.freeEntries() : 0,
         nvsWasEmpty ? " (VUOTO)" : "");
+    // Ripristino orologio da NVS (prima di WiFi/NTP)
+    { long saved_ts = preferences.getLong("last_ts", 0);
+      if (saved_ts > 1000000000) {
+          struct timeval tv = { .tv_sec = (time_t)saved_ts, .tv_usec = 0 };
+          settimeofday(&tv, nullptr);
+          Serial.printf("[NVS] ora ripristinata: %ld\n", saved_ts);
+      }
+    }
     preferences.end(); // chiude handle globale - da qui in poi solo handle locali
     Serial.printf("[NVS] provider=%s model=%s openai=%s claude=%s el=%s vid=%s fmt=%s\n",
         llm_provider.c_str(), llm_model.c_str(),
@@ -172,6 +182,14 @@ void setup() {
     if (!tryConnectWifi(false)) startCaptivePortal();
     // NTP: sincronizza subito se WiFi connesso (UTC, offset applicato lato browser)
     if (WiFi.status() == WL_CONNECTED) {
+        sntp_set_time_sync_notification_cb([](struct timeval* tv) {
+            static bool done = false;
+            if (done) return;
+            done = true;
+            Serial.printf("NTP: prima sync OK ts=%ld\n", (long)tv->tv_sec);
+            { Preferences p; p.begin("furby", false); p.putLong("last_ts", (long)tv->tv_sec); p.end(); }
+            saveConfigBackup();
+        });
         configTime(0, 0, "pool.ntp.org", "time.google.com");
         Serial.println("NTP: sync avviato");
     }
