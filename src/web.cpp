@@ -559,7 +559,7 @@ static void handlePersonalitiesNew() {
     po["name"]     = nm;
     po["prompt"]   = gpActivePers ? String(gpActivePers->prompt) : gPersonalityPrompt;
     po["voice_id"] = gpActivePers ? String(gpActivePers->voice_id) : gPersonalityVoiceId;
-    po["behaviors"] = JsonArray{};
+    po["behaviors"].to<JsonArray>();
     int newIdx = (int)arr.size() - 1;
 
     String out; serializeJson(doc, out);

@@ -20,6 +20,11 @@ function _navSvg(key){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+_NAV_SVG[key]+'</svg>';
 }
 
+function _navT(k){
+  var lang=typeof gLang!=='undefined'?gLang:'it';
+  return (_SHARED_TR[lang]||_SHARED_TR.it)[k]||k;
+}
+
 function renderNav(active){
   var pages=[
     {key:'home',  href:'/',       i18n:'nav.config', def:'Configurazione'},
@@ -29,15 +34,14 @@ function renderNav(active){
     {key:'info',  href:'/info',   i18n:'nav.info',   def:'Info'}
   ];
   var isDebug=(typeof setLang==='function');
-  var tFn=isDebug?function(k){return(TRANSLATIONS[gLang]||TRANSLATIONS.it)[k]||k;}:T;
-  var confirmFn=isDebug?"t('nav.confirm_reset')":"T('nav.confirm_reset')";
+  var tFn=isDebug?function(k){var tr=TRANSLATIONS[gLang]||TRANSLATIONS.it;return tr[k]||(_SHARED_TR[gLang]||_SHARED_TR.it)[k]||k;}:T;
 
   var offItems='';
   pages.forEach(function(p){
     var a=(p.key===active)?' active':'';
     offItems+='<a class="fb-nav-item'+a+'" href="'+p.href+'">'+_navSvg(p.key)+'<span data-i18n="'+p.i18n+'">'+p.def+'</span></a>';
   });
-  offItems+='<a class="fb-nav-item text-danger" href="#" onclick="if(confirm('+confirmFn+')){fetch(\'/reset\',{method:\'POST\'});}">'+_navSvg('reset')+'<span data-i18n="nav.reset">Reset ESP32</span></a>';
+  offItems+='<a class="fb-nav-item text-danger" href="#" onclick="if(confirm(_navT(\'nav.confirm_reset\'))){fetch(\'/reset\',{method:\'POST\'});}">'+_navSvg('reset')+'<span data-i18n="nav.reset">Reset ESP32</span></a>';
 
   var desktopItems='';
   pages.forEach(function(p){
@@ -62,7 +66,7 @@ function renderNav(active){
       '<div class="fb-header-text">'+
         '<img src="/img/title.png" alt="FurbyMind" onerror="this.outerHTML=\'<h1>FurbyMind</h1>\'">'+
       '</div>'+
-      '<nav class="fb-nav">'+desktopItems+'<a href="#" class="text-danger" onclick="if(confirm('+confirmFn+')){fetch(\'/reset\',{method:\'POST\'});}"><span data-i18n="nav.reset">Reset ESP32</span></a></nav>'+
+      '<nav class="fb-nav">'+desktopItems+'<a href="#" class="text-danger" onclick="if(confirm(_navT(\'nav.confirm_reset\'))){fetch(\'/reset\',{method:\'POST\'});}"><span data-i18n="nav.reset">Reset ESP32</span></a></nav>'+
       langSel+
       '<button class="fb-hamburger" data-bs-toggle="offcanvas" data-bs-target="#nav-offcanvas"><span></span><span></span><span></span></button>'+
     '</div>';

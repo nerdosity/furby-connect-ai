@@ -7,8 +7,6 @@
 <script>
 var TRANSLATIONS={
   it:{
-    'nav.config':'Configurazione','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
-    'nav.confirm_reset':'Riavviare l\'ESP32?',
     'tab.sensors':'Sensori','tab.actions':'Azioni','tab.control':'Controllo',
     'tab.persona':'Personalità',
     'sen.title':'Stato sensori','sen.ant_l':'Antenna sx','sen.ant_r':'Antenna dx',
@@ -97,8 +95,6 @@ var TRANSLATIONS={
     'voice_set':'Voice ID impostato:'
   },
   en:{
-    'nav.config':'Configuration','nav.debug':'Debug','nav.camera':'Camera','nav.reset':'Reset ESP32',
-    'nav.confirm_reset':'Restart the ESP32?',
     'tab.sensors':'Sensors','tab.actions':'Actions','tab.control':'Control',
     'tab.persona':'Personality',
     'sen.title':'Sensor state','sen.ant_l':'Antenna left','sen.ant_r':'Antenna right',
@@ -618,7 +614,8 @@ function persSave(){
   p.voice_id=document.getElementById('pers-voice').value;
   p.behaviors=gBehaviors;
   var payload={active:gActivePerIdx,personalities:gPersonalities};
-  fetch('/personalities/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).then(function(d){
+  var fd=new FormData();fd.append('plain',JSON.stringify(payload));
+  fetch('/personalities/save',{method:'POST',body:fd}).then(r=>r.json()).then(function(d){
     sMsg('pers-msg',d.ok?'Salvato.':'Errore.',d.ok?'success':'danger');
     if(d.ok)persLoad();
   });
