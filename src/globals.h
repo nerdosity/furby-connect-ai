@@ -332,6 +332,8 @@ extern volatile bool wakeUpTriggered;
 extern volatile bool isProcessing;
 extern volatile bool gDryRun;
 extern volatile int  currentAmplitude;
+extern bool gSimSkipTts;
+extern bool gSimSkipBle;
 
 extern int  vad_threshold;
 extern int  mic_gain;

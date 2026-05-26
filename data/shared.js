@@ -12,6 +12,7 @@ var _NAV_SVG={
   debug:'<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12M4.93 4.93A10 10 0 0 0 3 12m9 9a10 10 0 0 0 6.36-2.29M5.64 18.71A10 10 0 0 0 12 21"/>',
   camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
   furby:'<path d="M12 2a7 7 0 0 1 7 7c0 3-1.5 5.5-4 6.8V17a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1.2C6.5 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/>',
+  personalities:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
   reset:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>'
 };
@@ -27,11 +28,12 @@ function _navT(k){
 
 function renderNav(active){
   var pages=[
-    {key:'home',  href:'/',       i18n:'nav.config', def:'Configurazione'},
-    {key:'furby', href:'/furby',  i18n:'nav.furby',  def:'Furby'},
-    {key:'debug', href:'/debug',  i18n:'nav.debug',  def:'Debug'},
-    {key:'camera',href:'/camera', i18n:'nav.camera', def:'Camera'},
-    {key:'info',  href:'/info',   i18n:'nav.info',   def:'Info'}
+    {key:'home',          href:'/',                   i18n:'nav.config',        def:'Configurazione'},
+    {key:'personalities', href:'/personalities-page', i18n:'nav.personalities', def:'Personalità'},
+    {key:'furby',         href:'/furby',              i18n:'nav.furby',         def:'Furby'},
+    {key:'debug',         href:'/debug',              i18n:'nav.debug',         def:'Debug'},
+    {key:'camera',        href:'/camera',             i18n:'nav.camera',        def:'Camera'},
+    {key:'info',          href:'/info',               i18n:'nav.info',          def:'Info'}
   ];
   var isDebug=(typeof setLang==='function');
   var tFn=isDebug?function(k){var tr=TRANSLATIONS[gLang]||TRANSLATIONS.it;return tr[k]||(_SHARED_TR[gLang]||_SHARED_TR.it)[k]||k;}:T;
@@ -80,7 +82,7 @@ function renderNav(active){
 
 var _SHARED_TR={
   it:{
-    'nav.config':'Configurazione','nav.furby':'Furby','nav.debug':'Debug','nav.camera':'Camera','nav.info':'Info','nav.reset':'Reset ESP32',
+    'nav.config':'Configurazione','nav.personalities':'Personalità','nav.furby':'Furby','nav.debug':'Debug','nav.camera':'Camera','nav.info':'Info','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Riavviare l\'ESP32?',
     'sys.loading':'carico...',
     // index.html
@@ -178,7 +180,7 @@ var _SHARED_TR={
     'sys.saved':'Salvato con successo.'
   },
   en:{
-    'nav.config':'Configuration','nav.furby':'Furby','nav.debug':'Debug','nav.camera':'Camera','nav.info':'Info','nav.reset':'Reset ESP32',
+    'nav.config':'Configuration','nav.personalities':'Personalities','nav.furby':'Furby','nav.debug':'Debug','nav.camera':'Camera','nav.info':'Info','nav.reset':'Reset ESP32',
     'nav.confirm_reset':'Restart the ESP32?',
     'sys.loading':'loading...',
     // index.html

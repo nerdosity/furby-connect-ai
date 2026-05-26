@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalità – Furby LLM</title>
+<link rel="stylesheet" href="/bootstrap.min.css">
+<link rel="stylesheet" href="/bootstrap-icons.min.css">
+<style>
+.pers-row{cursor:pointer;transition:background .15s}
+.pers-row:hover{background:rgba(0,0,0,.04)}
+.pers-row.active-edit{background:rgba(13,110,253,.07);border-left:3px solid #0d6efd}
+.pers-row td:first-child{padding-left:12px}
+.pers-row.active-edit td:first-child{padding-left:9px}
+.editor-panel{background:#f8f9fa;border:1px solid #dee2e6;border-radius:.5rem}
+.beh-card{background:#fff;border:1px solid #dee2e6;border-radius:.375rem}
+.csq-badge{font-size:.7rem}
+.sim-toggles .form-check-label{font-size:.85rem}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="container-fluid py-3">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <h4 class="mb-0">Personalità</h4>
+    <div class="ms-auto d-flex gap-2 align-items-center">
+      <input id="pers-new-name" class="form-control form-control-sm" style="width:160px" placeholder="Nome nuova…" maxlength="47">
+      <button class="btn btn-primary btn-sm px-3" onclick="persNew()"><i class="bi bi-plus-lg"></i> Nuova</button>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0" id="pers-table">
+        <thead class="table-light">
+          <tr>
+            <th>Nome</th>
+            <th>Voce</th>
+            <th>Comportamenti</th>
+            <th class="text-end">Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="pers-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="editor-wrap" class="editor-panel p-3 mb-3 d-none">
+    <h6 id="editor-title" class="mb-3">Modifica personalità</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-sm-4">
+        <label class="form-label small mb-1">Nome</label>
+        <input id="ed-name" class="form-control form-control-sm" maxlength="47">
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small mb-1">Voce ElevenLabs</label>
+        <div class="input-group input-group-sm">
+          <select id="ed-voice" class="form-select form-select-sm"></select>
+          <button class="btn btn-outline-secondary btn-sm" onclick="voiceLoad(null,true)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">Prompt di sistema</label>
+      <textarea id="ed-prompt" class="form-control form-control-sm" rows="4" maxlength="511" style="font-family:monospace;font-size:.8rem"></textarea>
+    </div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2 mb-3">
+      <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva personalità</button>
+      <button class="btn btn-secondary px-3" onclick="editorClose()"><i class="bi bi-x-lg"></i> Chiudi</button>
+    </div>
+
+    <hr class="my-2">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h6 class="mb-0">Comportamenti</h6>
+      <button class="btn btn-outline-primary btn-sm ms-auto px-2" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+    </div>
+    <div id="beh-list" class="d-flex flex-column gap-2"></div>
+
+    <hr class="my-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h6 class="mb-0"><i class="bi bi-play-circle"></i> Simula flusso</h6>
+    </div>
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-4">
+        <label class="form-label small mb-1">Comportamento da simulare</label>
+        <select id="sim-beh-sel" class="form-select form-select-sm"></select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small mb-1">Input vocale (simulato)</label>
+        <input id="sim-text" class="form-control form-control-sm" placeholder="Testo STT simulato…">
+      </div>
+      <div class="col-sm-4">
+        <div class="sim-toggles d-flex flex-column gap-1 pb-1">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="dbg-skip-llm">
+            <label class="form-check-label" for="dbg-skip-llm">Skip LLM</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="dbg-skip-tts">
+            <label class="form-check-label" for="dbg-skip-tts">Skip TTS</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="dbg-skip-ble">
+            <label class="form-check-label" for="dbg-skip-ble">Skip BLE</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+      <button class="btn btn-warning px-3" onclick="simRun()"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
+    </div>
+    <pre id="sim-log" class="mt-2 p-2 bg-dark text-success rounded d-none" style="font-size:.75rem;max-height:240px;overflow-y:auto"></pre>
+  </div>
+</div>
+
+<div class="modal fade" id="behModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="behModalTitle">Comportamento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2 mb-3">
+          <div class="col-sm-4">
+            <label class="form-label small mb-1">Nome</label>
+            <input id="beh-name" class="form-control form-control-sm" maxlength="47">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small mb-1">Trigger</label>
+            <select id="beh-trg" class="form-select form-select-sm" onchange="behTrgChange()">
+              <option value="0">Voce (VAD)</option>
+              <option value="1">Bottone</option>
+              <option value="2">Sensore Furby</option>
+            </select>
+          </div>
+          <div class="col-sm-4" id="beh-sensor-wrap">
+            <label class="form-label small mb-1">Sensore</label>
+            <select id="beh-sensor" class="form-select form-select-sm"></select>
+          </div>
+        </div>
+        <hr class="my-2">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <h6 class="mb-0">Conseguenze</h6>
+          <button class="btn btn-outline-primary btn-sm ms-auto px-2" onclick="csqAdd()"><i class="bi bi-plus-lg"></i></button>
+        </div>
+        <div id="csq-list" class="d-flex flex-column gap-2"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end w-100">
+          <button class="btn btn-success px-3" onclick="behSave()"><i class="bi bi-floppy"></i> Salva</button>
+          <button class="btn btn-secondary px-3" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Annulla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/bootstrap.bundle.min.js"></script>
+<script src="/shared.js"></script>
+<script>
+/* ── state ── */
+let personalities = [];
+let editIdx = -1;
+let editBehIdx = -1;
+let voices = [];
+let voicesLoaded = false;
+let behModal = null;
+
+const SENSOR_NAMES = [
+  'Nessuno','Antenna SX','Antenna DX','Antenna Avanti','Antenna Indietro',
+  'Solletico Testa','Solletico Pancia','Solletico DX','Solletico SX',
+  'Tira Coda','Spinge Lingua',
+  'In piedi','Capovolto','Su lato DX','Su lato SX',
+  'Inclinato Indietro','Inclinato DX','Inclinato SX'
+];
+const CSQ_LABELS = {
+  furby_action:'Azione Furby', tts_fixed:'TTS fisso', prompt_fixed:'Prompt fisso',
+  prompt_llm:'LLM', prompt_auto:'LLM automatico'
+};
+
+/* ── init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  renderNav('personalities');
+  behModal = new bootstrap.Modal(document.getElementById('behModal'));
+  persLoad();
+});
+
+/* ── personalities ── */
+function persLoad() {
+  fetch('/api/personalities')
+    .then(r => r.json())
+    .then(data => {
+      personalities = data.personalities || [];
+      persRender();
+    })
+    .catch(e => console.error('persLoad', e));
+}
+
+function persRender() {
+  const tbody = document.getElementById('pers-tbody');
+  tbody.innerHTML = '';
+  if (!personalities.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.className = 'text-center text-muted py-3';
+    td.textContent = 'Nessuna personalità. Creane una sopra.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  personalities.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'pers-row' + (i === editIdx ? ' active-edit' : '');
+    tr.onclick = () => persEdit(i);
+
+    const tdName = document.createElement('td');
+    tdName.className = 'align-middle';
+    tdName.textContent = p.name || '(senza nome)';
+    tr.appendChild(tdName);
+
+    const tdVoice = document.createElement('td');
+    tdVoice.className = 'align-middle text-muted small';
+    tdVoice.textContent = p.voice_id || '—';
+    tr.appendChild(tdVoice);
+
+    const tdBeh = document.createElement('td');
+    tdBeh.className = 'align-middle';
+    const behCount = (p.behaviors || []).length;
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-secondary';
+    badge.textContent = behCount + ' comportament' + (behCount === 1 ? 'o' : 'i');
+    tdBeh.appendChild(badge);
+    tr.appendChild(tdBeh);
+
+    const tdAct = document.createElement('td');
+    tdAct.className = 'text-end align-middle';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-sm btn-outline-primary me-1';
+    editBtn.title = 'Modifica';
+    editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+    editBtn.onclick = (e) => { e.stopPropagation(); persEdit(i); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-outline-danger';
+    delBtn.title = 'Elimina';
+    delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+    delBtn.onclick = (e) => { e.stopPropagation(); persDel(i); };
+    tdAct.appendChild(editBtn);
+    tdAct.appendChild(delBtn);
+    tr.appendChild(tdAct);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function persEdit(i) {
+  editIdx = i;
+  const p = personalities[i];
+  document.getElementById('editor-title').textContent = 'Modifica: ' + (p.name || '');
+  document.getElementById('ed-name').value = p.name || '';
+  document.getElementById('ed-prompt').value = p.prompt || '';
+  const wrap = document.getElementById('editor-wrap');
+  wrap.classList.remove('d-none');
+
+  voiceLoad(() => {
+    const sel = document.getElementById('ed-voice');
+    sel.value = p.voice_id || '';
+  }, false);
+
+  behRender();
+  simBehSel();
+  persRender();
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function editorClose() {
+  editIdx = -1;
+  document.getElementById('editor-wrap').classList.add('d-none');
+  persRender();
+}
+
+function persNew() {
+  const nameEl = document.getElementById('pers-new-name');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+  const p = { name: name, prompt: '', voice_id: '', behaviors: [] };
+  personalities.push(p);
+  nameEl.value = '';
+  editIdx = personalities.length - 1;
+  persRender();
+  persEdit(editIdx);
+}
+
+function persSave() {
+  if (editIdx < 0) return;
+  const p = personalities[editIdx];
+  p.name = document.getElementById('ed-name').value.trim();
+  p.prompt = document.getElementById('ed-prompt').value;
+  p.voice_id = document.getElementById('ed-voice').value;
+  fetch('/api/personalities', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ personalities: personalities })
+  })
+  .then(r => r.json())
+  .then(() => persRender())
+  .catch(e => console.error('persSave', e));
+}
+
+function persDel(i) {
+  if (!confirm('Eliminare "' + (personalities[i].name || 'questa personalità') + '"?')) return;
+  personalities.splice(i, 1);
+  if (editIdx === i) editorClose();
+  else if (editIdx > i) editIdx--;
+  fetch('/api/personalities', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ personalities: personalities })
+  })
+  .then(() => persRender())
+  .catch(e => console.error('persDel', e));
+}
+
+/* ── voices ── */
+function voiceLoad(onDone, forceReload) {
+  if (!forceReload && voicesLoaded) {
+    if (onDone) onDone();
+    return;
+  }
+  const sel = document.getElementById('ed-voice');
+  fetch('/api/tts/voices')
+    .then(r => r.json())
+    .then(data => {
+      voices = data.voices || [];
+      sel.innerHTML = '';
+      const blank = document.createElement('option');
+      blank.value = '';
+      blank.textContent = '— seleziona voce —';
+      sel.appendChild(blank);
+      voices.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.voice_id;
+        opt.textContent = v.name;
+        sel.appendChild(opt);
+      });
+      voicesLoaded = true;
+      if (onDone) onDone();
+    })
+    .catch(e => { console.error('voiceLoad', e); if (onDone) onDone(); });
+}
+
+/* ── behaviors ── */
+function behRender() {
+  if (editIdx < 0) return;
+  const p = personalities[editIdx];
+  const list = document.getElementById('beh-list');
+  list.innerHTML = '';
+  if (!(p.behaviors || []).length) {
+    const d = document.createElement('div');
+    d.className = 'text-muted small';
+    d.textContent = 'Nessun comportamento. Aggiungine uno.';
+    list.appendChild(d);
+    return;
+  }
+  p.behaviors.forEach((b, bi) => {
+    const card = document.createElement('div');
+    card.className = 'beh-card p-2';
+
+    const header = document.createElement('div');
+    header.className = 'd-flex align-items-center gap-2';
+
+    const nameSpan = document.createElement('strong');
+    nameSpan.className = 'me-1';
+    nameSpan.textContent = b.name || '(senza nome)';
+    header.appendChild(nameSpan);
+
+    const trgBadge = document.createElement('span');
+    trgBadge.className = 'badge bg-info text-dark csq-badge';
+    const trgLabels = ['VAD', 'Bottone', 'Sensore'];
+    trgBadge.textContent = trgLabels[b.trigger] || 'VAD';
+    header.appendChild(trgBadge);
+
+    if (b.trigger === 2 && b.sensor_id) {
+      const senBadge = document.createElement('span');
+      senBadge.className = 'badge bg-secondary csq-badge';
+      senBadge.textContent = SENSOR_NAMES[b.sensor_id] || 'Sensore ' + b.sensor_id;
+      header.appendChild(senBadge);
+    }
+
+    const actDiv = document.createElement('div');
+    actDiv.className = 'ms-auto d-flex gap-1';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-sm btn-outline-primary';
+    editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+    editBtn.onclick = () => behEdit(bi);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-outline-danger';
+    delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+    delBtn.onclick = () => behDel(bi);
+    actDiv.appendChild(editBtn);
+    actDiv.appendChild(delBtn);
+    header.appendChild(actDiv);
+    card.appendChild(header);
+
+    if ((b.consequences || []).length) {
+      const csqDiv = document.createElement('div');
+      csqDiv.className = 'd-flex flex-wrap gap-1 mt-1';
+      b.consequences.forEach(c => {
+        const cb = document.createElement('span');
+        cb.className = 'badge bg-light text-dark border csq-badge';
+        cb.textContent = CSQ_LABELS[c.type] || c.type;
+        csqDiv.appendChild(cb);
+      });
+      card.appendChild(csqDiv);
+    }
+
+    list.appendChild(card);
+  });
+}
+
+function behAdd() {
+  if (editIdx < 0) return;
+  editBehIdx = -1;
+  openBehModal({ name: '', trigger: 0, sensor_id: 0, consequences: [] });
+}
+
+function behEdit(bi) {
+  editBehIdx = bi;
+  const b = personalities[editIdx].behaviors[bi];
+  openBehModal(b);
+}
+
+function behDel(bi) {
+  if (!confirm('Eliminare questo comportamento?')) return;
+  personalities[editIdx].behaviors.splice(bi, 1);
+  behRender();
+  simBehSel();
+  persSave();
+}
+
+function openBehModal(b) {
+  document.getElementById('behModalTitle').textContent = editBehIdx < 0 ? 'Nuovo comportamento' : 'Modifica comportamento';
+  document.getElementById('beh-name').value = b.name || '';
+  const trgSel = document.getElementById('beh-trg');
+  trgSel.value = String(b.trigger || 0);
+  const senSel = document.getElementById('beh-sensor');
+  senSel.innerHTML = '';
+  SENSOR_NAMES.forEach((s, si) => {
+    if (si === 0) return;
+    const opt = document.createElement('option');
+    opt.value = si;
+    opt.textContent = s;
+    senSel.appendChild(opt);
+  });
+  senSel.value = String(b.sensor_id || 1);
+  behTrgChange();
+  csqRender(b.consequences || []);
+  behModal.show();
+}
+
+function behTrgChange() {
+  const v = document.getElementById('beh-trg').value;
+  document.getElementById('beh-sensor-wrap').style.display = v === '2' ? '' : 'none';
+}
+
+function behSave() {
+  if (editIdx < 0) return;
+  const name = document.getElementById('beh-name').value.trim();
+  const trigger = parseInt(document.getElementById('beh-trg').value);
+  const sensor_id = trigger === 2 ? parseInt(document.getElementById('beh-sensor').value) : 0;
+  const consequences = csqCollect();
+  const b = { name, trigger, sensor_id, consequences };
+  const p = personalities[editIdx];
+  if (editBehIdx < 0) p.behaviors.push(b);
+  else p.behaviors[editBehIdx] = b;
+  behModal.hide();
+  behRender();
+  simBehSel();
+  persSave();
+}
+
+/* ── consequences ── */
+let csqData = [];
+
+function csqRender(list) {
+  csqData = list.map(c => Object.assign({}, c));
+  renderCsqList();
+}
+
+function renderCsqList() {
+  const el = document.getElementById('csq-list');
+  el.innerHTML = '';
+  if (!csqData.length) {
+    const d = document.createElement('div');
+    d.className = 'text-muted small';
+    d.textContent = 'Nessuna conseguenza.';
+    el.appendChild(d);
+    return;
+  }
+  csqData.forEach((c, ci) => {
+    const card = document.createElement('div');
+    card.className = 'border rounded p-2 mb-1';
+
+    const row = document.createElement('div');
+    row.className = 'd-flex align-items-center gap-2 mb-1';
+
+    const typeSel = document.createElement('select');
+    typeSel.className = 'form-select form-select-sm';
+    typeSel.style.maxWidth = '160px';
+    Object.entries(CSQ_LABELS).forEach(([k, v]) => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = v;
+      typeSel.appendChild(opt);
+    });
+    typeSel.value = c.type || 'prompt_llm';
+    typeSel.onchange = () => { csqData[ci].type = typeSel.value; csqTypeChange(ci, card); };
+    row.appendChild(typeSel);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-outline-danger ms-auto';
+    delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+    delBtn.onclick = () => { csqData.splice(ci, 1); renderCsqList(); };
+    row.appendChild(delBtn);
+    card.appendChild(row);
+
+    csqTypeChange(ci, card, c);
+    el.appendChild(card);
+  });
+}
+
+function csqTypeChange(ci, card, initial) {
+  const c = csqData[ci];
+  const type = c.type || 'prompt_llm';
+  let detail = card.querySelector('.csq-detail');
+  if (detail) detail.remove();
+  detail = document.createElement('div');
+  detail.className = 'csq-detail';
+
+  if (type === 'furby_action') {
+    const inp = document.createElement('input');
+    inp.className = 'form-control form-control-sm';
+    inp.placeholder = 'action_id (es. HAPPY)';
+    inp.maxLength = 31;
+    inp.value = (initial || c).action_id || '';
+    inp.oninput = () => { csqData[ci].action_id = inp.value; };
+    detail.appendChild(inp);
+  } else if (type === 'tts_fixed' || type === 'prompt_fixed') {
+    const ta = document.createElement('textarea');
+    ta.className = 'form-control form-control-sm';
+    ta.rows = 2;
+    ta.maxLength = 255;
+    ta.placeholder = type === 'tts_fixed' ? 'Testo da riprodurre…' : 'Prompt da inviare…';
+    ta.value = (initial || c).text || '';
+    ta.oninput = () => { csqData[ci].text = ta.value; };
+    detail.appendChild(ta);
+  } else if (type === 'prompt_llm') {
+    const chk = document.createElement('div');
+    chk.className = 'form-check form-check-inline';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox';
+    inp.className = 'form-check-input';
+    inp.id = 'csq-snap-' + ci;
+    inp.checked = !!(initial || c).snapshot;
+    inp.onchange = () => { csqData[ci].snapshot = inp.checked; };
+    const lbl = document.createElement('label');
+    lbl.className = 'form-check-label small';
+    lbl.htmlFor = inp.id;
+    lbl.textContent = 'Con snapshot camera';
+    chk.appendChild(inp);
+    chk.appendChild(lbl);
+    detail.appendChild(chk);
+  }
+
+  card.appendChild(detail);
+}
+
+function csqAdd() {
+  csqData.push({ type: 'prompt_llm', text: '', action_id: '', snapshot: false });
+  renderCsqList();
+}
+
+function csqCollect() {
+  return csqData.map(c => {
+    const out = { type: c.type };
+    if (c.type === 'furby_action') out.action_id = c.action_id || '';
+    else if (c.type === 'tts_fixed' || c.type === 'prompt_fixed') out.text = c.text || '';
+    else if (c.type === 'prompt_llm') out.snapshot = !!c.snapshot;
+    return out;
+  });
+}
+
+/* ── simulator ── */
+function simBehSel() {
+  if (editIdx < 0) return;
+  const sel = document.getElementById('sim-beh-sel');
+  const cur = sel.value;
+  sel.innerHTML = '';
+  const p = personalities[editIdx];
+  (p.behaviors || []).forEach((b, bi) => {
+    const opt = document.createElement('option');
+    opt.value = bi;
+    opt.textContent = b.name || 'Comportamento ' + (bi + 1);
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function simRun() {
+  if (editIdx < 0) return;
+  const behIdx = parseInt(document.getElementById('sim-beh-sel').value);
+  if (isNaN(behIdx)) return;
+  const p = personalities[editIdx];
+  const beh = (p.behaviors || [])[behIdx];
+  if (!beh) return;
+  const text = document.getElementById('sim-text').value;
+  const skipLlm = document.getElementById('dbg-skip-llm').checked ? '1' : '0';
+  const skipTts = document.getElementById('dbg-skip-tts').checked ? '1' : '0';
+  const skipBle = document.getElementById('dbg-skip-ble').checked ? '1' : '0';
+  const log = document.getElementById('sim-log');
+  log.textContent = 'Simulazione in corso…';
+  log.classList.remove('d-none');
+
+  const params = new URLSearchParams({
+    pers_id: p.id || String(editIdx),
+    beh_id: beh.id || beh.name,
+    text: text,
+    skip_llm: skipLlm,
+    skip_tts: skipTts,
+    skip_ble: skipBle
+  });
+  fetch('/test/simulate', { method: 'POST', body: params })
+    .then(r => r.text())
+    .then(t => { log.textContent = t; })
+    .catch(e => { log.textContent = 'Errore: ' + e; });
+}
+</script>
+</body>
+</html>

@@ -258,6 +258,7 @@ const FurbyActionDef* findFurbyAction(const char* id) {
 }
 
 void speakText(const String& text) {
+    if (gSimSkipTts) { Serial.printf("[SPEAK] skip-TTS: \"%s\"\n", text.c_str()); return; }
     sdCheck();
     Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
     if (sdAvailable) generateAndPlayTTS_SD(text);
@@ -271,8 +272,8 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
         case CSQ_FURBY_ACTION: {
             const FurbyActionDef* act = findFurbyAction(csq.action_id);
             if (act) {
-                if (gDryRun) {
-                    Serial.printf("[CSQ] DRY RUN - azione Furby SKIPPATA: %s\n", act->label);
+                if (gDryRun || gSimSkipBle) {
+                    Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
                 } else {
                     furbyWrite(act->cmd, act->len); delay(1500);
                 }
@@ -324,7 +325,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
                     if (act) {
-                        if (gDryRun) Serial.printf("[CSQ] DRY RUN - azione Furby: %s\n", act->label);
+                        if (gDryRun || gSimSkipBle) Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
                         else { furbyWrite(act->cmd, act->len); delay(1500); }
                     }
                 }
@@ -346,7 +347,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             const FurbyActionDef* act = findFurbyAction(answer.c_str());
             if (act) {
                 Serial.printf("[CSQ] PROMPT_AUTO → azione scelta: %s (%s)\n", act->id, act->label);
-                if (gDryRun) Serial.printf("[CSQ] DRY RUN - azione Furby SKIPPATA: %s\n", act->label);
+                if (gDryRun || gSimSkipBle) Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
                 else { furbyWrite(act->cmd, act->len); delay(1500); }
             } else {
                 Serial.printf("[CSQ] PROMPT_AUTO - azione LLM non valida: \"%s\"\n", answer.c_str());
@@ -407,7 +408,9 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         L("[SIM] personalità: \"" + String(gpActivePers ? gpActivePers->name : "?") + "\" (attiva)");
     }
 
-    if (skipLlm) L("[SIM] modalità skip-LLM attiva - chiamate LLM simulate");
+    if (skipLlm)       L("[SIM] skip-LLM attivo - chiamate LLM simulate");
+    if (gSimSkipTts)   L("[SIM] skip-TTS attivo - audio non riprodotto");
+    if (gSimSkipBle)   L("[SIM] skip-BLE attivo - azioni Furby non inviate (sovrascrive gDryRun)");
     L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
       + " behaviors=" + String(gEventBehaviorCount));
 
@@ -469,7 +472,9 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     gEventBehaviorCount = savedBehCount;
     for (int i = 0; i < savedBehCount; i++) gEventBehaviors[i] = savedBehaviors[i];
     free(savedBehaviors);
-    gDryRun = prevDry;
+    gDryRun      = prevDry;
+    gSimSkipTts  = false;
+    gSimSkipBle  = false;
     return log;
 }
 

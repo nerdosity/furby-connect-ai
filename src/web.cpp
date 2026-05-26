@@ -1254,6 +1254,8 @@ static void handleTestSimulate() {
     int sid      = server.arg("sensor_id").toInt();
     int persIdx  = server.hasArg("personality") ? server.arg("personality").toInt() : -1;
     bool skipLlm = server.arg("skip_llm") == "1";
+    gSimSkipTts  = server.arg("skip_tts") == "1";
+    gSimSkipBle  = server.arg("skip_ble") == "1";
     String vadText = server.arg("vad_text");
     if (trg < 0 || trg > 2) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger non valido\"}"); return;
@@ -1844,8 +1846,9 @@ void startWebServer() {
         delay(300);
         ESP.restart();
     });
-    server.on("/info",  HTTP_GET, []() { serveSpiffsETag("/info.html",  "text/html; charset=utf-8", "no-cache"); });
-    server.on("/furby", HTTP_GET, []() { serveSpiffsETag("/furby.html", "text/html; charset=utf-8", "no-cache"); });
+    server.on("/info",          HTTP_GET, []() { serveSpiffsETag("/info.html",          "text/html; charset=utf-8", "no-cache"); });
+    server.on("/furby",         HTTP_GET, []() { serveSpiffsETag("/furby.html",         "text/html; charset=utf-8", "no-cache"); });
+    server.on("/personalities-page", HTTP_GET, []() { serveSpiffsETag("/personalities.html", "text/html; charset=utf-8", "no-cache"); });
     server.on("/camera",                  HTTP_GET,  handleCameraPage);
     server.on("/camera/stream",           HTTP_GET,  handleCameraStream);
     server.on("/camera/frame",            HTTP_GET,  handleCameraFrame);
