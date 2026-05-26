@@ -51,12 +51,19 @@
         <label class="form-label small mb-1">Nome</label>
         <input id="ed-name" class="form-control form-control-sm" maxlength="47">
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-3">
         <label class="form-label small mb-1">Voce ElevenLabs</label>
         <div class="input-group input-group-sm">
           <select id="ed-voice" class="form-select form-select-sm"></select>
           <button class="btn btn-outline-secondary btn-sm" onclick="voiceLoad(null,true)" title="Ricarica voci"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
+      </div>
+      <div class="col-sm-1">
+        <label class="form-label small mb-1">Lingua</label>
+        <select id="ed-lang" class="form-select form-select-sm">
+          <option value="it">IT</option>
+          <option value="en">EN</option>
+        </select>
       </div>
     </div>
     <div class="mb-2">
@@ -286,6 +293,9 @@ function persEdit(i) {
     sel.value = p.voice_id || '';
   }, false);
 
+  const langSel = document.getElementById('ed-lang');
+  langSel.value = p.lang || 'it';
+
   behRender();
   simBehSel();
   persRender();
@@ -343,6 +353,7 @@ function persSave() {
   p.name = document.getElementById('ed-name').value.trim();
   p.prompt = document.getElementById('ed-prompt').value;
   p.voice_id = document.getElementById('ed-voice').value;
+  p.lang = document.getElementById('ed-lang').value;
   if (!p.id) p.id = 'p' + Date.now();
   fetch('/personalities/save', {
     method: 'POST',

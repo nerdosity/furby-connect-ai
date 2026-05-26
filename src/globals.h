@@ -217,6 +217,7 @@ struct Personality {
     char         name[48]                      = {};
     char         prompt[4096]                  = {};
     char         voice_id[64]                  = {};
+    char         lang[8]                       = {};  // "it" o "en"
     EventBehavior behaviors[MAX_EVENT_BEHAVIORS] = {};
     int          behavior_count                = 0;
 };
@@ -300,11 +301,13 @@ extern int   behaviorConfigCount;
 extern int   activeBehaviorConfig;
 
 extern const char* SENSOR_NAMES[];
+extern const char* SENSOR_NAMES_EN[];
 extern const FurbyActionDef FURBY_ACTIONS[];
 extern const int   FURBY_ACTIONS_COUNT;
 
 extern String        gPersonalityPrompt;
 extern String        gPersonalityVoiceId;
+extern String        gPersonalityLang;
 extern String        gCamDescPrompt;
 
 extern int           camStreamQuality;   // JPEG quality stream (4-63)

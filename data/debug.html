@@ -144,8 +144,9 @@ function setLang(l){
 
 <!-- TAB: Audio -->
 <div class="tab-pane fade show active" id="t-audio">
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-3" data-i18n="aud.tone">Test casse (sine wave)</h6>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-speaker"></i> <strong data-i18n="aud.tone">Test casse (sine wave)</strong></div>
+    <div class="card-body">
     <div class="mb-3">
       <label class="form-label small" data-i18n="aud.tone_dur">Durata (ms)</label>
       <input type="number" class="form-control form-control-sm" id="tone-ms" value="800" min="100" max="5000">
@@ -165,11 +166,9 @@ function setLang(l){
     </div>
     <div id="tone-result" class="small mt-2 text-muted"></div>
   </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-2">
-      <h6 class="text-uppercase text-muted fw-bold small mb-0" data-i18n="aud.mic">Microfoni live</h6>
-      <span id="vad-badge" class="badge bg-secondary"><i class="bi bi-mic-mute"></i> <span data-i18n="aud.vad_silence">Silenzio</span></span>
-    </div>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-mic"></i> <strong data-i18n="aud.mic">Microfoni live</strong> <span id="vad-badge" class="badge bg-secondary ms-auto"><i class="bi bi-mic-mute"></i> <span data-i18n="aud.vad_silence">Silenzio</span></span></div>
+    <div class="card-body">
     <p class="text-muted small mb-2" data-i18n="aud.mic_desc">RMS live - L=MIC1, R=MIC2</p>
     <div class="row g-3 mb-2">
       <div class="col">
@@ -204,8 +203,9 @@ function setLang(l){
     </div>
     <div id="dbg-vad-msg" class="small mt-1 text-muted"></div>
   </div></div>
-  <div class="card shadow-sm mb-3"><div class="card-body">
-    <h6 class="text-uppercase text-muted fw-bold small mb-2" data-i18n="aud.rec">Registra e riproduci (5s)</h6>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-record-circle"></i> <strong data-i18n="aud.rec">Registra e riproduci (5s)</strong></div>
+    <div class="card-body">
     <p class="text-muted small mb-2" data-i18n="aud.rec_desc">Parla per 5 secondi. L'ESP32 registra e riproduce sulle casse.</p>
     <canvas id="rms-scope" height="56" style="width:100%;display:block;border-radius:4px;background:#1a1a2e;opacity:0.3;transition:opacity 0.4s"></canvas>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">

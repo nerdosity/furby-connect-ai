@@ -55,6 +55,7 @@ static void deserializePersonality(Personality& p, JsonObject po) {
     strlcpy(p.name,     po["name"]     | "", sizeof(p.name));
     strlcpy(p.prompt,   po["prompt"]   | "", sizeof(p.prompt));
     strlcpy(p.voice_id, po["voice_id"] | "", sizeof(p.voice_id));
+    strlcpy(p.lang,     po["lang"]     | "it", sizeof(p.lang));
     p.behavior_count = 0;
     for (JsonObject bo : po["behaviors"].as<JsonArray>()) {
         if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
@@ -77,20 +78,24 @@ static void freeActivePers() {
 }
 
 static void buildDefaultPersonality(Personality& p) {
-    strlcpy(p.id,       "default", sizeof(p.id));
-    strlcpy(p.name,     "Default", sizeof(p.name));
-    strlcpy(p.prompt,   "Sei un giocattolo cinico, volgare e scontroso. Genera frasi BREVISSIME (max 8 parole). Sii diretto e sgarbato.", sizeof(p.prompt));
+    memset(&p, 0, sizeof(p));
+    strlcpy(p.id,       "default",  sizeof(p.id));
+    strlcpy(p.name,     "Default",  sizeof(p.name));
+    strlcpy(p.lang,     "it",       sizeof(p.lang));
     strlcpy(p.voice_id, elevenlabs_voice_id.c_str(), sizeof(p.voice_id));
-    EventBehavior& b = p.behaviors[0];
-    strlcpy(b.id,   "vad_default", sizeof(b.id));
-    b.trigger   = TRG_VAD;
-    b.sensor_id = 0;
-    strlcpy(b.name, "Parlato rilevato (VAD)", sizeof(b.name));
-    b.consequences[0].type     = CSQ_PROMPT_LLM;
-    b.consequences[0].snapshot = true;
-    strlcpy(b.consequences[0].text, "Qualcuno ti sta parlando. Reagisci.", sizeof(b.consequences[0].text));
-    b.consequence_count = 1;
-    p.behavior_count = 1;
+    // 17 comportamenti - uno per sensore SEN_ANT_L..SEN_TILT_L
+    p.behavior_count = 0;
+    for (int s = SEN_ANT_L; s < SEN_COUNT; s++) {
+        EventBehavior& b = p.behaviors[p.behavior_count];
+        snprintf(b.id,   sizeof(b.id),   "sen_%d", s);
+        snprintf(b.name, sizeof(b.name), "%d", p.behavior_count + 1);
+        b.trigger   = TRG_SENSOR;
+        b.sensor_id = (uint8_t)s;
+        b.consequences[0].type       = CSQ_PROMPT_AUTO;
+        b.consequences[0].ctx_sensor = true;
+        b.consequence_count = 1;
+        p.behavior_count++;
+    }
 }
 
 // ── applyActivePersonality: copia prompt/voice/behaviors dai globals ──────────
@@ -98,6 +103,7 @@ void applyActivePersonality() {
     if (!gpActivePers) return;
     gPersonalityPrompt  = String(gpActivePers->prompt);
     gPersonalityVoiceId = String(gpActivePers->voice_id);
+    gPersonalityLang    = gpActivePers->lang[0] ? String(gpActivePers->lang) : "it";
     gEventBehaviorCount = gpActivePers->behavior_count;
     for (int i = 0; i < gpActivePers->behavior_count; i++)
         gEventBehaviors[i] = gpActivePers->behaviors[i];
@@ -127,6 +133,7 @@ void savePersonalities() {
     po["name"]     = gpActivePers->name;
     po["prompt"]   = gpActivePers->prompt;
     po["voice_id"] = gpActivePers->voice_id;
+    po["lang"]     = gpActivePers->lang[0] ? gpActivePers->lang : "it";
     JsonArray ba = po["behaviors"].to<JsonArray>();
     for (int b = 0; b < gpActivePers->behavior_count; b++) {
         JsonObject bo = ba.add<JsonObject>();
@@ -142,23 +149,19 @@ void savePersonalities() {
 void loadPersonalities() {
     gActivePersonality = 0;
 
-    // migrazione da /behaviors.json (formato vecchio)
-    bool migrateFromOld = !SPIFFS.exists("/personalities.json") && SPIFFS.exists("/behaviors.json");
-
-    if (!SPIFFS.exists("/personalities.json") && !migrateFromOld) {
+    if (!SPIFFS.exists("/personalities.json")) {
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
         buildDefaultPersonality(*gpActivePers);
-        savePersonalities();
         applyActivePersonality();
+        Serial.println("[PERS] nessun file - personalità default in RAM");
         return;
     }
 
-    const char* src = migrateFromOld ? "/behaviors.json" : "/personalities.json";
-    File f = SPIFFS.open(src, "r");
+    File f = SPIFFS.open("/personalities.json", "r");
     if (!f) {
-        Serial.println("[PERS] WARN: impossibile aprire file, uso default in RAM");
+        Serial.println("[PERS] ERRORE: impossibile aprire file, uso default in RAM");
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
@@ -172,7 +175,7 @@ void loadPersonalities() {
     f.close();
 
     if (err != DeserializationError::Ok) {
-        Serial.println("[PERS] WARN: JSON corrotto, uso default in RAM senza sovrascrivere");
+        Serial.println("[PERS] ERRORE: JSON corrotto, uso default in RAM senza sovrascrivere");
         freeActivePers();
         gpActivePers = allocPersonalityPSRAM();
         if (!gpActivePers) return;
@@ -185,34 +188,25 @@ void loadPersonalities() {
     gpActivePers = allocPersonalityPSRAM();
     if (!gpActivePers) return;
 
-    if (migrateFromOld) {
+    gActivePersonality = doc["active"] | 0;
+    JsonArray arr = doc["personalities"].as<JsonArray>();
+    if ((int)arr.size() == 0) {
         buildDefaultPersonality(*gpActivePers);
-        if (doc["personality"].is<JsonObject>()) {
-            strlcpy(gpActivePers->prompt,   doc["personality"]["prompt"]   | gpActivePers->prompt,   sizeof(gpActivePers->prompt));
-            strlcpy(gpActivePers->voice_id, doc["personality"]["voice_id"] | gpActivePers->voice_id, sizeof(gpActivePers->voice_id));
-        }
-        gpActivePers->behavior_count = 0;
-        for (JsonObject bo : doc["behaviors"].as<JsonArray>()) {
-            if (gpActivePers->behavior_count >= MAX_EVENT_BEHAVIORS) break;
-            deserializeBehavior(gpActivePers->behaviors[gpActivePers->behavior_count++], bo);
-        }
-        gActivePersonality = 0;
-        savePersonalities();
-    } else {
-        gActivePersonality = doc["active"] | 0;
-        JsonArray arr = doc["personalities"].as<JsonArray>();
-        if ((int)arr.size() == 0) {
-            buildDefaultPersonality(*gpActivePers);
-        } else {
-            if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
-            // salta eventuali null nell'array
-            while (gActivePersonality < (int)arr.size() && !arr[gActivePersonality].is<JsonObject>()) gActivePersonality++;
-            if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
-            if (arr[gActivePersonality].is<JsonObject>())
-                deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
-            else
-                buildDefaultPersonality(*gpActivePers);
-        }
+        applyActivePersonality();
+        Serial.println("[PERS] array vuoto, uso default in RAM");
+        return;
+    }
+
+    if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
+    while (gActivePersonality < (int)arr.size() && !arr[gActivePersonality].is<JsonObject>()) gActivePersonality++;
+    if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
+    if (arr[gActivePersonality].is<JsonObject>())
+        deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
+    else {
+        buildDefaultPersonality(*gpActivePers);
+        applyActivePersonality();
+        Serial.println("[PERS] nessuna personalità valida, uso default in RAM");
+        return;
     }
 
     applyActivePersonality();
@@ -314,8 +308,10 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             // contesto aggiuntivo richiesto dalla regola
             if (csq.ctx_beh_name && behName && behName[0])
                 userMsg = "[Regola attiva: \"" + String(behName) + "\"] " + userMsg;
-            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT)
-                userMsg = "[Sensore stimolato: " + String(SENSOR_NAMES[sensorId]) + "] " + userMsg;
+            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT) {
+                const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
+                userMsg = "[Sensore: " + String(sname) + "] " + userMsg;
+            }
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
                 if (answer.length() > 0) speakText(answer);
@@ -358,8 +354,10 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             if (userMsg.length() == 0) userMsg = "Reagisci allo stimolo ricevuto.";
             if (csq.ctx_beh_name && behName && behName[0])
                 userMsg = "[Regola attiva: \"" + String(behName) + "\"] " + userMsg;
-            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT)
-                userMsg = "[Sensore stimolato: " + String(SENSOR_NAMES[sensorId]) + "] " + userMsg;
+            if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT) {
+                const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
+                userMsg = "[Sensore: " + String(sname) + "] " + userMsg;
+            }
             String actionList;
             for (int i = 0; i < FURBY_ACTIONS_COUNT; i++)
                 actionList += String(FURBY_ACTIONS[i].id) + ": " + FURBY_ACTIONS[i].label + "\n";

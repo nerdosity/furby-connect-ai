@@ -526,13 +526,14 @@ static void handleVadSave() {
 // ── /personalities/* ─────────────────────────────────────────────────────────
 
 static void handlePersonalitiesList() {
-    // legge direttamente dal JSON su SPIFFS - non carica tutto in RAM
     if (!SPIFFS.exists("/personalities.json")) {
-        savePersonalities();
+        server.send(200, "application/json",
+            "{\"active\":0,\"personalities\":[]}");
+        return;
     }
     File f = SPIFFS.open("/personalities.json", "r");
     if (!f) { server.send(500, "application/json", "{\"error\":\"file non trovato\"}"); return; }
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (deserializeJson(doc, f) != DeserializationError::Ok) {
         f.close(); server.send(500, "application/json", "{\"error\":\"JSON corrotto\"}"); return;
     }
@@ -555,7 +556,7 @@ static void handlePersonalitiesNew() {
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Nuova";
 
     // legge JSON, aggiunge entry, riscrive
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (SPIFFS.exists("/personalities.json")) {
         File f = SPIFFS.open("/personalities.json", "r");
         if (f) { deserializeJson(doc, f); f.close(); }
@@ -585,7 +586,7 @@ static void handlePersonalitiesDel() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
 
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (SPIFFS.exists("/personalities.json")) {
         File f = SPIFFS.open("/personalities.json", "r");
         if (f) { deserializeJson(doc, f); f.close(); }
@@ -612,20 +613,24 @@ static void handlePersonalitiesSave() {
     HTTP_LOG();
     String body = server.arg("plain");
     if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (deserializeJson(doc, body) != DeserializationError::Ok) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
     }
     File f = SPIFFS.open("/personalities.json", "w");
     if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
     f.print(body); f.close();
+    if (sdAvailable) {
+        File sd = SD_MMC.open("/personalities.json", FILE_WRITE);
+        if (sd) { sd.print(body); sd.close(); }
+    }
     loadPersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalitiesExport() {
     HTTP_LOG();
-    if (!SPIFFS.exists("/personalities.json")) savePersonalities();
+    if (!SPIFFS.exists("/personalities.json")) { server.send(404, "text/plain", "not found"); return; }
     File f = SPIFFS.open("/personalities.json", "r");
     if (!f) { server.send(404, "text/plain", "not found"); return; }
     server.sendHeader("Content-Disposition", "attachment; filename=personalities.json");
@@ -636,13 +641,17 @@ static void handlePersonalitiesImport() {
     HTTP_LOG();
     String body = server.arg("plain");
     if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (deserializeJson(doc, body) != DeserializationError::Ok) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
     }
     File f = SPIFFS.open("/personalities.json", "w");
     if (!f) { server.send(500, "application/json", "{\"ok\":false}"); return; }
     f.print(body); f.close();
+    if (sdAvailable) {
+        File sd = SD_MMC.open("/personalities.json", FILE_WRITE);
+        if (sd) { sd.print(body); sd.close(); }
+    }
     loadPersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
@@ -675,7 +684,7 @@ static void handleCfgRename() {
     int idx = server.arg("idx").toInt();
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Config";
 
-    JsonDocument doc;
+    auto doc = JsonDocPsram();
     if (SPIFFS.exists("/personalities.json")) {
         File f = SPIFFS.open("/personalities.json", "r");
         if (f) { deserializeJson(doc, f); f.close(); }

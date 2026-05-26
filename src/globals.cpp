@@ -64,6 +64,14 @@ const char* SENSOR_NAMES[] = {
     "Inclinato back", "Inclinato dx", "Inclinato sx"
 };
 
+const char* SENSOR_NAMES_EN[] = {
+    "-", "Left antenna", "Right antenna", "Forward antenna", "Back antenna",
+    "Head tickle", "Tummy tickle", "Right tickle", "Left tickle",
+    "Pull tail", "Push tongue",
+    "Upright", "Upside down", "Right side", "Left side",
+    "Lean back", "Tilt right", "Tilt left"
+};
+
 // Fonte: bluefluff/doc/actionlist.md (Jeija) + pdjstone/furby-web-bluetooth
 const FurbyActionDef FURBY_ACTIONS[] = {
     // ── Coccole (input 1) ────────────────────────────────────────────────────
@@ -216,6 +224,7 @@ const int FURBY_ACTIONS_COUNT = (int)(sizeof(FURBY_ACTIONS)/sizeof(FURBY_ACTIONS
 
 String        gPersonalityPrompt;
 String        gPersonalityVoiceId;
+String        gPersonalityLang = "it";
 String        gCamDescPrompt;
 
 int          camStreamQuality = 12;

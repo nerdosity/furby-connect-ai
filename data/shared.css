@@ -64,9 +64,10 @@ body { background: var(--fb-bg); overflow-x: hidden; }
 /* ── sys bar (monospace dark strip) ── */
 #sys-bar, #sys-info-bar { background: var(--fb-navy); padding: 4px 16px; font-size: .6rem; font-family: monospace; color: #8fb3e8; overflow-x: auto; white-space: nowrap; }
 
-/* ── section title con icona SVG inline (Bootstrap non ha questo pattern) ── */
+/* ── section title con icona SVG/BI inline (Bootstrap non ha questo pattern) ── */
 .fb-sec { display: flex; align-items: center; gap: 8px; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #8a9ab5; margin: 20px 0 8px; }
 .fb-sec svg { width: 17px; height: 17px; opacity: .7; flex-shrink: 0; }
+.fb-sec i { font-size: .9rem; opacity: .7; flex-shrink: 0; line-height: 1; }
 
 /* ── status dot con glow (box-shadow glow non coperto da Bootstrap) ── */
 .fb-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
