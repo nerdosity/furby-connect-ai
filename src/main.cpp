@@ -21,7 +21,7 @@ static void* mbedtls_psram_calloc(size_t n, size_t size) {
     if (p) memset(p, 0, total);
     return p;
 }
-static void mbedtls_psram_free(void* p) { free(p); }
+static void mbedtls_psram_free(void* p) { heap_caps_free(p); }
 
 void IRAM_ATTR isrWakeUp() {
     pendingTrigger  = TRG_BUTTON;
