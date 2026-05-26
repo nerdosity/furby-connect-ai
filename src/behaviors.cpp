@@ -4,6 +4,9 @@
 #include "ble_furby.h"
 #include "hw.h"
 
+// append a gSimLog (se attivo) e a Serial
+#define SIMLOG(s) do { String _m = (s); Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+
 // ── Helpers JSON per serializzare/deserializzare EventBehavior ────────────────
 static void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
     bo["id"]        = b.id;
@@ -328,8 +331,8 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             }
             if (csq.reaction_count == 0) {
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
-                if (answer.length() > 0) speakText(answer);
-                else Serial.println("[CSQ] ERRORE: LLM risposta vuota");
+                if (answer.length() > 0) { SIMLOG("[CSQ] LLM risposta: \"" + answer + "\""); speakText(answer); }
+                else SIMLOG("[CSQ] ERRORE: LLM risposta vuota");
             } else {
                 String reactList;
                 for (int r = 0; r < csq.reaction_count; r++) {
@@ -354,7 +357,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
                     if (act) {
-                        if (gDryRun || gSimSkipBle) Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
+                        if (gDryRun || gSimSkipBle) SIMLOG(String("[CSQ] BLE SKIPPATA: ") + act->label);
                         else { furbyWrite(act->cmd, act->len); delay(1500); }
                     }
                 }
@@ -383,11 +386,11 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             answer.trim();
             const FurbyActionDef* act = findFurbyAction(answer.c_str());
             if (act) {
-                Serial.printf("[CSQ] PROMPT_AUTO → azione scelta: %s (%s)\n", act->id, act->label);
-                if (gDryRun || gSimSkipBle) Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
+                SIMLOG("[CSQ] PROMPT_AUTO → azione scelta: " + String(act->id) + " (" + act->label + ")");
+                if (gDryRun || gSimSkipBle) SIMLOG(String("[CSQ] BLE SKIPPATA: ") + act->label);
                 else { furbyWrite(act->cmd, act->len); delay(1500); }
             } else {
-                Serial.printf("[CSQ] PROMPT_AUTO - azione LLM non valida: \"%s\"\n", answer.c_str());
+                SIMLOG("[CSQ] PROMPT_AUTO - azione LLM non valida: \"" + answer + "\"");
             }
             break;
         }
@@ -491,6 +494,8 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         L("[SIM] camera: non richiesta da questo behavior");
     }
 
+    gSimLog = &log;
+
     if (!beh) {
         L("[SIM] nessun comportamento specifico - uso processStimulusDefault");
         if (!skipLlm) processStimulusDefault(base64Img);
@@ -519,6 +524,8 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
                 executeConsequence(csq, base64Img, sttText, beh->name, sensorId);
         }
     }
+
+    gSimLog = nullptr;
 
     if (ownDebugPers) { free(debugPers); debugPers = nullptr; }
 

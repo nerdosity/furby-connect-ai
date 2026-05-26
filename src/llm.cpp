@@ -111,7 +111,7 @@ String callLLM(const String& base64Img, const String& systemPrompt, const String
 
     http.end();
     answer.replace("\\n", ""); answer.trim();
-    Serial.printf("[LLM] risposta finale: \"%s\"\n", answer.c_str());
+    { String _m = "[LLM] risposta finale: \"" + answer + "\""; Serial.println(_m); if (gSimLog) *gSimLog += _m + "\n"; }
     return answer;
 }
 
