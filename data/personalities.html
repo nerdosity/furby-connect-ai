@@ -19,7 +19,7 @@
 <body>
 <script src="/shared.js"></script>
 <script>renderNav('personalities');</script>
-<div class="container py-3 fb-page">
+<div class="container-fluid px-3 px-xl-5 py-3 fb-page">
   <div class="d-flex align-items-center gap-2 mb-3">
     <h4 class="mb-0">Personalità</h4>
     <div class="ms-auto d-flex gap-2 align-items-center">
@@ -61,7 +61,7 @@
     </div>
     <div class="mb-2">
       <label class="form-label small mb-1">Prompt di sistema</label>
-      <textarea id="ed-prompt" class="form-control form-control-sm" rows="4" maxlength="511" style="font-family:monospace;font-size:.8rem"></textarea>
+      <textarea id="ed-prompt" class="form-control form-control-sm" rows="4" maxlength="4095" style="font-family:monospace;font-size:.8rem"></textarea>
     </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2 mb-3">
       <button class="btn btn-success px-3" onclick="persSave()"><i class="bi bi-floppy"></i> Salva personalità</button>

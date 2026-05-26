@@ -213,7 +213,7 @@ struct EventBehavior {
 struct Personality {
     char         id[32]                        = {};
     char         name[48]                      = {};
-    char         prompt[512]                   = {};
+    char         prompt[4096]                  = {};
     char         voice_id[64]                  = {};
     EventBehavior behaviors[MAX_EVENT_BEHAVIORS] = {};
     int          behavior_count                = 0;
