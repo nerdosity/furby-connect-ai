@@ -163,6 +163,8 @@ let editIdx = -1;
 let editBehIdx = -1;
 let voices = [];
 let voicesLoaded = false;
+let actions = [];
+let actionsLoaded = false;
 let behModal = null;
 
 const SENSOR_NAMES = [
@@ -553,13 +555,29 @@ function csqTypeChange(ci, card, initial) {
   detail.className = 'csq-detail';
 
   if (type === 'furby_action') {
-    const inp = document.createElement('input');
-    inp.className = 'form-control form-control-sm';
-    inp.placeholder = 'action_id (es. HAPPY)';
-    inp.maxLength = 31;
-    inp.value = (initial || c).action_id || '';
-    inp.oninput = () => { csqData[ci].action_id = inp.value; };
-    detail.appendChild(inp);
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm';
+    const curVal = (initial || c).action_id || '';
+    const populate = () => {
+      sel.innerHTML = '';
+      const blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '— scegli azione —';
+      sel.appendChild(blank);
+      actions.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id; opt.textContent = a.label;
+        sel.appendChild(opt);
+      });
+      sel.value = curVal;
+    };
+    if (actionsLoaded) { populate(); }
+    else {
+      fetch('/behaviors/actions').then(r => r.json()).then(data => {
+        actions = data; actionsLoaded = true; populate();
+      });
+    }
+    sel.onchange = () => { csqData[ci].action_id = sel.value; };
+    detail.appendChild(sel);
   } else if (type === 'tts_fixed' || type === 'prompt_fixed') {
     const ta = document.createElement('textarea');
     ta.className = 'form-control form-control-sm';
