@@ -934,7 +934,6 @@ static void handleSysInfo() {
     d["uptime_s"]     = millis() / 1000;
     { time_t now = time(nullptr); d["now_ts"] = (now > 1000000000) ? (long)now : 0; }
     d["bat_mv"]       = readBatteryMv();
-    d["usb_connected"] = readUsbConnected();
     d["chg_stat"]      = readChargingStat();
     d["chip_temp_c"]  = (int)temperatureRead();
     d["fw_version"]   = spiffsVersion();

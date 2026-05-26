@@ -59,9 +59,8 @@
         </div>
       </div>
       <div class="text-muted small mt-1">ETA6098: fine carica 4.2V, auto-recharge sotto 4.04V — normale oscillare tra ~4.04 e ~4.08V sotto carica.</div>
-      <div class="mt-2 d-flex gap-3 flex-wrap">
-        <div><span class="text-muted small">USB (5V): </span><span id="usb-status" class="fw-semibold">-</span></div>
-        <div><span class="text-muted small">Carica: </span><span id="chg-status" class="fw-semibold">-</span></div>
+      <div class="mt-2">
+        <span class="text-muted small">Carica: </span><span id="chg-status" class="fw-semibold">-</span>
       </div>
       <div id="bat-furby" class="mt-1 d-none">
         <span class="text-muted small">Furby (BLE): </span><span id="bat-ble" class="fw-semibold">-</span>
@@ -190,20 +189,11 @@ function load(){
     if(d.bat_mv>0) updateBat(d.bat_mv);
     else document.getElementById('bat-volt').textContent='N/D';
 
-    var usbEl=document.getElementById('usb-status');
-    if(d.usb_connected===true){
-      usbEl.innerHTML='<span class="badge bg-success"><i class="bi bi-plug-fill"></i> Connessa</span>';
-    } else if(d.usb_connected===false){
-      usbEl.innerHTML='<span class="badge bg-secondary"><i class="bi bi-plug"></i> Non connessa</span>';
-    } else { usbEl.textContent='-'; }
-
     var chgEl=document.getElementById('chg-status');
     if(d.chg_stat===1){
       chgEl.innerHTML='<span class="badge bg-warning text-dark"><i class="bi bi-battery-charging"></i> In carica</span>';
-    } else if(d.usb_connected===false){
-      chgEl.innerHTML='<span class="badge bg-danger"><i class="bi bi-battery-half"></i> In uso (batteria)</span>';
     } else if(d.chg_stat===0){
-      chgEl.innerHTML='<span class="badge bg-success"><i class="bi bi-battery-full"></i> Carica completa</span>';
+      chgEl.innerHTML='<span class="badge bg-secondary"><i class="bi bi-battery-half"></i> Non in carica</span>';
     } else { chgEl.textContent='-'; }
 
     // BLE battery
