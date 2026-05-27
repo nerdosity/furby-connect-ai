@@ -526,24 +526,34 @@ static void handleVadSave() {
 // ── /personalities/* ─────────────────────────────────────────────────────────
 
 static void handlePersonalitiesList() {
-    File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
-    if (!f) f = SPIFFS.open("/personalities.json", "r");
-    if (!f) {
-        auto doc = JsonDocPsram();
-        doc["active"] = 0;
-        JsonArray arr = doc["personalities"].to<JsonArray>();
-        JsonObject po = arr.add<JsonObject>();
-        serializeActivePersonalityTo(po);
-        String out; serializeJson(doc, out);
-        server.send(200, "application/json", out);
-        return;
-    }
+    sdCheck(); // lazy: triggera retry mount + reconcile se SD compare ora
     auto doc = JsonDocPsram();
-    if (deserializeJson(doc, f) != DeserializationError::Ok) {
-        f.close(); server.send(500, "application/json", "{\"error\":\"JSON corrotto\"}"); return;
-    }
-    f.close();
     doc["active"] = gActivePersonality;
+    doc["origin"] = (gPersonalitiesOrigin == PORG_SD) ? "sd"
+                   : (gPersonalitiesOrigin == PORG_SPIFFS) ? "spiffs"
+                   : (gPersonalitiesOrigin == PORG_DEFAULT) ? "default" : "none";
+    JsonArray arr = doc["personalities"].to<JsonArray>();
+    for (int i = 0; i < gPersonalityCount; i++) {
+        Personality& p = gAllPersonalities[i];
+        JsonObject po = arr.add<JsonObject>();
+        po["id"]       = p.id;
+        po["name"]     = p.name;
+        po["prompt"]   = p.prompt;
+        po["voice_id"] = p.voice_id;
+        po["lang"]     = p.lang[0] ? p.lang : "it";
+        JsonArray ba = po["behaviors"].to<JsonArray>();
+        for (int b = 0; b < p.behavior_count; b++) {
+            JsonObject bo = ba.add<JsonObject>();
+            serializeBehavior(bo, p.behaviors[b]);
+        }
+        JsonArray ka = po["canned"].to<JsonArray>();
+        for (int k = 0; k < p.canned_count; k++) {
+            JsonObject ko = ka.add<JsonObject>();
+            ko["id"]   = p.canned[k].id;
+            ko["text"] = p.canned[k].text;
+            ko["file"] = p.canned[k].file;
+        }
+    }
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }
@@ -551,56 +561,47 @@ static void handlePersonalitiesList() {
 static void handlePersonalitiesActivate() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
+    if (idx < 0 || idx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"idx fuori range\"}"); return; }
     activatePersonality(idx);
-    if (gActivePersonality != idx) { server.send(400, "application/json", "{\"ok\":false}"); return; }
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalitiesNew() {
     HTTP_LOG();
     String nm = server.arg("name"); nm.trim(); if (nm.length() == 0) nm = "Nuova";
-
-    auto doc = JsonDocPsram();
-    { File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
-      if (!f) f = SPIFFS.open("/personalities.json", "r");
-      if (f) { deserializeJson(doc, f); f.close(); } }
-    JsonArray arr = doc["personalities"].is<JsonArray>()
-        ? doc["personalities"].as<JsonArray>()
-        : doc["personalities"].to<JsonArray>();
-
-    JsonObject po = arr.add<JsonObject>();
-    po["id"]       = "p" + String(millis());
-    po["name"]     = nm;
-    po["prompt"]   = gpActivePers ? String(gpActivePers->prompt) : gPersonalityPrompt;
-    po["voice_id"] = gpActivePers ? String(gpActivePers->voice_id) : gPersonalityVoiceId;
-    po["behaviors"].to<JsonArray>();
-    int newIdx = (int)arr.size() - 1;
-
-    String out; serializeJson(doc, out);
-    if (!writePersFile(out)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
+    if (gPersonalityCount >= MAX_PERSONALITIES) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"raggiunto MAX_PERSONALITIES\"}"); return;
+    }
+    Personality& p = gAllPersonalities[gPersonalityCount];
+    memset(&p, 0, sizeof(p));
+    String newId = "p" + String(millis());
+    strlcpy(p.id,   newId.c_str(), sizeof(p.id));
+    strlcpy(p.name, nm.c_str(),    sizeof(p.name));
+    strlcpy(p.lang, "it",          sizeof(p.lang));
+    if (gpActivePers) {
+        strlcpy(p.prompt,   gpActivePers->prompt,   sizeof(p.prompt));
+        strlcpy(p.voice_id, gpActivePers->voice_id, sizeof(p.voice_id));
+    }
+    int newIdx = gPersonalityCount;
+    gPersonalityCount++;
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true,\"idx\":" + String(newIdx) + "}");
 }
 
 static void handlePersonalitiesDel() {
     HTTP_LOG();
     int idx = server.arg("idx").toInt();
-
-    auto doc = JsonDocPsram();
-    { File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
-      if (!f) f = SPIFFS.open("/personalities.json", "r");
-      if (f) { deserializeJson(doc, f); f.close(); } }
-    JsonArray arr = doc["personalities"].as<JsonArray>();
-    if (idx < 0 || idx >= (int)arr.size() || (int)arr.size() <= 1) {
-        server.send(400, "application/json", "{\"ok\":false}"); return;
+    if (idx < 0 || idx >= gPersonalityCount || gPersonalityCount <= 1) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"idx invalido o ultima personality\"}"); return;
     }
-    arr.remove(idx);
+    // shift left
+    for (int i = idx; i < gPersonalityCount - 1; i++) gAllPersonalities[i] = gAllPersonalities[i+1];
+    memset(&gAllPersonalities[gPersonalityCount - 1], 0, sizeof(Personality));
+    gPersonalityCount--;
     int newActive = gActivePersonality;
-    if (newActive >= (int)arr.size()) newActive = (int)arr.size() - 1;
-    doc["active"] = newActive;
-
-    String out; serializeJson(doc, out);
-    if (!writePersFile(out)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
-    activatePersonality(newActive);
+    if (newActive >= gPersonalityCount) newActive = gPersonalityCount - 1;
+    setActiveByIndex(newActive);
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
@@ -620,30 +621,57 @@ static void handlePersonalitiesSave() {
             if (csq.isNull() || csq.size() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"comportamento senza conseguenze\"}"); return; }
         }
     }
-    if (!writePersFile(body)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
-    loadPersonalities();
+    // aggiorna RAM (preservando canned.file via lookup) poi scrive
+    int active = -1;
+    if (!loadAllPersonalitiesFromJSON(body, &active)) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"caricamento RAM fallito\"}"); return;
+    }
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
 static void handlePersonalitiesExport() {
     HTTP_LOG();
-    File f = sdAvailable ? SD_MMC.open("/personalities.json", FILE_READ) : File();
-    if (!f) f = SPIFFS.open("/personalities.json", "r");
-    if (!f) { server.send(404, "text/plain", "not found"); return; }
+    String payload;
+    {
+        auto doc = JsonDocPsram();
+        doc["active"] = gActivePersonality;
+        JsonArray arr = doc["personalities"].to<JsonArray>();
+        for (int i = 0; i < gPersonalityCount; i++) {
+            JsonObject po = arr.add<JsonObject>();
+            po["id"]       = gAllPersonalities[i].id;
+            po["name"]     = gAllPersonalities[i].name;
+            po["prompt"]   = gAllPersonalities[i].prompt;
+            po["voice_id"] = gAllPersonalities[i].voice_id;
+            po["lang"]     = gAllPersonalities[i].lang[0] ? gAllPersonalities[i].lang : "it";
+            JsonArray ba = po["behaviors"].to<JsonArray>();
+            for (int b = 0; b < gAllPersonalities[i].behavior_count; b++) {
+                JsonObject bo = ba.add<JsonObject>();
+                serializeBehavior(bo, gAllPersonalities[i].behaviors[b]);
+            }
+            JsonArray ka = po["canned"].to<JsonArray>();
+            for (int k = 0; k < gAllPersonalities[i].canned_count; k++) {
+                JsonObject ko = ka.add<JsonObject>();
+                ko["id"]   = gAllPersonalities[i].canned[k].id;
+                ko["text"] = gAllPersonalities[i].canned[k].text;
+                ko["file"] = gAllPersonalities[i].canned[k].file;
+            }
+        }
+        serializeJson(doc, payload);
+    }
     server.sendHeader("Content-Disposition", "attachment; filename=personalities.json");
-    server.streamFile(f, "application/json"); f.close();
+    server.send(200, "application/json", payload);
 }
 
 static void handlePersonalitiesImport() {
     HTTP_LOG();
     String body = server.arg("plain");
     if (body.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"body vuoto\"}"); return; }
-    auto doc = JsonDocPsram();
-    if (deserializeJson(doc, body) != DeserializationError::Ok) {
-        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
+    int active = -1;
+    if (!loadAllPersonalitiesFromJSON(body, &active)) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido o vuoto\"}"); return;
     }
-    if (!writePersFile(body)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
-    loadPersonalities();
+    savePersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
 }
 
@@ -893,6 +921,7 @@ static void handleSdReinit() {
     delay(200);
     bool ok = sdMount();
     if (ok) {
+        reconcilePersonalitiesWithSD(); // mount manuale: forza reconcile (sdCheck non viene chiamato qui)
         uint8_t t = SD_MMC.cardType();
         const char* ts = (t==CARD_MMC)?"MMC":(t==CARD_SD)?"SDSC":(t==CARD_SDHC)?"SDHC":"UNKNOWN";
         String msg = String("{\"ok\":true,\"type\":\"") + ts
@@ -1357,6 +1386,7 @@ static void handleFsDel() {
 // ── SD file manager ───────────────────────────────────────────────────────────
 
 static void handleSdList() {
+    sdCheck(); // lazy: tenta mount con cooldown se SD assente, triggera reconcile su appear
     if (!sdAvailable) { server.send(503, "application/json", "{\"error\":\"SD non presente\"}"); return; }
     String dirPath = server.arg("dir");
     if (dirPath.length() == 0) dirPath = "/";
@@ -1369,9 +1399,10 @@ static void handleSdList() {
     if (root && root.isDirectory()) {
         for (File f = root.openNextFile(); f; f = root.openNextFile()) {
             JsonObject o = files.add<JsonObject>();
-            o["name"] = String(f.name());
-            o["size"] = (long long)f.size();
-            o["dir"]  = f.isDirectory();
+            o["name"]  = String(f.name());
+            o["size"]  = (long long)f.size();
+            o["dir"]   = f.isDirectory();
+            o["mtime"] = (long long)f.getLastWrite();
         }
     }
     String out; serializeJson(doc, out);

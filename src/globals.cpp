@@ -238,6 +238,9 @@ int          camAgc           = 1; // 1=auto AGC con ceiling limitato
 EventBehavior* gEventBehaviors     = nullptr;  // allocato in PSRAM da setup()
 int            gEventBehaviorCount = 0;
 
+Personality*  gAllPersonalities  = nullptr;
+int           gPersonalityCount  = 0;
+PersOrigin    gPersonalitiesOrigin = PORG_NONE;
 Personality*  gpActivePers       = nullptr;
 int           gActivePersonality = 0;
 int           gDebugPersonality  = -1;

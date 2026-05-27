@@ -12,7 +12,7 @@ body { background: var(--fb-bg); overflow-x: hidden; }
 #fb-loader {
   position: fixed; inset: 0; z-index: 9999;
   background: var(--fb-navy);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   transition: opacity .25s ease;
 }
 #fb-loader.fb-loader-done { opacity: 0; pointer-events: none; }
@@ -21,6 +21,11 @@ body { background: var(--fb-bg); overflow-x: hidden; }
   border: 3px solid #ffffff22;
   border-top-color: #8fb3e8;
   animation: fb-spin .7s linear infinite;
+}
+#fb-loader .fb-loader-status {
+  color: #8fb3e8; font-size: .82rem; font-family: monospace;
+  text-align: center; min-height: 1.2em; max-width: 80vw;
+  opacity: .9; transition: opacity .15s ease;
 }
 @keyframes fb-spin { to { transform: rotate(360deg); } }
 

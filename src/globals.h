@@ -190,8 +190,11 @@ enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
 #define MAX_EVENT_BEHAVIORS  64
 #define MAX_CANNED_PHRASES   16
 #define CANNED_TEXT_LEN      48
+#define MAX_PERSONALITIES    10
 #define MAX_FURBY_SCAN       8
 #define STT_BUF_MAX_SAMPLES  128000
+
+enum PersOrigin : uint8_t { PORG_NONE=0, PORG_DEFAULT, PORG_SPIFFS, PORG_SD };
 
 struct Consequence {
     ConsequenceType type         = CSQ_NONE;
@@ -221,7 +224,6 @@ struct EventBehavior {
     uint8_t     consequence_count = 0;
 };
 
-// Allocata in PSRAM - una sola istanza attiva alla volta
 struct Personality {
     char         id[32]                        = {};
     char         name[48]                      = {};
@@ -342,9 +344,13 @@ void camTouch();
 extern EventBehavior* gEventBehaviors;
 extern int            gEventBehaviorCount;
 
-// Unica personalità attiva - allocata in PSRAM
+// Array completo di personality in PSRAM (singola sorgente di verità in RAM).
+// gpActivePers punta a una entry di gAllPersonalities.
+extern Personality*  gAllPersonalities;   // array di MAX_PERSONALITIES, allocato in setup
+extern int           gPersonalityCount;
+extern PersOrigin    gPersonalitiesOrigin; // da dove è stata caricata la copia in RAM
 extern Personality*  gpActivePers;
-extern int           gActivePersonality;  // indice nel JSON
+extern int           gActivePersonality;  // indice in gAllPersonalities
 extern int           gDebugPersonality;   // -1 = usa quella attiva
 
 extern volatile TriggerType pendingTrigger;

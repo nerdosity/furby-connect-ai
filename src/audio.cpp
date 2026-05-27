@@ -97,25 +97,21 @@ static bool migrateToSD(const String& fullPath) {
     return true;
 }
 
-// Apre per lettura: SD se disponibile (migrando da SPIFFS se serve), altrimenti SPIFFS.
+bool migrateFileToSD(const String& fullPath) { return migrateToSD(fullPath); }
+
+// Apre per lettura SOLO su SD. Cache audio non esiste senza SD.
 static File openRead(const String& fullPath) {
-    if (sdAvailable) {
-        migrateToSD(fullPath);
-        if (SD_MMC.exists(fullPath.c_str())) return SD_MMC.open(fullPath.c_str(), "r");
-    }
-    if (SPIFFS.exists(fullPath.c_str())) return SPIFFS.open(fullPath.c_str(), "r");
-    return File();
+    if (!sdAvailable) return File();
+    if (!SD_MMC.exists(fullPath.c_str())) return File();
+    return SD_MMC.open(fullPath.c_str(), "r");
 }
 
-// Apre per scrittura: SD se disponibile, fallback SPIFFS.
+// Apre per scrittura SOLO su SD. Cache audio non esiste senza SD.
+// Se SD non disponibile o open fallisce, ritorna File() vuoto: chi chiama deve gestirlo.
 static File openWrite(const String& fullPath) {
-    if (sdAvailable) {
-        ensureDirsSD(fullPath);
-        File f = SD_MMC.open(fullPath.c_str(), FILE_WRITE);
-        if (f) return f;
-    }
-    ensureDirsSPIFFS(fullPath);
-    return SPIFFS.open(fullPath.c_str(), "w");
+    if (!sdAvailable) return File();
+    ensureDirsSD(fullPath);
+    return SD_MMC.open(fullPath.c_str(), FILE_WRITE);
 }
 
 String getCacheJSON() {

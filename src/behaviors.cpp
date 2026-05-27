@@ -4,11 +4,33 @@
 #include "ble_furby.h"
 #include "hw.h"
 
-// append a gSimLog (se attivo) e a Serial
-#define SIMLOG(s) do { String _m = (s); Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+// ── Logging strutturato per simulazione ───────────────────────────────────────
+// In modalità simulazione (gSimLog!=nullptr) produce blocchi per-azione leggibili.
+// In modalità normale (gSimLog==nullptr) va solo su Serial.
+#define SIMLOG(s)   do { String _m = (s); Serial.println(_m);            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMHEAD(s)  do { String _m = (s); Serial.println(_m);            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMACT(s)   do { String _m = String("\n=== ") + (s) + " ===";    Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSTEP(s)  do { String _m = String("  ") + (s);                 Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSUB(s)   do { String _m = String("    ") + (s);               Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSKIP(s)  do { String _m = String("  SKIP: ") + (s);           Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+static String _csqTypeName(uint8_t t) {
+    switch (t) {
+        case CSQ_FURBY_ACTION: return "Azione Furby";
+        case CSQ_TTS_FIXED:    return "TTS fisso";
+        case CSQ_PROMPT_FIXED: return "Prompt fisso";
+        case CSQ_PROMPT_LLM:   return "LLM libero";
+        case CSQ_PROMPT_AUTO:  return "LLM sceglie azione";
+        case CSQ_CANNED:       return "Frase pronta";
+        default:               return String("? (") + t + ")";
+    }
+}
+static String _short(const String& s, int max=200) {
+    if ((int)s.length() <= max) return s;
+    return s.substring(0, max) + "… (+" + String((int)s.length() - max) + " char)";
+}
 
 // ── Helpers JSON per serializzare/deserializzare EventBehavior ────────────────
-static void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
+void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
     bo["id"]        = b.id;
     bo["trigger"]   = (int)b.trigger;
     bo["sensor_id"] = (int)b.sensor_id;
@@ -79,31 +101,33 @@ static void deserializePersonality(Personality& p, JsonObject po) {
         const char* existingFile = ko["file"] | "";
         if (existingFile[0]) {
             strlcpy(k.file, existingFile, sizeof(k.file));
-        } else if (gpActivePers && k.id[0]) {
-            for (int i = 0; i < gpActivePers->canned_count; i++) {
-                if (strcmp(gpActivePers->canned[i].id, k.id) == 0) {
-                    // se il testo è cambiato, il file cached non è più valido
-                    if (strcmp(gpActivePers->canned[i].text, k.text) == 0)
-                        strlcpy(k.file, gpActivePers->canned[i].file, sizeof(k.file));
-                    break;
+        } else if (gAllPersonalities && k.id[0]) {
+            // cerca in TUTTE le personality già caricate (per save bulk che ridefinisce l'array)
+            for (int pi = 0; pi < gPersonalityCount && !k.file[0]; pi++) {
+                Personality& old = gAllPersonalities[pi];
+                for (int i = 0; i < old.canned_count; i++) {
+                    if (strcmp(old.canned[i].id, k.id) == 0) {
+                        if (strcmp(old.canned[i].text, k.text) == 0)
+                            strlcpy(k.file, old.canned[i].file, sizeof(k.file));
+                        break;
+                    }
                 }
             }
         }
     }
 }
 
-// ── Alloca/libera gpActivePers in PSRAM ───────────────────────────────────────
-static Personality* allocPersonalityPSRAM() {
-    void* mem = heap_caps_malloc(sizeof(Personality), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+// ── Alloca array di Personality in PSRAM (chiamato una sola volta in setup) ──
+static void ensurePersonalitiesAllocated() {
+    if (gAllPersonalities) return;
+    size_t sz = sizeof(Personality) * MAX_PERSONALITIES;
+    void* mem = heap_caps_calloc(MAX_PERSONALITIES, sizeof(Personality), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!mem) {
-        Serial.printf("[PERS] PSRAM esaurita (%u), fallback DRAM\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-        mem = malloc(sizeof(Personality));
+        Serial.printf("[PERS] PSRAM esaurita (%u), fallback DRAM per array\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        mem = calloc(MAX_PERSONALITIES, sizeof(Personality));
     }
-    return static_cast<Personality*>(mem);
-}
-
-static void freeActivePers() {
-    if (gpActivePers) { heap_caps_free(gpActivePers); gpActivePers = nullptr; }
+    gAllPersonalities = static_cast<Personality*>(mem);
+    Serial.printf("[PERS] array allocato in PSRAM: %u byte (%d slot)\n", (unsigned)sz, MAX_PERSONALITIES);
 }
 
 static void buildDefaultPersonality(Personality& p) {
@@ -138,6 +162,14 @@ void applyActivePersonality() {
         gEventBehaviors[i] = gpActivePers->behaviors[i];
 }
 
+void setActiveByIndex(int idx) {
+    if (idx < 0 || idx >= gPersonalityCount) idx = 0;
+    if (gPersonalityCount == 0) { gpActivePers = nullptr; gActivePersonality = 0; return; }
+    gActivePersonality = idx;
+    gpActivePers = &gAllPersonalities[idx];
+    applyActivePersonality();
+}
+
 void serializeActivePersonalityTo(JsonObject po) {
     if (!gpActivePers) return;
     po["id"]       = gpActivePers->id;
@@ -159,153 +191,257 @@ void serializeActivePersonalityTo(JsonObject po) {
     }
 }
 
-// ── savePersonalities: legge tutto il JSON, aggiorna entry attiva, riscrive ───
-// apre /personalities.json con priorità SD → SPIFFS (read-only)
-static File openPersFile() {
-    if (sdAvailable) {
-        File f = SD_MMC.open("/personalities.json", FILE_READ);
-        if (f) return f;
+// ── Storage personalities ────────────────────────────────────────────────────
+// Architettura RAM-first:
+//   - gAllPersonalities[] preallocato in PSRAM (MAX_PERSONALITIES slot)
+//   - gpActivePers punta a una entry dell'array (mai allocazione separata)
+//   - gPersonalitiesOrigin = sorgente da cui è stato letto (SD > SPIFFS > DEFAULT)
+//   - lettura da disco SOLO al boot + reconcile su SD-appear
+//   - scrittura: atomic via tmp+rename, mirror SD+SPIFFS quando SD disponibile
+
+static const char* PERS_FILE     = "/personalities.json";
+static const char* PERS_FILE_TMP = "/personalities.json.tmp";
+
+static String serializeAllPersonalities() {
+    auto doc = JsonDocPsram();
+    doc["active"] = gActivePersonality;
+    JsonArray arr = doc["personalities"].to<JsonArray>();
+    for (int i = 0; i < gPersonalityCount; i++) {
+        Personality& p = gAllPersonalities[i];
+        JsonObject po = arr.add<JsonObject>();
+        po["id"]       = p.id;
+        po["name"]     = p.name;
+        po["prompt"]   = p.prompt;
+        po["voice_id"] = p.voice_id;
+        po["lang"]     = p.lang[0] ? p.lang : "it";
+        JsonArray ba = po["behaviors"].to<JsonArray>();
+        for (int b = 0; b < p.behavior_count; b++) {
+            JsonObject bo = ba.add<JsonObject>();
+            serializeBehavior(bo, p.behaviors[b]);
+        }
+        JsonArray ka = po["canned"].to<JsonArray>();
+        for (int k = 0; k < p.canned_count; k++) {
+            JsonObject ko = ka.add<JsonObject>();
+            ko["id"]   = p.canned[k].id;
+            ko["text"] = p.canned[k].text;
+            ko["file"] = p.canned[k].file;
+        }
     }
-    return SPIFFS.open("/personalities.json", "r");
+    String out; serializeJson(doc, out); return out;
 }
 
-// scrive /personalities.json su SD se disponibile, altrimenti SPIFFS
-bool writePersFile(const String& out) {
-    if (sdAvailable) {
-        File f = SD_MMC.open("/personalities.json", FILE_WRITE);
-        if (f) { f.print(out); f.close(); return true; }
+// scrittura atomica: scrivi tmp, fsync via close, remove target, rename tmp→target.
+// Se rename non disponibile/fallisce, restiamo con tmp+target e il recover al boot prende il buono.
+template<typename FS>
+static bool atomicWriteFS(FS& fs, const String& payload, const char* path, const char* tmpPath) {
+    fs.remove(tmpPath);
+    File tf = fs.open(tmpPath, "w");
+    if (!tf) return false;
+    size_t written = tf.print(payload);
+    tf.close();
+    if (written != payload.length()) { fs.remove(tmpPath); return false; }
+    fs.remove(path);
+    bool ok = fs.rename(tmpPath, path);
+    if (!ok) { // rename fallito: tieni almeno il tmp leggibile
+        File t = fs.open(tmpPath, "r");
+        if (!t) return false;
+        File f = fs.open(path, "w");
+        if (f) { while (t.available()) f.write(t.read()); f.close(); fs.remove(tmpPath); ok = true; }
+        t.close();
     }
-    File f = SPIFFS.open("/personalities.json", "w");
-    if (f) { f.print(out); f.close(); return true; }
-    return false;
+    return ok;
+}
+
+// ricovero al boot: se esiste tmp insieme al target valido, tmp è una scrittura
+// interrotta → cancella tmp. Se il target è corrotto e tmp esiste valido, promuove tmp.
+template<typename FS>
+static void recoverInterruptedWrite(FS& fs, const char* path, const char* tmpPath) {
+    if (!fs.exists(tmpPath)) return;
+    // verifica se target è leggibile e parsabile
+    bool targetOk = false;
+    if (fs.exists(path)) {
+        File t = fs.open(path, "r");
+        if (t) {
+            auto d = JsonDocPsram();
+            targetOk = (deserializeJson(d, t) == DeserializationError::Ok);
+            t.close();
+        }
+    }
+    if (targetOk) { fs.remove(tmpPath); Serial.printf("[PERS] recover: %s rimosso (target ok)\n", tmpPath); return; }
+    // target ko, prova tmp
+    File t = fs.open(tmpPath, "r");
+    if (!t) return;
+    auto d = JsonDocPsram();
+    bool tmpOk = (deserializeJson(d, t) == DeserializationError::Ok);
+    t.close();
+    if (tmpOk) {
+        fs.remove(path);
+        fs.rename(tmpPath, path);
+        Serial.printf("[PERS] recover: promosso %s → %s (target era corrotto)\n", tmpPath, path);
+    } else {
+        fs.remove(tmpPath);
+        Serial.printf("[PERS] recover: %s era corrotto anche lui, rimosso\n", tmpPath);
+    }
+}
+
+// Scrittura: mirror SD+SPIFFS quando SD disponibile, solo SPIFFS altrimenti.
+bool writePersFile(const String& payload) {
+    bool okSd = false, okSpiffs = false;
+    if (sdAvailable) {
+        okSd = atomicWriteFS(SD_MMC, payload, PERS_FILE, PERS_FILE_TMP);
+        if (!okSd) Serial.println("[PERS] WARN: scrittura SD fallita");
+    }
+    okSpiffs = atomicWriteFS(SPIFFS, payload, PERS_FILE, PERS_FILE_TMP);
+    if (!okSpiffs) Serial.println("[PERS] WARN: scrittura SPIFFS fallita");
+    if (sdAvailable && okSd && okSpiffs) Serial.println("[PERS] salvato su SD+SPIFFS (mirror)");
+    else if (okSd)                        Serial.println("[PERS] salvato su SD");
+    else if (okSpiffs)                    Serial.println("[PERS] salvato su SPIFFS");
+    return okSd || okSpiffs;
 }
 
 void savePersonalities() {
-    if (!gpActivePers) return;
-
-    auto doc = JsonDocPsram();
-    File rf = openPersFile();
-    if (rf) { deserializeJson(doc, rf); rf.close(); }
-
-    doc["active"] = gActivePersonality;
-    JsonArray arr = doc["personalities"].is<JsonArray>()
-        ? doc["personalities"].as<JsonArray>()
-        : doc["personalities"].to<JsonArray>();
-
-    if (gActivePersonality > (int)arr.size()) gActivePersonality = (int)arr.size();
-    if (gActivePersonality == (int)arr.size()) arr.add(JsonObject{});
-    JsonObject po = arr[gActivePersonality].as<JsonObject>();
-    po["id"]       = gpActivePers->id;
-    po["name"]     = gpActivePers->name;
-    po["prompt"]   = gpActivePers->prompt;
-    po["voice_id"] = gpActivePers->voice_id;
-    po["lang"]     = gpActivePers->lang[0] ? gpActivePers->lang : "it";
-    JsonArray ba = po["behaviors"].to<JsonArray>();
-    for (int b = 0; b < gpActivePers->behavior_count; b++) {
-        JsonObject bo = ba.add<JsonObject>();
-        serializeBehavior(bo, gpActivePers->behaviors[b]);
-    }
-    JsonArray ka = po["canned"].to<JsonArray>();
-    for (int k = 0; k < gpActivePers->canned_count; k++) {
-        JsonObject ko = ka.add<JsonObject>();
-        ko["id"]   = gpActivePers->canned[k].id;
-        ko["text"] = gpActivePers->canned[k].text;
-        ko["file"] = gpActivePers->canned[k].file;
-    }
-
-    String out; serializeJson(doc, out);
-    if (writePersFile(out))
-        Serial.printf("[PERS] salvato su %s\n", sdAvailable ? "SD" : "SPIFFS");
-    else
-        Serial.println("[PERS] ERRORE: impossibile salvare personalities");
+    if (!gAllPersonalities || gPersonalityCount == 0) { Serial.println("[PERS] save: niente da salvare"); return; }
+    String out = serializeAllPersonalities();
+    if (!writePersFile(out)) Serial.println("[PERS] ERRORE: scrittura fallita su tutti i FS");
 }
 
-// ── loadPersonalities: alloca in PSRAM solo quella attiva ─────────────────────
-void loadPersonalities() {
-    gActivePersonality = 0;
+// Carica TUTTE le personality in gAllPersonalities. Ritorna l'origin scelta.
+static PersOrigin loadPersonalitiesFromFS() {
+    ensurePersonalitiesAllocated();
+    if (!gAllPersonalities) { Serial.println("[PERS] FATAL: array non allocato"); return PORG_NONE; }
+    gPersonalityCount = 0;
 
-    File f = openPersFile();
+    // recover scritture interrotte
+    if (sdAvailable) recoverInterruptedWrite(SD_MMC, PERS_FILE, PERS_FILE_TMP);
+    recoverInterruptedWrite(SPIFFS, PERS_FILE, PERS_FILE_TMP);
+
+    File f;
+    PersOrigin origin = PORG_NONE;
+    if (sdAvailable) {
+        f = SD_MMC.open(PERS_FILE, FILE_READ);
+        if (f) origin = PORG_SD;
+    }
     if (!f) {
-        freeActivePers();
-        gpActivePers = allocPersonalityPSRAM();
-        if (!gpActivePers) return;
-        buildDefaultPersonality(*gpActivePers);
-        applyActivePersonality();
-        Serial.println("[PERS] nessun file trovato (SD né SPIFFS) - personalità default in RAM");
-        return;
+        f = SPIFFS.open(PERS_FILE, "r");
+        if (f) origin = PORG_SPIFFS;
     }
-    Serial.printf("[PERS] carico da %s\n", sdAvailable ? "SD" : "SPIFFS");
+    if (!f) {
+        Personality& p0 = gAllPersonalities[0];
+        buildDefaultPersonality(p0);
+        gPersonalityCount = 1;
+        gActivePersonality = 0;
+        setActiveByIndex(0);
+        Serial.println("[PERS] nessun file (SD/SPIFFS) - default in RAM");
+        return PORG_DEFAULT;
+    }
+    Serial.printf("[PERS] carico da %s\n", origin == PORG_SD ? "SD" : "SPIFFS");
 
     auto doc = JsonDocPsram();
     DeserializationError err = deserializeJson(doc, f);
     f.close();
-
     if (err != DeserializationError::Ok) {
-        Serial.println("[PERS] ERRORE: JSON corrotto, uso default in RAM senza sovrascrivere");
-        freeActivePers();
-        gpActivePers = allocPersonalityPSRAM();
-        if (!gpActivePers) return;
-        buildDefaultPersonality(*gpActivePers);
-        applyActivePersonality();
-        return;
+        Serial.printf("[PERS] ERRORE parse %s: %s — uso default\n", origin == PORG_SD ? "SD" : "SPIFFS", err.c_str());
+        Personality& p0 = gAllPersonalities[0];
+        buildDefaultPersonality(p0);
+        gPersonalityCount = 1;
+        gActivePersonality = 0;
+        setActiveByIndex(0);
+        return PORG_DEFAULT;
     }
 
-    freeActivePers();
-    gpActivePers = allocPersonalityPSRAM();
-    if (!gpActivePers) return;
-
-    gActivePersonality = doc["active"] | 0;
+    int active = doc["active"] | 0;
     JsonArray arr = doc["personalities"].as<JsonArray>();
-    if ((int)arr.size() == 0) {
-        buildDefaultPersonality(*gpActivePers);
-        applyActivePersonality();
-        Serial.println("[PERS] array vuoto, uso default in RAM");
-        return;
+    for (JsonVariant v : arr) {
+        if (gPersonalityCount >= MAX_PERSONALITIES) { Serial.println("[PERS] WARN: array pieno, troncamento"); break; }
+        if (!v.is<JsonObject>()) continue;
+        deserializePersonality(gAllPersonalities[gPersonalityCount], v.as<JsonObject>());
+        gPersonalityCount++;
     }
-
-    if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
-    while (gActivePersonality < (int)arr.size() && !arr[gActivePersonality].is<JsonObject>()) gActivePersonality++;
-    if (gActivePersonality >= (int)arr.size()) gActivePersonality = 0;
-    if (arr[gActivePersonality].is<JsonObject>())
-        deserializePersonality(*gpActivePers, arr[gActivePersonality].as<JsonObject>());
-    else {
-        buildDefaultPersonality(*gpActivePers);
-        applyActivePersonality();
-        Serial.println("[PERS] nessuna personalità valida, uso default in RAM");
-        return;
+    if (gPersonalityCount == 0) {
+        Personality& p0 = gAllPersonalities[0];
+        buildDefaultPersonality(p0);
+        gPersonalityCount = 1;
+        active = 0;
+        origin = PORG_DEFAULT;
+        Serial.println("[PERS] array vuoto, default in RAM");
     }
-
-    applyActivePersonality();
-    Serial.printf("[PERS] caricata: \"%s\" (idx=%d, PSRAM=%u liberi)\n",
-        gpActivePers->name, gActivePersonality, heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    if (active < 0 || active >= gPersonalityCount) active = 0;
+    gActivePersonality = active;
+    setActiveByIndex(active);
+    Serial.printf("[PERS] %d personalit%s in RAM, attiva=\"%s\" (PSRAM libera=%u)\n",
+        gPersonalityCount, gPersonalityCount == 1 ? "à" : "à",
+        gpActivePers ? gpActivePers->name : "?",
+        heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    return origin;
 }
 
-// ── activatePersonality: switcha personalità senza ricaricare tutto ───────────
-void activatePersonality(int idx) {
-    File f = openPersFile();
-    if (!f) return;
+bool loadAllPersonalitiesFromJSON(const String& body, int* outActive) {
     auto doc = JsonDocPsram();
-    DeserializationError err = deserializeJson(doc, f);
-    f.close();
-    if (err != DeserializationError::Ok) return;
-
+    if (deserializeJson(doc, body) != DeserializationError::Ok) return false;
     JsonArray arr = doc["personalities"].as<JsonArray>();
-    if (idx < 0 || idx >= (int)arr.size() || !arr[idx].is<JsonObject>()) return;
+    if (arr.isNull()) return false;
+    ensurePersonalitiesAllocated();
+    if (!gAllPersonalities) return false;
+    // Deserialize in slot temp PSRAM così deserializePersonality può cercare i canned.file
+    // nel vecchio gAllPersonalities mentre costruisce i nuovi.
+    Personality* tmp = (Personality*)heap_caps_calloc(MAX_PERSONALITIES, sizeof(Personality), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!tmp) tmp = (Personality*)calloc(MAX_PERSONALITIES, sizeof(Personality));
+    if (!tmp) return false;
+    int newCount = 0;
+    for (JsonVariant v : arr) {
+        if (newCount >= MAX_PERSONALITIES) break;
+        if (!v.is<JsonObject>()) continue;
+        deserializePersonality(tmp[newCount], v.as<JsonObject>()); // legge vecchio gAllPersonalities
+        newCount++;
+    }
+    if (newCount == 0) { heap_caps_free(tmp); return false; }
+    // Swap atomico
+    for (int i = 0; i < newCount; i++) gAllPersonalities[i] = tmp[i];
+    for (int i = newCount; i < MAX_PERSONALITIES; i++) memset(&gAllPersonalities[i], 0, sizeof(Personality));
+    heap_caps_free(tmp);
+    gPersonalityCount = newCount;
+    int active = doc["active"] | 0;
+    if (active < 0 || active >= gPersonalityCount) active = 0;
+    setActiveByIndex(active);
+    if (outActive) *outActive = active;
+    return true;
+}
 
-    freeActivePers();
-    gpActivePers = allocPersonalityPSRAM();
-    if (!gpActivePers) return;
+void loadPersonalities() {
+    gPersonalitiesOrigin = loadPersonalitiesFromFS();
+    // Se RAM proviene da SPIFFS e SD è disponibile, fai mirror immediato su SD.
+    if (gPersonalitiesOrigin == PORG_SPIFFS && sdAvailable) {
+        Serial.println("[PERS] origin=SPIFFS ma SD disponibile: mirror su SD");
+        if (writePersFile(serializeAllPersonalities())) gPersonalitiesOrigin = PORG_SD;
+    }
+    sdSetOnAppearCallback(reconcilePersonalitiesWithSD);
+}
 
-    deserializePersonality(*gpActivePers, arr[idx].as<JsonObject>());
-    gActivePersonality = idx;
+// Chiamata quando SD passa da assente a presente. Politica:
+//   - se SD ha personalities.json valido → carico quello (SD vince sempre)
+//   - se SD vuota e RAM viene da SPIFFS/DEFAULT → mirror su SD
+//   - SPIFFS non viene mai cancellato (resta come backup)
+void reconcilePersonalitiesWithSD() {
+    if (!sdAvailable) return;
+    recoverInterruptedWrite(SD_MMC, PERS_FILE, PERS_FILE_TMP);
+    bool sdHasFile = SD_MMC.exists(PERS_FILE);
+    if (sdHasFile) {
+        if (gPersonalitiesOrigin == PORG_SD) return; // già in sync
+        Serial.println("[PERS] reconcile: SD comparsa con file presente → ricarico da SD");
+        gPersonalitiesOrigin = loadPersonalitiesFromFS();
+    } else {
+        Serial.println("[PERS] reconcile: SD comparsa vuota → mirror RAM su SD");
+        if (writePersFile(serializeAllPersonalities())) gPersonalitiesOrigin = PORG_SD;
+    }
+}
 
-    // persiste l'indice attivo
-    doc["active"] = idx;
-    String out; serializeJson(doc, out);
-    File fw = SPIFFS.open("/personalities.json", "w");
-    if (fw) { fw.print(out); fw.close(); }
-
-    applyActivePersonality();
+void activatePersonality(int idx) {
+    if (idx < 0 || idx >= gPersonalityCount) {
+        Serial.printf("[PERS] activate: idx %d fuori range (count=%d)\n", idx, gPersonalityCount);
+        return;
+    }
+    setActiveByIndex(idx);
+    savePersonalities();
     Serial.printf("[PERS] attivata: \"%s\" (idx=%d)\n", gpActivePers->name, idx);
 }
 
@@ -318,46 +454,75 @@ const FurbyActionDef* findFurbyAction(const char* id) {
 }
 
 void speakText(const String& text) {
-    if (gSimSkipTts) { Serial.printf("[SPEAK] skip-TTS: \"%s\"\n", text.c_str()); return; }
-    sdCheck();
-    if (gSimAudioLocal) {
-        String f = generateAndSaveTTS_SD(text);
-        if (f.length() > 0) {
-            updateCacheJSON(f, text);
-            gSimAudioFile = f;
-            SIMLOG(String("[SIM] AUDIO_FILE=") + f);
-        } else {
-            SIMLOG("[SIM] TTS fallito - nessun file generato");
-        }
+    bool inSim = (gSimLog != nullptr);
+    // skip_tts: non chiamare TTS, dichiara cosa avrei fatto e basta
+    if (gSimSkipTts) {
+        SIMSTEP(String("→ TTS: SKIP (skip_tts attivo) — avrei generato \"") + text + "\"");
         return;
     }
-    Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
+    sdCheck();
+    // audio_local (simulazione): genera ma manda al browser, niente riproduzione ESP.
+    // Senza SD non c'è cache su cui appoggiarsi: genera+streamma comunque e NON salvare nulla.
+    if (gSimAudioLocal) {
+        if (!sdAvailable) {
+            SIMSTEP(String("→ TTS: genero \"") + text + "\" (senza SD: nessuna cache, file volatile non disponibile per audio_local)");
+            SIMSTEP("→ audio: SKIP invio browser — serve SD per produrre un path scaricabile");
+            return;
+        }
+        SIMSTEP(String("→ TTS: genero \"") + text + "\" (SD)");
+        uint32_t t0 = millis();
+        String f = generateAndSaveTTS_SD(text);
+        if (f.length() == 0) { SIMSTEP(String("← TTS: ERRORE (") + String(millis() - t0) + "ms)"); return; }
+        updateCacheJSON(f, text);
+        gSimAudioFile = f;
+        SIMSTEP(String("← TTS: file=") + f + " (" + String(millis() - t0) + "ms)");
+        SIMSTEP("→ audio: invio al browser (skip riproduzione ESP)");
+        return;
+    }
+    // produzione:
+    //  - con SD: TTS+save+play da cache (riusabile)
+    //  - senza SD: streaming RAM puro, NESSUNA cache mai
+    if (inSim) SIMSTEP(String("→ TTS+play: \"") + text + "\" (" + (sdAvailable ? "SD cache" : "RAM stream — no SD, no cache") + ")");
+    else Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
     if (sdAvailable) generateAndPlayTTS_SD(text);
     else             streamAndPlayTTS_RAM(text);
 }
 
+// helper: esegue (o logga skip di) un'azione BLE Furby
+static void runFurbyAction(const FurbyActionDef* act) {
+    if (!act) return;
+    if (gDryRun || gSimSkipBle) {
+        SIMSTEP(String("→ BLE: SKIP (skip_ble attivo) — comando ") + act->id + " (\"" + act->label + "\")");
+        return;
+    }
+    SIMSTEP(String("→ BLE: invio ") + act->id + " (\"" + act->label + "\")");
+    furbyWrite(act->cmd, act->len);
+    SIMSTEP("  attesa 1500ms (movimento fisico)");
+    delay(1500);
+}
+
 // ── Esecuzione conseguenza ────────────────────────────────────────────────────
 void executeConsequence(const Consequence& csq, const String& base64Img, const String& sttText, const char* behName, uint8_t sensorId) {
-    Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
+    bool inSim = (gSimLog != nullptr);
+    if (!inSim) Serial.printf("[CSQ] tipo=%d snapshot=%d testo=\"%s\"\n", csq.type, csq.snapshot, csq.text);
+
     switch (csq.type) {
+
         case CSQ_FURBY_ACTION: {
             const FurbyActionDef* act = findFurbyAction(csq.action_id);
-            if (act) {
-                if (gDryRun || gSimSkipBle) {
-                    Serial.printf("[CSQ] BLE SKIPPATA: %s\n", act->label);
-                } else {
-                    furbyWrite(act->cmd, act->len); delay(1500);
-                }
-            } else {
-                Serial.printf("[CSQ] ERRORE: azione \"%s\" non trovata\n", csq.action_id);
-            }
+            if (!act) { SIMSTEP(String("ERRORE: azione \"") + csq.action_id + "\" non trovata"); break; }
+            runFurbyAction(act);
             break;
         }
+
         case CSQ_TTS_FIXED: {
             String t = String(csq.text); t.trim();
-            if (t.length() > 0) speakText(t);
+            if (t.length() == 0) { SIMSTEP("testo vuoto, nulla da pronunciare"); break; }
+            SIMSTEP(String("testo: \"") + t + "\"");
+            speakText(t);
             break;
         }
+
         case CSQ_PROMPT_FIXED:
         case CSQ_PROMPT_LLM: {
             String img = csq.snapshot ? base64Img : "";
@@ -368,17 +533,23 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 userMsg = sttText.length() > 0
                     ? "L'utente ha detto: \"" + sttText + "\". " + String(csq.text)
                     : String(csq.text);
-            // contesto aggiuntivo richiesto dalla regola
             if (csq.ctx_beh_name && behName && behName[0])
                 userMsg = "[Regola attiva: \"" + String(behName) + "\"] " + userMsg;
             if (csq.ctx_sensor && sensorId > 0 && sensorId < SEN_COUNT) {
                 const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
                 userMsg = "[Sensore: " + String(sname) + "] " + userMsg;
             }
+            SIMSTEP(String("snapshot: ") + (csq.snapshot ? (img.length() ? "si (" + String(img.length()) + " char base64)" : "richiesto ma non disponibile") : "no"));
+            SIMSTEP(String("→ LLM INVIO:"));
+            SIMSUB(String("system: \"") + _short(gPersonalityPrompt) + "\"");
+            SIMSUB(String("user:   \"") + _short(userMsg) + "\"");
+
             if (csq.reaction_count == 0) {
+                uint32_t t0 = millis();
                 String answer = callLLM(img, gPersonalityPrompt, userMsg);
-                if (answer.length() > 0) speakText(answer);
-                else SIMLOG("[CSQ] ERRORE: LLM risposta vuota");
+                SIMSTEP(String("← LLM RICEZIONE (") + String(millis() - t0) + "ms): \"" + _short(answer) + "\"");
+                if (answer.length() == 0) { SIMSTEP("ERRORE: risposta vuota"); break; }
+                speakText(answer);
             } else {
                 String reactList;
                 for (int r = 0; r < csq.reaction_count; r++) {
@@ -389,62 +560,80 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                     " Rispondi SOLO con JSON valido (niente altro testo): "
                     "{\"action\":\"id_o_null\",\"speech_before\":\"...\",\"speech_after\":\"...\"}."
                     " Frasi max 6 parole o null. Azioni disponibili:\n" + reactList;
+                SIMSUB(String("reazioni ammesse: ") + String(csq.reaction_count));
+                uint32_t t0 = millis();
                 String answer = callLLM(img, sys, userMsg);
+                SIMSTEP(String("← LLM RICEZIONE (") + String(millis() - t0) + "ms): \"" + _short(answer) + "\"");
                 String speechBefore, speechAfter, actionId;
                 auto rdoc = JsonDocPsram();
                 if (deserializeJson(rdoc, answer) == DeserializationError::Ok) {
                     speechBefore = rdoc["speech_before"] | "";
                     speechAfter  = rdoc["speech_after"]  | "";
                     actionId     = rdoc["action"]         | "";
+                    SIMSUB(String("parse JSON ok — before=\"") + speechBefore + "\" action=" + actionId + " after=\"" + speechAfter + "\"");
                 } else {
                     speechBefore = answer;
+                    SIMSUB("parse JSON fallito, tratto tutto come speech_before");
                 }
                 if (speechBefore.length() > 0 && speechBefore != "null") speakText(speechBefore);
                 if (actionId.length() > 0 && actionId != "null") {
                     const FurbyActionDef* act = findFurbyAction(actionId.c_str());
-                    if (act) {
-                        if (gDryRun || gSimSkipBle) SIMLOG(String("[CSQ] BLE SKIPPATA: ") + act->label);
-                        else { furbyWrite(act->cmd, act->len); delay(1500); }
-                    }
+                    if (act) runFurbyAction(act);
+                    else SIMSTEP(String("azione id=\"") + actionId + "\" non trovata");
                 }
                 if (speechAfter.length() > 0 && speechAfter != "null") speakText(speechAfter);
             }
             break;
         }
+
         case CSQ_CANNED: {
             if (!gpActivePers || gpActivePers->canned_count == 0) {
-                SIMLOG("[CSQ] CANNED: nessuna frase pronta nella personality attiva");
+                SIMSTEP("nessuna frase pronta definita per questa personality");
                 break;
             }
             int idx = -1;
             if (csq.canned_random || csq.canned_id[0] == 0) {
                 idx = (int)(esp_random() % (uint32_t)gpActivePers->canned_count);
+                SIMSTEP(String("selezione: casuale tra ") + String(gpActivePers->canned_count) + " frasi");
             } else {
                 for (int i = 0; i < gpActivePers->canned_count; i++) {
                     if (strcmp(gpActivePers->canned[i].id, csq.canned_id) == 0) { idx = i; break; }
                 }
+                SIMSTEP(String("selezione: id=") + csq.canned_id);
             }
-            if (idx < 0) { SIMLOG(String("[CSQ] CANNED: id non trovato: ") + csq.canned_id); break; }
+            if (idx < 0) { SIMSTEP(String("ERRORE: canned_id \"") + csq.canned_id + "\" non trovato"); break; }
             CannedPhrase& cp = gpActivePers->canned[idx];
             String text = String(cp.text);
             String file = String(cp.file);
+            SIMSTEP(String("→ scelta: \"") + text + "\" (id=" + cp.id + ")");
+            SIMSTEP(String("cache file: ") + (file.length() ? file : "(non ancora generato)"));
+
             if (gSimSkipTts) {
-                SIMLOG(String("[MOCKED]\nplay: ") + (file.length() ? file : "(da generare)") + " (" + text + ")");
+                if (file.length() == 0) SIMSKIP("TTS (skip_tts) — avrei generato e marcato come canned");
+                else                     SIMSKIP("riproduzione (skip_tts) — file gia' pronto: " + file);
                 break;
             }
-            sdCheck();
             if (file.length() == 0) {
+                sdCheck();
+                uint32_t t0 = millis();
                 String saved = generateAndSaveTTS_SD(text);
-                if (saved.length() == 0) { SIMLOG("[CSQ] CANNED: TTS fallito"); break; }
+                if (saved.length() == 0) { SIMSTEP(String("← TTS: ERRORE (") + String(millis() - t0) + "ms)"); break; }
                 strlcpy(cp.file, saved.c_str(), sizeof(cp.file));
                 updateCacheJSONCanned(saved, text);
                 savePersonalities();
                 file = saved;
+                SIMSTEP(String("← TTS: salvato come ") + file + " (" + String(millis() - t0) + "ms, marcato canned)");
             }
-            Serial.printf("[CSQ] CANNED play: %s (%s)\n", file.c_str(), text.c_str());
+            if (gSimAudioLocal) {
+                gSimAudioFile = file;
+                SIMSTEP("→ audio: invio al browser (skip riproduzione ESP)");
+                break;
+            }
+            SIMSTEP(String("→ play: ") + file);
             playAudioSD(file);
             break;
         }
+
         case CSQ_PROMPT_AUTO: {
             String img = csq.snapshot ? base64Img : "";
             String userMsg = sttText.length() > 0 ? sttText : String(csq.text);
@@ -462,20 +651,22 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
             String sys = gPersonalityPrompt + (isEn
                 ? " Choose ONE action from this list and reply with ONLY its id, nothing else:\n"
                 : " Scegli UNA SOLA azione da questo elenco e rispondi con SOLO il suo id, nient'altro:\n") + actionList;
+            SIMSTEP(String("azioni disponibili: ") + String(FURBY_ACTIONS_COUNT));
+            SIMSTEP("→ LLM INVIO:");
+            SIMSUB(String("user: \"") + _short(userMsg) + "\"");
+            uint32_t t0 = millis();
             String answer = callLLM(img, sys, userMsg);
             answer.trim();
+            SIMSTEP(String("← LLM RICEZIONE (") + String(millis() - t0) + "ms): \"" + answer + "\"");
             const FurbyActionDef* act = findFurbyAction(answer.c_str());
-            if (act) {
-                SIMLOG("[CSQ] PROMPT_AUTO → azione scelta: " + String(act->id) + " (" + act->label + ")");
-                if (gDryRun || gSimSkipBle) SIMLOG(String("[CSQ] BLE SKIPPATA: ") + act->label);
-                else { furbyWrite(act->cmd, act->len); delay(1500); }
-            } else {
-                SIMLOG("[CSQ] PROMPT_AUTO - azione LLM non valida: \"" + answer + "\"");
-            }
+            if (!act) { SIMSTEP(String("ERRORE: id azione non valido \"") + answer + "\""); break; }
+            SIMSTEP(String("→ azione scelta: ") + act->id + " (\"" + act->label + "\")");
+            runFurbyAction(act);
             break;
         }
+
         default:
-            Serial.printf("[CSQ] tipo sconosciuto: %d\n", csq.type);
+            SIMSTEP(String("tipo conseguenza sconosciuto: ") + String((int)csq.type));
             break;
     }
 }
@@ -483,7 +674,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
 // ── Simulazione (debug, dry-run, personalità non attiva via idx) ──────────────
 String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText, bool skipLlm, int personalityIdx) {
     String log;
-    auto L = [&](const String& s){ log += s + "\n"; Serial.println(s); };
+    gSimLog = &log; // attivato per primo così SIMACT/SIMSTEP funzionano da subito
 
     bool prevDry = gDryRun;
     gDryRun = true;
@@ -496,49 +687,32 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     if (!savedBehaviors) savedBehaviors = new EventBehavior[MAX_EVENT_BEHAVIORS];
     for (int i = 0; i < gEventBehaviorCount; i++) savedBehaviors[i] = gEventBehaviors[i];
 
+    Personality* prevActive = gpActivePers;     // ripristinato a fine simulazione
+    int          prevActiveIdx = gActivePersonality;
     Personality* debugPers = nullptr;
-    bool ownDebugPers = false;
 
-    if (personalityIdx >= 0 && personalityIdx != gActivePersonality) {
-        // carica temporaneamente la personalità debug in PSRAM
-        File f = SPIFFS.open("/personalities.json", "r");
-        if (f) {
-            auto doc = JsonDocPsram();
-            if (deserializeJson(doc, f) == DeserializationError::Ok) {
-                JsonArray arr = doc["personalities"].as<JsonArray>();
-                if (personalityIdx < (int)arr.size()) {
-                    debugPers = allocPersonalityPSRAM();
-                    if (debugPers) {
-                        deserializePersonality(*debugPers, arr[personalityIdx].as<JsonObject>());
-                        ownDebugPers = true;
-                        gPersonalityPrompt  = String(debugPers->prompt);
-                        gPersonalityVoiceId = String(debugPers->voice_id);
-                        gEventBehaviorCount = debugPers->behavior_count;
-                        for (int i = 0; i < debugPers->behavior_count; i++) gEventBehaviors[i] = debugPers->behaviors[i];
-                        L("[SIM] personalità debug: \"" + String(debugPers->name) + "\"");
-                    }
-                }
-            }
-            f.close();
-        }
-        if (!debugPers) L("[SIM] WARN: personalità idx=" + String(personalityIdx) + " non trovata, uso attiva");
+    SIMACT("Setup simulazione");
+    if (personalityIdx >= 0 && personalityIdx != gActivePersonality && personalityIdx < gPersonalityCount) {
+        debugPers = &gAllPersonalities[personalityIdx];
+        // swap temporaneo dell'attiva: serve a executeConsequence per leggere le canned giuste
+        gpActivePers = debugPers;
+        gActivePersonality = personalityIdx;
+        gPersonalityPrompt  = String(debugPers->prompt);
+        gPersonalityVoiceId = String(debugPers->voice_id);
+        gPersonalityLang    = debugPers->lang[0] ? String(debugPers->lang) : "it";
+        gEventBehaviorCount = debugPers->behavior_count;
+        for (int i = 0; i < debugPers->behavior_count; i++) gEventBehaviors[i] = debugPers->behaviors[i];
+        SIMSTEP(String("personalità (debug): \"") + debugPers->name + "\"");
+    } else if (personalityIdx >= 0 && personalityIdx >= gPersonalityCount) {
+        SIMSTEP(String("WARN: personalità idx=") + String(personalityIdx) + " fuori range, uso attiva");
     }
-
-    if (!debugPers) {
-        L("[SIM] personalità: \"" + String(gpActivePers ? gpActivePers->name : "?") + "\" (attiva)");
-    }
-    L("[SIM] prompt: \"" + gPersonalityPrompt + "\"");
-    L("[SIM] lingua: " + gPersonalityLang + " | voice: " + gPersonalityVoiceId);
-
-    if (skipLlm)       L("[SIM] skip-LLM attivo - chiamate LLM simulate");
-    if (gSimSkipTts)   L("[SIM] skip-TTS attivo - audio non riprodotto");
-    if (gSimSkipBle)   L("[SIM] skip-BLE attivo - azioni Furby non inviate (sovrascrive gDryRun)");
-    L("[SIM] trigger=" + String(trg) + " sensorId=" + String(sensorId)
-      + " behaviors=" + String(gEventBehaviorCount));
-
+    if (!debugPers) SIMSTEP(String("personalità (attiva): \"") + (gpActivePers ? gpActivePers->name : "?") + "\"");
+    SIMSTEP(String("lingua: ") + gPersonalityLang + " | voice: " + gPersonalityVoiceId);
+    SIMSTEP(String("prompt: \"") + _short(gPersonalityPrompt) + "\"");
+    SIMSTEP(String("trigger: ") + (trg==TRG_VAD?"VAD":trg==TRG_BUTTON?"BOTTONE":"SENSORE") + (trg==TRG_SENSOR?(String(" id=")+sensorId):""));
+    SIMSTEP(String("flag: skip_llm=") + (skipLlm?"ON":"OFF") + " | skip_tts=" + (gSimSkipTts?"ON":"OFF") + " | skip_ble=" + (gSimSkipBle?"ON":"OFF") + " | audio_local=" + (gSimAudioLocal?"ON":"OFF"));
     String sttText = vadText;
-    if (sttText.length() > 0)
-        L("[SIM] testo VAD simulato: \"" + sttText + "\"");
+    if (sttText.length() > 0) SIMSTEP(String("VAD simulato: \"") + sttText + "\"");
 
     EventBehavior* beh = nullptr;
     for (int i = 0; i < gEventBehaviorCount; i++) {
@@ -546,51 +720,48 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
         if (b.trigger != trg) continue;
         if (trg == TRG_SENSOR && b.sensor_id != sensorId) continue;
         beh = &b;
-        L("[SIM] comportamento trovato: \"" + String(b.name) + "\" (" + String(b.consequence_count) + " conseguenze)");
+        SIMSTEP(String("comportamento match: \"") + b.name + "\" (" + String(b.consequence_count) + " azioni)");
         break;
     }
+    if (!beh) SIMSTEP("nessun comportamento match - userò processStimulusDefault");
 
     // cattura camera solo se almeno una conseguenza la richiede
     bool needsCam = false;
     if (beh) { for (int c = 0; c < beh->consequence_count; c++) if (beh->consequences[c].snapshot) { needsCam = true; break; } }
-    else needsCam = true; // processStimulusDefault la usa sempre
+    else needsCam = true;
 
     String base64Img;
+    SIMACT("Camera");
     if (needsCam) {
         if (camActive || camInit()) {
             camTouch();
             camApplySettings(camSnapSize, camSnapQuality);
+            uint32_t t0 = millis();
             camera_fb_t* fb = esp_camera_fb_get();
             if (fb) {
                 base64Img = base64Encode(fb->buf, fb->len);
                 esp_camera_fb_return(fb);
-                L("[SIM] camera: frame catturato (" + String(base64Img.length()) + " char base64)");
+                SIMSTEP(String("frame catturato in ") + String(millis()-t0) + "ms → " + String(base64Img.length()) + " char base64");
             } else {
-                L("[SIM] camera: esp_camera_fb_get() NULL, procedo senza immagine");
+                SIMSTEP("esp_camera_fb_get() NULL, procedo senza immagine");
             }
             camApplySettings(camStreamSize, camStreamQuality);
         } else {
-            L("[SIM] camera: non disponibile");
+            SIMSTEP("camera: non disponibile");
         }
     } else {
-        L("[SIM] camera: non richiesta da questo behavior");
+        SIMSTEP("non richiesta da questo behavior");
     }
 
-    gSimLog = &log;
-
     if (!beh) {
-        L("[SIM] nessun comportamento specifico - uso processStimulusDefault");
-        if (!skipLlm) processStimulusDefault(base64Img);
-        else L("[SIM] processStimulusDefault SKIPPATO (skip-LLM)");
+        SIMACT("Stimolo default (no behavior match)");
+        if (skipLlm) SIMSKIP("processStimulusDefault (skip_llm)");
+        else         processStimulusDefault(base64Img);
     } else {
         for (int c = 0; c < beh->consequence_count; c++) {
             const Consequence& csq = beh->consequences[c];
+            SIMACT(String("Azione ") + String(c+1) + "/" + String(beh->consequence_count) + " — " + _csqTypeName(csq.type));
             bool isLlm = (csq.type == CSQ_PROMPT_LLM || csq.type == CSQ_PROMPT_FIXED || csq.type == CSQ_PROMPT_AUTO);
-            L("[SIM] conseguenza " + String(c+1) + "/" + String(beh->consequence_count)
-              + " tipo=" + String(csq.type)
-              + (csq.action_id[0] ? String(" action=") + csq.action_id : "")
-              + (csq.text[0]      ? String(" testo=\"") + csq.text + "\"" : "")
-              + (csq.snapshot     ? " [snapshot]" : ""));
             if (isLlm && skipLlm) {
                 String simMsg = sttText.length() > 0 ? sttText : String(csq.text);
                 if (simMsg.length() == 0) simMsg = "Reagisci allo stimolo ricevuto.";
@@ -600,16 +771,19 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
                     const char* sname = (gPersonalityLang == "en") ? SENSOR_NAMES_EN[sensorId] : SENSOR_NAMES[sensorId];
                     simMsg = "[Sensore: " + String(sname) + "] " + simMsg;
                 }
-                L("[SIM] → LLM SKIPPATO - userMsg sarebbe: \"" + simMsg + "\"");
+                SIMSKIP(String("LLM (skip_llm) — userMsg sarebbe: \"") + simMsg + "\"");
             }
-            else
-                executeConsequence(csq, base64Img, sttText, beh->name, sensorId);
+            else executeConsequence(csq, base64Img, sttText, beh->name, sensorId);
         }
     }
 
+    SIMACT("Fine");
     gSimLog = nullptr;
 
-    if (ownDebugPers) { free(debugPers); debugPers = nullptr; }
+    // debugPers è un puntatore dentro gAllPersonalities, non va liberato.
+    // Ripristino i puntatori dell'attiva se erano stati swappati.
+    gpActivePers       = prevActive;
+    gActivePersonality = prevActiveIdx;
 
     gPersonalityPrompt  = savedPrompt;
     gPersonalityVoiceId = savedVoiceId;

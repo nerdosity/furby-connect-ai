@@ -351,17 +351,36 @@ void sdUnmount() {
 }
 
 // Chiamata prima di ogni accesso SD e al caricamento di /sys/info.
-// Se montata e card non risponde → unmount. Se non montata → prova mount.
+// Lazy + cooldown 30s: se non montata, riprova mount al massimo ogni 30s
+// per evitare spam I/O. Se SD passa da assente a presente, triggera reconcile
+// delle personalities (via callback installata da loadPersonalities).
+static uint32_t _sdLastMountAttempt = 0;
+static void (*_sdOnAppearCb)() = nullptr;
+
+void sdSetOnAppearCallback(void (*cb)()) { _sdOnAppearCb = cb; }
+
 bool sdCheck() {
     if (sdAvailable) {
         if (SD_MMC.cardType() == CARD_NONE) {
             Serial.println("SD: rimossa - modalita RAM streaming");
             sdUnmount();
+            _sdLastMountAttempt = 0; // permetti retry immediato al prossimo check
         }
     } else {
+        uint32_t now = millis();
+        if (_sdLastMountAttempt != 0 && (now - _sdLastMountAttempt) < 30000) return false;
+        _sdLastMountAttempt = now;
+        bool wasUnavail = !sdAvailable;
         sdMount();
+        if (sdAvailable && wasUnavail && _sdOnAppearCb) _sdOnAppearCb();
     }
     return sdAvailable;
+}
+
+// Force-check: ignora il cooldown (usata da /sd/reinit dopo inserimento manuale).
+bool sdCheckForce() {
+    _sdLastMountAttempt = 0;
+    return sdCheck();
 }
 
 // ── Camera ────────────────────────────────────────────────────────────────────

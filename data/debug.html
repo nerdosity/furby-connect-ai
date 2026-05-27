@@ -239,13 +239,12 @@ function setLang(l){
       </div>
       <span class="text-muted small" id="fm-quota">-</span>
       <span class="text-muted small font-monospace" id="fm-path" style="display:none">/</span>
-      <button class="btn btn-outline-secondary px-3" id="fm-up-dir-btn" onclick="fmDirUp()" style="display:none"><i class="bi bi-arrow-up"></i> Su</button>
       <button class="btn btn-success px-3 ms-auto" onclick="fmRefresh()"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
     </div>
     <div id="fm-absent" class="text-muted small d-none">SD non presente.</div>
     <div class="table-responsive">
-      <table class="table table-sm table-hover">
-        <thead class="table-light"><tr><th data-i18n="fm.header_name">File</th><th data-i18n="fm.header_size">Dim.</th><th class="text-end" colspan="2"></th></tr></thead>
+      <table class="table table-sm table-hover" id="fm-table">
+        <thead class="table-light" id="fm-thead"></thead>
         <tbody id="fm-tbody"><tr><td colspan="4" class="text-center text-muted" data-i18n="fm.loading">carico...</td></tr></tbody>
       </table>
     </div>
@@ -505,10 +504,20 @@ function stopMicPoll(){
 
 var fmCurrentPath='';
 function fmFmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}
+function fmFmtDate(sec){
+  if(!sec||sec<=0)return '—';
+  var d=new Date(sec*1000);
+  if(isNaN(d.getTime())||d.getFullYear()<2000)return '—';
+  var p=function(n){return(n<10?'0':'')+n;};
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
 // ── File manager unificato (SPIFFS + SD) ──────────────────────────────────
 var fmSource='spiffs'; // 'spiffs' | 'sd'
 var fmCurDir='/';      // usato solo per SD
 var fmCurrentPath='';
+var fmFiles=[];        // ultimo payload .files dal backend
+var fmSortKey='name';  // 'name' | 'size' | 'mtime'
+var fmSortDir=1;       // 1 asc, -1 desc
 
 function fmSetSource(src){
   fmSource=src;
@@ -518,60 +527,111 @@ function fmSetSource(src){
   pathEl.style.display=(src==='sd')?'':'none';
   fmEditorClose();
   fmCurDir='/';
+  if(fmSortKey==='mtime'&&src==='spiffs'){fmSortKey='name';fmSortDir=1;}
   fmRefresh();
 }
 
 function fmRefresh(){ fmLoadDir(fmCurDir); }
 
+function fmColsCount(){ return fmSource==='sd' ? 5 : 4; }
+
+function fmRenderHead(){
+  var thead=document.getElementById('fm-thead');
+  var arrow=function(k){ return fmSortKey===k ? (fmSortDir>0?' ▲':' ▼') : ''; };
+  var html='<tr>'
+    +'<th role="button" onclick="fmSortBy(\'name\')">Nome'+arrow('name')+'</th>'
+    +'<th role="button" onclick="fmSortBy(\'size\')">Dim.'+arrow('size')+'</th>';
+  if(fmSource==='sd') html+='<th role="button" onclick="fmSortBy(\'mtime\')">Modifica'+arrow('mtime')+'</th>';
+  html+='<th class="text-end"></th></tr>';
+  thead.innerHTML=html;
+}
+
+function fmSortBy(k){
+  if(fmSortKey===k) fmSortDir=-fmSortDir;
+  else { fmSortKey=k; fmSortDir=1; }
+  fmRenderHead();
+  fmRenderBody();
+}
+
 function fmLoadDir(dir){
   if(fmSource==='spiffs') dir='/';
   fmCurDir=dir;
   document.getElementById('fm-path').textContent=dir;
-  document.getElementById('fm-up-dir-btn').style.display=(fmSource==='sd'&&dir!=='/')?'':'none';
   document.getElementById('fm-absent').classList.add('d-none');
-  document.getElementById('fm-tbody').innerHTML='<tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm text-secondary"></span></td></tr>';
+  fmRenderHead();
+  document.getElementById('fm-tbody').innerHTML='<tr><td colspan="'+fmColsCount()+'" class="text-center py-3"><span class="spinner-border spinner-border-sm text-secondary"></span></td></tr>';
   var url=(fmSource==='spiffs')?'/fs/list':'/sd/list?dir='+encodeURIComponent(dir);
   fetch(url).then(r=>r.json()).then(function(d){
     if(d.error){document.getElementById('fm-absent').classList.remove('d-none');document.getElementById('fm-tbody').innerHTML='';return;}
     var label=(fmSource==='spiffs')?'SPIFFS':'SD';
-    var used=d.used||0;
-    var total=d.total||0;
-    document.getElementById('fm-quota').textContent=label+': '+fmFmtSize(used)+' / '+fmFmtSize(total)+' usati';
-    var tb=document.getElementById('fm-tbody');
-    if(!d.files||!d.files.length){tb.innerHTML='<tr><td colspan="4" class="text-center text-muted">'+t('fm.no_files')+'</td></tr>';return;}
-    var rows='';
-    d.files.forEach(function(f){
-      var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-      if(fmSource==='sd'&&f.dir){
-        var fullPath=(dir==='/'?'':dir)+'/'+f.name;
-        rows+='<tr><td class="font-monospace small" colspan="2"><i class="bi bi-folder-fill text-warning me-1"></i>'
-          +'<a href="#" onclick="fmLoadDir(\''+fullPath.replace(/'/g,"\\'")+'\');return false;" class="text-decoration-none">'+n+'</a></td>'
-          +'<td colspan="2"></td></tr>';
-      } else {
-        var filePath=(fmSource==='spiffs')?f.name:(dir==='/'?'':dir)+'/'+f.name;
-        var ro=fmSource==='spiffs'&&(/\.(html|htm|css|js|woff2|png)$/.test(f.name)||f.name==='/version.txt');
-        var editable=!ro&&/\.(json|txt|md|sh|conf|config|cfg|ini|yaml|yml|log|csv|xml|html|htm|js|css|py|lua|c|cpp|h|ino)$/i.test(f.name);
-        var playable=/\.(mp3|wav)$/i.test(f.name);
-        var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath+'?dl=1':'/sd/get?dl=1&path='+encodeURIComponent(filePath);
-        var pe=filePath.replace(/'/g,"\\'");
-        rows+='<tr>'
-          +'<td class="font-monospace small text-break">'+(fmSource==='sd'?'<i class="bi bi-file-earmark me-1 text-muted"></i>':'')+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
-          +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
-          +'<td class="text-end">'
-          +(playable?'<button class="btn btn-outline-primary btn-sm py-0 me-1" onclick="fmPlay(\''+pe+'\')"><i class="bi bi-play-fill"></i></button>':'')
-          +(editable?'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+pe+'\')"><i class="bi bi-pencil"></i></button>':'')
-          +'<a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="'+dlHref+'" download><i class="bi bi-download"></i></a>'
-          +(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+pe+'\')"><i class="bi bi-trash3"></i></button>')
-          +'</td></tr>';
-      }
-    });
-    tb.innerHTML=rows;
-  }).catch(function(){document.getElementById('fm-tbody').innerHTML='<tr><td colspan="4" class="text-danger">'+t('fm.net_err')+'</td></tr>';});
+    document.getElementById('fm-quota').textContent=label+': '+fmFmtSize(d.used||0)+' / '+fmFmtSize(d.total||0)+' usati';
+    fmFiles=d.files||[];
+    fmRenderBody();
+  }).catch(function(){document.getElementById('fm-tbody').innerHTML='<tr><td colspan="'+fmColsCount()+'" class="text-danger">'+t('fm.net_err')+'</td></tr>';});
 }
 
-function fmDirUp(){
-  var parts=fmCurDir.split('/').filter(Boolean);parts.pop();
-  fmLoadDir(parts.length?'/'+parts.join('/'):'/' );
+function fmRenderBody(){
+  var tb=document.getElementById('fm-tbody');
+  var cols=fmColsCount();
+  var dir=fmCurDir;
+  // sort: directory sempre prima, poi secondo chiave
+  var sorted=fmFiles.slice().sort(function(a,b){
+    var da=!!a.dir, db=!!b.dir;
+    if(da!==db) return da?-1:1;
+    var va,vb;
+    if(fmSortKey==='size'){ va=+a.size||0; vb=+b.size||0; }
+    else if(fmSortKey==='mtime'){ va=+a.mtime||0; vb=+b.mtime||0; }
+    else { va=(a.name||'').toLowerCase(); vb=(b.name||'').toLowerCase(); }
+    if(va<vb) return -1*fmSortDir;
+    if(va>vb) return  1*fmSortDir;
+    return 0;
+  });
+
+  var rows='';
+  // riga ".." per risalire (solo SD e solo se non in root)
+  if(fmSource==='sd' && dir!=='/'){
+    var parts=dir.split('/').filter(Boolean); parts.pop();
+    var parent=parts.length?'/'+parts.join('/'):'/';
+    var parentLabelRaw=parent==='/'?'/':parts[parts.length-1];
+    var parentLabel=parentLabelRaw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    rows+='<tr><td class="font-monospace small" colspan="'+(cols-1)+'">'
+      +'<i class="bi bi-arrow-90deg-up text-secondary me-1"></i>'
+      +'<a href="#" onclick="fmLoadDir(\''+parent.replace(/'/g,"\\'")+'\');return false;" class="text-decoration-none">.. '+parentLabel+'</a>'
+      +'</td><td></td></tr>';
+  }
+
+  if(!sorted.length && !(fmSource==='sd' && dir!=='/')){
+    tb.innerHTML='<tr><td colspan="'+cols+'" class="text-center text-muted">'+t('fm.no_files')+'</td></tr>';
+    return;
+  }
+
+  sorted.forEach(function(f){
+    var n=f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    if(fmSource==='sd'&&f.dir){
+      var fullPath=(dir==='/'?'':dir)+'/'+f.name;
+      rows+='<tr><td class="font-monospace small" colspan="'+(cols-1)+'"><i class="bi bi-folder-fill text-warning me-1"></i>'
+        +'<a href="#" onclick="fmLoadDir(\''+fullPath.replace(/'/g,"\\'")+'\');return false;" class="text-decoration-none">'+n+'</a></td>'
+        +'<td></td></tr>';
+    } else {
+      var filePath=(fmSource==='spiffs')?f.name:(dir==='/'?'':dir)+'/'+f.name;
+      var ro=fmSource==='spiffs'&&(/\.(html|htm|css|js|woff2|png)$/.test(f.name)||f.name==='/version.txt');
+      var editable=!ro&&/\.(json|txt|md|sh|conf|config|cfg|ini|yaml|yml|log|csv|xml|html|htm|js|css|py|lua|c|cpp|h|ino)$/i.test(f.name);
+      var playable=/\.(mp3|wav)$/i.test(f.name);
+      var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath+'?dl=1':'/sd/get?dl=1&path='+encodeURIComponent(filePath);
+      var pe=filePath.replace(/'/g,"\\'");
+      rows+='<tr>'
+        +'<td class="font-monospace small text-break">'+(fmSource==='sd'?'<i class="bi bi-file-earmark me-1 text-muted"></i>':'')+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
+        +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
+        +(fmSource==='sd'?'<td class="text-muted text-nowrap small">'+fmFmtDate(f.mtime)+'</td>':'')
+        +'<td class="text-end">'
+        +(playable?'<button class="btn btn-outline-primary btn-sm py-0 me-1" onclick="fmPlay(\''+pe+'\')"><i class="bi bi-play-fill"></i></button>':'')
+        +(editable?'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+pe+'\')"><i class="bi bi-pencil"></i></button>':'')
+        +'<a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="'+dlHref+'" download><i class="bi bi-download"></i></a>'
+        +(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+pe+'\')"><i class="bi bi-trash3"></i></button>')
+        +'</td></tr>';
+    }
+  });
+  tb.innerHTML=rows;
 }
 
 function fmEdit(path){

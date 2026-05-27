@@ -108,7 +108,7 @@ void setup() {
         gEventBehaviors = new EventBehavior[MAX_EVENT_BEHAVIORS];
     }
     loadBehaviorConfigs();
-    loadPersonalities();
+    // NOTA: loadPersonalities() spostata DOPO il mount SD per leggere da SD se disponibile
 
     // I2C - after camInit (camera uses GPIO8/7 as SCCB); bus-stuck recovery: 9 SCL pulses
     pinMode(I2C_SCL_PIN, OUTPUT);
@@ -150,6 +150,9 @@ void setup() {
     } else {
         Serial.println("SD: assente o non riconosciuta - modalita RAM");
     }
+
+    // SD ora è stata sondata: posso caricare le personalities con la giusta priorità.
+    loadPersonalities();
 
     if (loadConfigBackupIfNeeded(nvsWasEmpty)) {
         Serial.println("[CFG] config ripristinata da backup");

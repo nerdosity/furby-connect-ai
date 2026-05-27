@@ -438,6 +438,20 @@ function _loaderDone(){
   setTimeout(function(){if(l.parentNode)l.parentNode.removeChild(l);},300);
 }
 
+// Aggiorna il testo sotto lo spinner del fb-loader. Utile per dare feedback
+// durante operazioni lente (load /personalities, /sys/info, /api/voices, ecc).
+function loaderStatus(msg){
+  var l=document.getElementById('fb-loader');
+  if(!l)return;
+  var s=l.querySelector('.fb-loader-status');
+  if(!s){
+    s=document.createElement('div');
+    s.className='fb-loader-status';
+    l.appendChild(s);
+  }
+  s.textContent=msg||'';
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   var ipEl=document.getElementById('esp-ip');
   if(ipEl)ipEl.textContent=window.location.hostname;

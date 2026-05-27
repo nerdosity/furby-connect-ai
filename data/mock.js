@@ -125,7 +125,10 @@
     var body = parseBody(init);
 
     if (method === 'GET') {
-      if (u === '/personalities')           return jres(ST.personalities);
+      if (u === '/personalities')           {
+        var p = ST.personalities;
+        return jres({ active: p.active, origin: 'spiffs', personalities: p.list });
+      }
       if (u === '/sensors/list')            return jres(SENSORS);
       if (u === '/behaviors/actions')       return jres({ actions: ACTIONS });
       if (u === '/api/home')                return jres(ST.home);

@@ -234,15 +234,17 @@ persLoad();
 
 /* ── personalities ── */
 function persLoad(onDone) {
+  if (typeof loaderStatus === 'function') loaderStatus('carico personalities...');
   fetch('/personalities')
     .then(r => r.json())
     .then(data => {
       personalities = (data.personalities || []).filter(p => p != null);
       activeIdx = data.active || 0;
+      if (typeof loaderStatus === 'function') loaderStatus('personalities: ' + personalities.length + (data.origin ? ' (origin: ' + data.origin + ')' : ''));
       persRender();
       if (onDone) onDone();
     })
-    .catch(e => console.error('persLoad', e));
+    .catch(e => { if (typeof loaderStatus === 'function') loaderStatus('errore: /personalities'); console.error('persLoad', e); });
 }
 
 function persRender() {

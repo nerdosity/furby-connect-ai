@@ -24,6 +24,8 @@ void camApplyExposure(int gainCeiling, int brightness, int agc);
 bool sdMount();
 void sdUnmount();
 bool sdCheck();
+bool sdCheckForce();
+void sdSetOnAppearCallback(void (*cb)());
 
 void saveWifiNets();
 void loadWifiNets();
