@@ -10,6 +10,7 @@ String elOutputFormat();
 void   vadTask(void* pvParameters);
 
 String currentPersonalityDir();
+String personalityDirByIndex(int idx);
 bool   migrateFileToSD(const String& fullPath);   // SPIFFS->SD, safe, ritorna true se il file su SD esiste dopo
 String getCacheJSON();
 String getCacheSummaryJSON();

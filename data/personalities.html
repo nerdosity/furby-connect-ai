@@ -824,6 +824,15 @@ function cannedRender() {
     tr.appendChild(tdFile);
     const tdAct = document.createElement('td');
     tdAct.className = 'text-end align-middle';
+    const play = document.createElement('button');
+    play.className = 'btn btn-sm btn-outline-primary me-1';
+    play.innerHTML = '<i class="bi bi-play-fill"></i>';
+    play.disabled = !k.file;
+    play.title = k.file
+      ? 'Riproduci (rispetta il toggle "Audio sul browser" della sezione simulazione)'
+      : 'File non ancora generato (esegui la simulazione una volta per generarlo)';
+    play.onclick = () => cannedPlay(k.id);
+    tdAct.appendChild(play);
     const del = document.createElement('button');
     del.className = 'btn btn-sm btn-outline-danger';
     del.innerHTML = '<i class="bi bi-trash"></i>';
@@ -832,6 +841,30 @@ function cannedRender() {
     tr.appendChild(tdAct);
     tb.appendChild(tr);
   });
+}
+
+function cannedPlay(id) {
+  if (editIdx < 0) return;
+  const audioLocal = document.getElementById('dbg-audio-local') && document.getElementById('dbg-audio-local').checked;
+  const fd = new FormData();
+  fd.append('id', id);
+  fd.append('pers_idx', editIdx);
+  fd.append('local', audioLocal ? '1' : '0');
+  fetch('/canned/play', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { alert('Errore: ' + (d.error || 'sconosciuto')); return; }
+      if (d.played_on === 'browser' && d.audio_path) {
+        const audio = document.getElementById('sim-audio');
+        if (audio) {
+          audio.pause(); audio.removeAttribute('src');
+          audio.src = '/sd/get?path=' + encodeURIComponent(d.audio_path);
+          audio.classList.remove('d-none');
+          audio.play().catch(()=>{});
+        }
+      }
+    })
+    .catch(e => alert('Errore rete: ' + e));
 }
 
 function cannedAdd() {

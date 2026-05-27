@@ -229,6 +229,20 @@
         }
         return jres(out);
       }
+      if (u === '/canned/play') {
+        var pi = parseInt(body.pers_idx || ST.personalities.active);
+        var per = ST.personalities.list[pi];
+        if (!per) return jres({ ok:false, error:'pers_idx fuori range' }, 400);
+        var cp = (per.canned || []).find(function(k){ return k.id === body.id; });
+        if (!cp)       return jres({ ok:false, error:'canned id non trovato' }, 404);
+        if (!cp.file)  return jres({ ok:false, error:'file non ancora generato' }, 404);
+        return jres({
+          ok:true, text: cp.text,
+          audio_path: '/' + (per.id||'default') + '/' + cp.file,
+          audio_source: 'sd',
+          played_on: body.local === '1' ? 'browser' : 'esp'
+        });
+      }
       if (u === '/test/tts')                return jres({ ok:true });
       if (u === '/camera/describe')         return jres({ ok:true, text:'(mock) vedo uno sviluppatore davanti a uno schermo' });
       if (u === '/camera/settings')         { Object.assign(ST.camera, body); persist(); return jres({ ok:true }); }

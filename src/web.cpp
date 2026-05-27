@@ -1282,6 +1282,55 @@ static void handleTestSimulate() {
     server.send(200, "application/json", out);
 }
 
+// /canned/play?id=<canned_id>[&pers_idx=N][&local=1]
+// local=1 → ritorna solo audio_path per riproduzione browser, NO play ESP
+// local=0 (default) → triggera playAudioSD sull'ESP (non bloccante? sì, breve)
+static void handleCannedPlay() {
+    HTTP_LOG();
+    String id = server.arg("id");
+    if (id.length() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"id mancante\"}"); return; }
+    int persIdx = server.hasArg("pers_idx") ? server.arg("pers_idx").toInt() : gActivePersonality;
+    if (persIdx < 0 || persIdx >= gPersonalityCount) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"pers_idx fuori range\"}"); return; }
+    bool local = server.arg("local") == "1";
+
+    Personality& p = gAllPersonalities[persIdx];
+    CannedPhrase* cp = nullptr;
+    for (int i = 0; i < p.canned_count; i++) {
+        if (strcmp(p.canned[i].id, id.c_str()) == 0) { cp = &p.canned[i]; break; }
+    }
+    if (!cp)             { server.send(404, "application/json", "{\"ok\":false,\"error\":\"canned id non trovato\"}"); return; }
+    if (!cp->file[0])    { server.send(404, "application/json", "{\"ok\":false,\"error\":\"file non ancora generato (riproduci una volta via simulazione)\"}"); return; }
+    if (!sdAvailable)    { server.send(503, "application/json", "{\"ok\":false,\"error\":\"SD non disponibile\"}"); return; }
+
+    // costruisce path completo /<persId-sanitized>/<file>
+    String full = personalityDirByIndex(persIdx) + "/" + String(cp->file);
+    if (!SD_MMC.exists(full.c_str())) {
+        server.send(404, "application/json", String("{\"ok\":false,\"error\":\"file mancante su SD: ") + full + "\"}"); return;
+    }
+
+    JsonDocument resp;
+    resp["ok"]   = true;
+    resp["text"] = cp->text;
+    resp["audio_path"]   = full;
+    resp["audio_source"] = "sd";
+    if (local) {
+        // browser-only: non riprodurre sull'ESP
+        resp["played_on"] = "browser";
+    } else {
+        // riproduzione sull'ESP via I2S: playAudioSD usa la persDir() dell'ATTIVA,
+        // quindi se persIdx != attiva forzo l'utente a usare browser-mode.
+        if (persIdx != gActivePersonality) {
+            server.send(400, "application/json",
+                "{\"ok\":false,\"error\":\"riproduzione ESP disponibile solo per personality attiva (usa local=1 oppure attiva prima questa personality)\"}");
+            return;
+        }
+        playAudioSD(String(cp->file));
+        resp["played_on"] = "esp";
+    }
+    String out; serializeJson(resp, out);
+    server.send(200, "application/json", out);
+}
+
 static void handleDebugPage() {
     File f = SPIFFS.open("/debug.html", "r");
     if (!f) { server.send(503, "text/plain", "debug.html non trovato - eseguire uploadfs"); return; }
@@ -1989,6 +2038,7 @@ void startWebServer() {
     server.on("/test/voices",         HTTP_GET,  handleTestVoices);
     server.on("/test/behavior",       HTTP_POST, handleTestBehavior);
     server.on("/test/simulate",       HTTP_POST, handleTestSimulate);
+    server.on("/canned/play",         HTTP_POST, handleCannedPlay);
     server.on("/fs/list",    HTTP_GET,  handleFsList);
     server.on("/fs/put",     HTTP_POST, handleFsPut, handleFsUpload);
     server.on("/fs/del",     HTTP_POST, handleFsDel);

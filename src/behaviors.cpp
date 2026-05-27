@@ -7,12 +7,21 @@
 // ── Logging strutturato per simulazione ───────────────────────────────────────
 // In modalità simulazione (gSimLog!=nullptr) produce blocchi per-azione leggibili.
 // In modalità normale (gSimLog==nullptr) va solo su Serial.
-#define SIMLOG(s)   do { String _m = (s); Serial.println(_m);            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
-#define SIMHEAD(s)  do { String _m = (s); Serial.println(_m);            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
-#define SIMACT(s)   do { String _m = String("\n=== ") + (s) + " ===";    Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
-#define SIMSTEP(s)  do { String _m = String("  ") + (s);                 Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
-#define SIMSUB(s)   do { String _m = String("    ") + (s);               Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
-#define SIMSKIP(s)  do { String _m = String("  SKIP: ") + (s);           Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+// timestamp relativo all'inizio simulazione (azzerato in processStimulusSimulated)
+static uint32_t _simT0 = 0;
+static String _simTs() {
+    if (!_simT0) return String("[+----ms] ");
+    uint32_t d = millis() - _simT0;
+    char buf[16];
+    snprintf(buf, sizeof(buf), "[+%5lums] ", (unsigned long)d);
+    return String(buf);
+}
+#define SIMLOG(s)   do { String _m = _simTs() + (s); Serial.println(_m);                            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMHEAD(s)  do { String _m = _simTs() + (s); Serial.println(_m);                            if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMACT(s)   do { String _m = String("\n") + _simTs() + "=== " + (s) + " ===";               Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSTEP(s)  do { String _m = _simTs() + "  " + (s);                                         Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSUB(s)   do { String _m = _simTs() + "    " + (s);                                       Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
+#define SIMSKIP(s)  do { String _m = _simTs() + "  SKIP: " + (s);                                   Serial.println(_m); if (gSimLog) { *gSimLog += _m + "\n"; } } while(0)
 static String _csqTypeName(uint8_t t) {
     switch (t) {
         case CSQ_FURBY_ACTION: return "Azione Furby";
@@ -675,6 +684,7 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
 String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String& vadText, bool skipLlm, int personalityIdx) {
     String log;
     gSimLog = &log; // attivato per primo così SIMACT/SIMSTEP funzionano da subito
+    _simT0 = millis(); // timestamp 0 = inizio simulazione
 
     bool prevDry = gDryRun;
     gDryRun = true;

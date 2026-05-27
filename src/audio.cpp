@@ -31,6 +31,13 @@ static String persDir() {
 
 String currentPersonalityDir() { return persDir(); }
 
+String personalityDirByIndex(int idx) {
+    if (!gAllPersonalities || idx < 0 || idx >= gPersonalityCount) return String("/default");
+    const char* id = gAllPersonalities[idx].id;
+    String s = (id && id[0]) ? sanitizeId(id) : String("default");
+    return "/" + s;
+}
+
 static String cacheIndexPath() { return persDir() + "/index.json"; }
 
 static void ensureDirsSD(const String& fullPath) {
