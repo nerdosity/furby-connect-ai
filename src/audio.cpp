@@ -29,6 +29,8 @@ static String persDir() {
     return "/" + id;
 }
 
+String currentPersonalityDir() { return persDir(); }
+
 static String cacheIndexPath() { return persDir() + "/index.json"; }
 
 static void ensureDirsSD(const String& fullPath) {

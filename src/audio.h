@@ -9,6 +9,7 @@ void   i2s_write_mono(const int16_t* buf, int samples);
 String elOutputFormat();
 void   vadTask(void* pvParameters);
 
+String currentPersonalityDir();
 String getCacheJSON();
 String getCacheSummaryJSON();
 void   updateCacheJSON(String newFilename, String text);

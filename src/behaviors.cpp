@@ -280,6 +280,17 @@ const FurbyActionDef* findFurbyAction(const char* id) {
 void speakText(const String& text) {
     if (gSimSkipTts) { Serial.printf("[SPEAK] skip-TTS: \"%s\"\n", text.c_str()); return; }
     sdCheck();
+    if (gSimAudioLocal) {
+        String f = generateAndSaveTTS_SD(text);
+        if (f.length() > 0) {
+            updateCacheJSON(f, text);
+            gSimAudioFile = f;
+            SIMLOG(String("[SIM] AUDIO_FILE=") + f);
+        } else {
+            SIMLOG("[SIM] TTS fallito - nessun file generato");
+        }
+        return;
+    }
     Serial.printf("[SPEAK] \"%s\" (SD=%s)\n", text.c_str(), sdAvailable ? "si" : "no");
     if (sdAvailable) generateAndPlayTTS_SD(text);
     else             streamAndPlayTTS_RAM(text);
@@ -531,9 +542,10 @@ String processStimulusSimulated(TriggerType trg, uint8_t sensorId, const String&
     gEventBehaviorCount = savedBehCount;
     for (int i = 0; i < savedBehCount; i++) gEventBehaviors[i] = savedBehaviors[i];
     free(savedBehaviors);
-    gDryRun      = prevDry;
-    gSimSkipTts  = false;
-    gSimSkipBle  = false;
+    gDryRun         = prevDry;
+    gSimSkipTts     = false;
+    gSimSkipBle     = false;
+    gSimAudioLocal  = false;
     return log;
 }
 

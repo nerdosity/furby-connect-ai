@@ -1224,12 +1224,15 @@ static void handleTestSimulate() {
     if (isProcessing || isSpeaking) {
         server.send(503, "application/json", "{\"ok\":false,\"error\":\"occupato\"}"); return;
     }
-    int trg      = server.arg("trigger").toInt();
-    int sid      = server.arg("sensor_id").toInt();
-    int persIdx  = server.hasArg("personality") ? server.arg("personality").toInt() : -1;
-    bool skipLlm = server.arg("skip_llm") == "1";
-    gSimSkipTts  = server.arg("skip_tts") == "1";
-    gSimSkipBle  = server.arg("skip_ble") == "1";
+    int trg         = server.arg("trigger").toInt();
+    int sid         = server.arg("sensor_id").toInt();
+    int persIdx     = server.hasArg("personality") ? server.arg("personality").toInt() : -1;
+    bool skipLlm    = server.arg("skip_llm") == "1";
+    gSimSkipTts     = server.arg("skip_tts") == "1";
+    gSimSkipBle     = server.arg("skip_ble") == "1";
+    gSimAudioLocal  = server.arg("audio_local") == "1";
+    if (gSimAudioLocal) gSimSkipTts = false; // serve generare il file
+    gSimAudioFile   = "";
     String vadText = server.arg("vad_text");
     if (trg < 0 || trg > 2) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger non valido\"}"); return;
@@ -1240,6 +1243,12 @@ static void handleTestSimulate() {
     JsonDocument doc;
     doc["ok"]  = true;
     doc["log"] = simLog;
+    if (gSimAudioFile.length() > 0) {
+        String full = currentPersonalityDir() + "/" + gSimAudioFile; // es "/Default/it/3.pcm"
+        doc["audio_path"]   = full;
+        doc["audio_source"] = sdAvailable && SD_MMC.exists(full.c_str()) ? "sd" : "spiffs";
+    }
+    gSimAudioFile = "";
     String out; serializeJson(doc, out);
     server.send(200, "application/json", out);
 }

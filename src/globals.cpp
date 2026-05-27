@@ -249,9 +249,11 @@ volatile bool isSpeaking      = false;
 volatile bool wakeUpTriggered = false;
 volatile bool isProcessing    = false;
 volatile bool gDryRun         = false;
-bool     gSimSkipTts = false;
-bool     gSimSkipBle = false;
-String*  gSimLog     = nullptr;
+bool     gSimSkipTts    = false;
+bool     gSimSkipBle    = false;
+bool     gSimAudioLocal = false;
+String   gSimAudioFile  = "";
+String*  gSimLog        = nullptr;
 volatile int  currentAmplitude = 0;
 
 int  vad_threshold = VAD_THRESHOLD_DEFAULT;

@@ -113,12 +113,17 @@
             <input class="form-check-input" type="checkbox" id="dbg-skip-ble">
             <label class="form-check-label" for="dbg-skip-ble">Skip BLE</label>
           </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="dbg-audio-local">
+            <label class="form-check-label" for="dbg-audio-local">Audio sul browser</label>
+          </div>
         </div>
       </div>
     </div>
     <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
       <button class="btn btn-warning px-3" onclick="simRun()"><i class="bi bi-play-fill"></i> Esegui simulazione</button>
     </div>
+    <audio id="sim-audio" controls preload="none" class="w-100 mt-2 d-none"></audio>
     <pre id="sim-log" class="mt-2 p-2 bg-dark text-success rounded d-none" style="font-size:.75rem;max-height:240px;overflow-y:auto"></pre>
   </div>
 </div>
@@ -759,10 +764,13 @@ function simRun() {
   const beh = (p.behaviors || [])[behIdx];
   if (!beh) return;
   const text = document.getElementById('sim-text').value;
-  const skipLlm = document.getElementById('dbg-skip-llm').checked ? '1' : '0';
-  const skipTts = document.getElementById('dbg-skip-tts').checked ? '1' : '0';
-  const skipBle = document.getElementById('dbg-skip-ble').checked ? '1' : '0';
-  const log = document.getElementById('sim-log');
+  const skipLlm    = document.getElementById('dbg-skip-llm').checked ? '1' : '0';
+  const skipTts    = document.getElementById('dbg-skip-tts').checked ? '1' : '0';
+  const skipBle    = document.getElementById('dbg-skip-ble').checked ? '1' : '0';
+  const audioLocal = document.getElementById('dbg-audio-local').checked ? '1' : '0';
+  const log   = document.getElementById('sim-log');
+  const audio = document.getElementById('sim-audio');
+  audio.pause(); audio.removeAttribute('src'); audio.classList.add('d-none');
   log.textContent = 'Simulazione in corso…';
   log.classList.remove('d-none');
 
@@ -773,11 +781,22 @@ function simRun() {
     vad_text:    text,
     skip_llm:    skipLlm,
     skip_tts:    skipTts,
-    skip_ble:    skipBle
+    skip_ble:    skipBle,
+    audio_local: audioLocal
   });
   fetch('/test/simulate', { method: 'POST', body: params })
     .then(r => r.json())
-    .then(d => { log.textContent = d.log || JSON.stringify(d); })
+    .then(d => {
+      log.textContent = d.log || JSON.stringify(d);
+      if (d.audio_path) {
+        const src = d.audio_source === 'sd'
+          ? '/sd/get?path=' + encodeURIComponent(d.audio_path)
+          : '/fs/get' + d.audio_path;
+        audio.src = src;
+        audio.classList.remove('d-none');
+        audio.play().catch(()=>{});
+      }
+    })
     .catch(e => { log.textContent = 'Errore: ' + e; });
 }
 </script>

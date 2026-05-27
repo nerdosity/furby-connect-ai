@@ -345,6 +345,8 @@ extern volatile bool gDryRun;
 extern volatile int  currentAmplitude;
 extern bool     gSimSkipTts;
 extern bool     gSimSkipBle;
+extern bool     gSimAudioLocal;
+extern String   gSimAudioFile;
 extern String*  gSimLog;
 
 extern int  vad_threshold;
