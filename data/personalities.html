@@ -17,6 +17,7 @@
 </style>
 </head>
 <body>
+<script src="/mock.js"></script>
 <script src="/shared.js"></script>
 <script>renderNav('personalities');</script>
 <div class="container py-3 fb-page">
@@ -81,6 +82,29 @@
       <button class="btn btn-outline-primary btn-sm ms-auto px-2" onclick="behAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
     </div>
     <div id="beh-list" class="d-flex flex-column gap-2"></div>
+
+    <hr class="my-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <div class="fb-sec" style="margin:0"><i class="bi bi-chat-quote"></i> <span>Frasi pronte</span></div>
+      <span class="text-muted small" id="canned-count"></span>
+    </div>
+    <div class="text-muted small mb-2">Frasi/parole brevi (max 48 char) pronunciate senza passare dall'LLM. Possono essere usate nelle conseguenze.</div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-2">
+        <thead class="table-light"><tr><th class="text-start">Frase</th><th class="text-start">Audio</th><th class="text-end pe-2">Azioni</th></tr></thead>
+        <tbody id="canned-tbody"></tbody>
+      </table>
+    </div>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-9">
+        <input id="canned-new-text" class="form-control form-control-sm" maxlength="47" placeholder="Nuova frase pronta…">
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="d-grid d-sm-flex gap-2 justify-content-sm-end">
+          <button class="btn btn-primary px-3" onclick="cannedAdd()"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+        </div>
+      </div>
+    </div>
 
     <hr class="my-3">
     <div class="fb-sec" style="margin-top:0"><i class="bi bi-play-circle"></i> <span>Simula flusso</span></div>
@@ -193,16 +217,16 @@ const SENSOR_NAMES = [
 ];
 const CSQ_LABELS_IT = {
   furby_action:'Azione Furby', tts_fixed:'TTS fisso', prompt_fixed:'Prompt fisso',
-  prompt_llm:'LLM', prompt_auto:'LLM sceglie azione automaticamente'
+  prompt_llm:'LLM', prompt_auto:'LLM sceglie azione automaticamente', canned:'Frase pronta'
 };
 const CSQ_LABELS_EN = {
   furby_action:'Furby Action', tts_fixed:'Fixed TTS', prompt_fixed:'Fixed Prompt',
-  prompt_llm:'LLM', prompt_auto:'LLM chooses action automatically'
+  prompt_llm:'LLM', prompt_auto:'LLM chooses action automatically', canned:'Canned phrase'
 };
 function csqLabels() { return (localStorage.getItem('furby_lang')||'it')==='en' ? CSQ_LABELS_EN : CSQ_LABELS_IT; }
 // firmware serializza type come intero
-const CSQ_TYPE_TO_INT = { furby_action:1, tts_fixed:2, prompt_fixed:3, prompt_llm:4, prompt_auto:5 };
-const CSQ_INT_TO_TYPE = { 1:'furby_action', 2:'tts_fixed', 3:'prompt_fixed', 4:'prompt_llm', 5:'prompt_auto' };
+const CSQ_TYPE_TO_INT = { furby_action:1, tts_fixed:2, prompt_fixed:3, prompt_llm:4, prompt_auto:5, canned:6 };
+const CSQ_INT_TO_TYPE = { 1:'furby_action', 2:'tts_fixed', 3:'prompt_fixed', 4:'prompt_llm', 5:'prompt_auto', 6:'canned' };
 
 /* ── init ── */
 behModal = new bootstrap.Modal(document.getElementById('behModal'));
@@ -304,6 +328,7 @@ function persEdit(i) {
   langSel.value = p.lang || 'it';
 
   behRender();
+  cannedRender();
   simBehSel();
   persRender();
   updateActiveBtnState();
@@ -714,13 +739,37 @@ function csqTypeChange(ci, card, initial) {
     }
   } else if (type === 'prompt_llm' || type === 'prompt_auto') {
     detail.appendChild(mkCtxChecks(ci, initial || c));
+  } else if (type === 'canned') {
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm';
+    const canned = (editIdx >= 0 ? (personalities[editIdx].canned || []) : []);
+    const optRand = document.createElement('option');
+    optRand.value = '__random__'; optRand.textContent = '(casuale tra tutte)';
+    sel.appendChild(optRand);
+    if (!canned.length) {
+      const opt = document.createElement('option');
+      opt.value = ''; opt.textContent = '— nessuna frase pronta definita —';
+      opt.disabled = true; sel.appendChild(opt);
+    }
+    canned.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k.id; opt.textContent = k.text;
+      sel.appendChild(opt);
+    });
+    const initVal = (initial || c).canned_random ? '__random__' : ((initial || c).canned_id || '__random__');
+    sel.value = initVal;
+    sel.onchange = () => {
+      if (sel.value === '__random__') { csqData[ci].canned_random = true;  csqData[ci].canned_id = ''; }
+      else                             { csqData[ci].canned_random = false; csqData[ci].canned_id = sel.value; }
+    };
+    detail.appendChild(sel);
   }
 
   card.appendChild(detail);
 }
 
 function csqAdd() {
-  csqData.push({ type: 'prompt_llm', text: '', action_id: '', snapshot: false, ctx_beh_name: false, ctx_sensor: false });
+  csqData.push({ type: 'prompt_llm', text: '', action_id: '', snapshot: false, ctx_beh_name: false, ctx_sensor: false, canned_id: '', canned_random: true });
   renderCsqList();
 }
 
@@ -731,8 +780,70 @@ function csqCollect() {
     else if (c.type === 'tts_fixed') { out.text = c.text || ''; }
     else if (c.type === 'prompt_fixed') { out.text = c.text || ''; out.ctx_beh_name = !!c.ctx_beh_name; out.ctx_sensor = !!c.ctx_sensor; }
     else if (c.type === 'prompt_llm' || c.type === 'prompt_auto') { out.snapshot = !!c.snapshot; out.ctx_beh_name = !!c.ctx_beh_name; out.ctx_sensor = !!c.ctx_sensor; }
+    else if (c.type === 'canned') { out.canned_random = !!c.canned_random; out.canned_id = c.canned_random ? '' : (c.canned_id || ''); }
     return out;
   });
+}
+
+/* ── canned phrases (frasi pronte) ── */
+const CANNED_MAX_LEN = 47;
+const CANNED_MAX_NUM = 16;
+
+function cannedRender() {
+  const tb = document.getElementById('canned-tbody');
+  if (!tb) return;
+  if (editIdx < 0) { tb.innerHTML = ''; return; }
+  const p = personalities[editIdx];
+  if (!p.canned) p.canned = [];
+  document.getElementById('canned-count').textContent = p.canned.length + '/' + CANNED_MAX_NUM;
+  if (!p.canned.length) {
+    tb.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">Nessuna frase pronta.</td></tr>';
+    return;
+  }
+  tb.innerHTML = '';
+  p.canned.forEach((k, i) => {
+    const tr = document.createElement('tr');
+    const tdText = document.createElement('td');
+    tdText.className = 'align-middle';
+    const inp = document.createElement('input');
+    inp.className = 'form-control form-control-sm';
+    inp.maxLength = CANNED_MAX_LEN;
+    inp.value = k.text || '';
+    inp.onchange = () => {
+      const v = inp.value.trim();
+      if (!v) return;
+      if (v !== k.text) { k.text = v; k.file = ''; persSave(true); cannedRender(); }
+    };
+    tdText.appendChild(inp);
+    tr.appendChild(tdText);
+    const tdFile = document.createElement('td');
+    tdFile.className = 'align-middle small text-muted font-monospace';
+    tdFile.textContent = k.file || '(non generato)';
+    tr.appendChild(tdFile);
+    const tdAct = document.createElement('td');
+    tdAct.className = 'text-end align-middle';
+    const del = document.createElement('button');
+    del.className = 'btn btn-sm btn-outline-danger';
+    del.innerHTML = '<i class="bi bi-trash"></i>';
+    del.onclick = () => { if (confirm('Eliminare "'+(k.text||'')+'"?')) { p.canned.splice(i, 1); persSave(true); cannedRender(); } };
+    tdAct.appendChild(del);
+    tr.appendChild(tdAct);
+    tb.appendChild(tr);
+  });
+}
+
+function cannedAdd() {
+  if (editIdx < 0) return;
+  const p = personalities[editIdx];
+  if (!p.canned) p.canned = [];
+  if (p.canned.length >= CANNED_MAX_NUM) { alert('Massimo ' + CANNED_MAX_NUM + ' frasi pronte per personalità.'); return; }
+  const inp = document.getElementById('canned-new-text');
+  const text = inp.value.trim();
+  if (!text) return;
+  p.canned.push({ id: 'k' + Date.now(), text: text.substring(0, CANNED_MAX_LEN), file: '' });
+  inp.value = '';
+  persSave(true);
+  cannedRender();
 }
 
 /* ── simulator ── */

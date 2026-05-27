@@ -13,6 +13,7 @@ String currentPersonalityDir();
 String getCacheJSON();
 String getCacheSummaryJSON();
 void   updateCacheJSON(String newFilename, String text);
+void   updateCacheJSONCanned(String newFilename, String text);
 String getCachedPrefix(const String& audioFile);
 void   setCachedPrefix(const String& audioFile, const String& prefixFile);
 String getNextFilename();

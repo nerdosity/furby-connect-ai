@@ -132,8 +132,12 @@ String getCacheSummaryJSON() {
     auto summary = JsonDocPsram();
     for (JsonPair kv : full.as<JsonObject>()) {
         JsonVariant v = kv.value();
-        if (v.is<JsonObject>()) summary[kv.key()] = v["text"].as<String>();
-        else                    summary[kv.key()] = v.as<String>();
+        if (v.is<JsonObject>()) {
+            if (v["canned"] | false) continue; // le canned non vanno proposte all'LLM
+            summary[kv.key()] = v["text"].as<String>();
+        } else {
+            summary[kv.key()] = v.as<String>();
+        }
     }
     String out; serializeJson(summary, out); return out;
 }
@@ -149,6 +153,16 @@ void updateCacheJSON(String newFilename, String text) {
     JsonObject entry = doc[newFilename].to<JsonObject>();
     entry["text"]   = text;
     entry["prefix"] = "";
+    saveCacheIndex(doc);
+}
+
+void updateCacheJSONCanned(String newFilename, String text) {
+    auto doc = JsonDocPsram();
+    deserializeJson(doc, getCacheJSON());
+    JsonObject entry = doc[newFilename].to<JsonObject>();
+    entry["text"]   = text;
+    entry["prefix"] = "";
+    entry["canned"] = true;
     saveCacheIndex(doc);
 }
 

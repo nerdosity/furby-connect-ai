@@ -23,6 +23,8 @@ static void serializeBehavior(JsonObject& bo, const EventBehavior& b) {
         co["snapshot"]     = q.snapshot;
         co["ctx_beh_name"] = q.ctx_beh_name;
         co["ctx_sensor"]   = q.ctx_sensor;
+        co["canned_id"]    = q.canned_id;
+        co["canned_random"]= q.canned_random;
         JsonArray ra = co["reactions"].to<JsonArray>();
         for (int r = 0; r < q.reaction_count; r++) ra.add(q.reactions[r]);
     }
@@ -43,6 +45,8 @@ static void deserializeBehavior(EventBehavior& b, JsonObject bo) {
         q.snapshot     = co["snapshot"]     | false;
         q.ctx_beh_name = co["ctx_beh_name"] | false;
         q.ctx_sensor   = co["ctx_sensor"]   | false;
+        strlcpy(q.canned_id, co["canned_id"] | "", sizeof(q.canned_id));
+        q.canned_random = co["canned_random"] | false;
         q.reaction_count = 0;
         for (JsonVariant rv : co["reactions"].as<JsonArray>()) {
             if (q.reaction_count >= MAX_REACTIONS) break;
@@ -63,6 +67,28 @@ static void deserializePersonality(Personality& p, JsonObject po) {
     for (JsonObject bo : po["behaviors"].as<JsonArray>()) {
         if (p.behavior_count >= MAX_EVENT_BEHAVIORS) break;
         deserializeBehavior(p.behaviors[p.behavior_count++], bo);
+    }
+    p.canned_count = 0;
+    for (JsonObject ko : po["canned"].as<JsonArray>()) {
+        if (p.canned_count >= MAX_CANNED_PHRASES) break;
+        CannedPhrase& k = p.canned[p.canned_count++];
+        strlcpy(k.id,   ko["id"]   | "", sizeof(k.id));
+        strlcpy(k.text, ko["text"] | "", sizeof(k.text));
+        // Il campo "file" non è inviato dal frontend (popolato solo dopo la prima esecuzione TTS).
+        // Lo recuperiamo dalla personality attiva in memoria se l'id coincide.
+        const char* existingFile = ko["file"] | "";
+        if (existingFile[0]) {
+            strlcpy(k.file, existingFile, sizeof(k.file));
+        } else if (gpActivePers && k.id[0]) {
+            for (int i = 0; i < gpActivePers->canned_count; i++) {
+                if (strcmp(gpActivePers->canned[i].id, k.id) == 0) {
+                    // se il testo è cambiato, il file cached non è più valido
+                    if (strcmp(gpActivePers->canned[i].text, k.text) == 0)
+                        strlcpy(k.file, gpActivePers->canned[i].file, sizeof(k.file));
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -124,6 +150,13 @@ void serializeActivePersonalityTo(JsonObject po) {
         JsonObject bo = ba.add<JsonObject>();
         serializeBehavior(bo, gpActivePers->behaviors[b]);
     }
+    JsonArray ka = po["canned"].to<JsonArray>();
+    for (int k = 0; k < gpActivePers->canned_count; k++) {
+        JsonObject ko = ka.add<JsonObject>();
+        ko["id"]   = gpActivePers->canned[k].id;
+        ko["text"] = gpActivePers->canned[k].text;
+        ko["file"] = gpActivePers->canned[k].file;
+    }
 }
 
 // ── savePersonalities: legge tutto il JSON, aggiorna entry attiva, riscrive ───
@@ -171,6 +204,13 @@ void savePersonalities() {
     for (int b = 0; b < gpActivePers->behavior_count; b++) {
         JsonObject bo = ba.add<JsonObject>();
         serializeBehavior(bo, gpActivePers->behaviors[b]);
+    }
+    JsonArray ka = po["canned"].to<JsonArray>();
+    for (int k = 0; k < gpActivePers->canned_count; k++) {
+        JsonObject ko = ka.add<JsonObject>();
+        ko["id"]   = gpActivePers->canned[k].id;
+        ko["text"] = gpActivePers->canned[k].text;
+        ko["file"] = gpActivePers->canned[k].file;
     }
 
     String out; serializeJson(doc, out);
@@ -369,6 +409,40 @@ void executeConsequence(const Consequence& csq, const String& base64Img, const S
                 }
                 if (speechAfter.length() > 0 && speechAfter != "null") speakText(speechAfter);
             }
+            break;
+        }
+        case CSQ_CANNED: {
+            if (!gpActivePers || gpActivePers->canned_count == 0) {
+                SIMLOG("[CSQ] CANNED: nessuna frase pronta nella personality attiva");
+                break;
+            }
+            int idx = -1;
+            if (csq.canned_random || csq.canned_id[0] == 0) {
+                idx = (int)(esp_random() % (uint32_t)gpActivePers->canned_count);
+            } else {
+                for (int i = 0; i < gpActivePers->canned_count; i++) {
+                    if (strcmp(gpActivePers->canned[i].id, csq.canned_id) == 0) { idx = i; break; }
+                }
+            }
+            if (idx < 0) { SIMLOG(String("[CSQ] CANNED: id non trovato: ") + csq.canned_id); break; }
+            CannedPhrase& cp = gpActivePers->canned[idx];
+            String text = String(cp.text);
+            String file = String(cp.file);
+            if (gSimSkipTts) {
+                SIMLOG(String("[MOCKED]\nplay: ") + (file.length() ? file : "(da generare)") + " (" + text + ")");
+                break;
+            }
+            sdCheck();
+            if (file.length() == 0) {
+                String saved = generateAndSaveTTS_SD(text);
+                if (saved.length() == 0) { SIMLOG("[CSQ] CANNED: TTS fallito"); break; }
+                strlcpy(cp.file, saved.c_str(), sizeof(cp.file));
+                updateCacheJSONCanned(saved, text);
+                savePersonalities();
+                file = saved;
+            }
+            Serial.printf("[CSQ] CANNED play: %s (%s)\n", file.c_str(), text.c_str());
+            playAudioSD(file);
             break;
         }
         case CSQ_PROMPT_AUTO: {

@@ -180,7 +180,7 @@ struct FurbyDevice {
 struct FurbyActionDef { const char* id; const char* label; const char* label_en; uint8_t cmd[6]; uint8_t len; };
 
 enum ConsequenceType : uint8_t {
-    CSQ_NONE = 0, CSQ_FURBY_ACTION, CSQ_TTS_FIXED, CSQ_PROMPT_FIXED, CSQ_PROMPT_LLM, CSQ_PROMPT_AUTO
+    CSQ_NONE = 0, CSQ_FURBY_ACTION, CSQ_TTS_FIXED, CSQ_PROMPT_FIXED, CSQ_PROMPT_LLM, CSQ_PROMPT_AUTO, CSQ_CANNED
 };
 enum TriggerType : uint8_t { TRG_VAD=0, TRG_BUTTON=1, TRG_SENSOR=2 };
 enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
@@ -188,6 +188,8 @@ enum EventType   : uint8_t { EVT_NONE=0, EVT_VAD, EVT_BUTTON };
 #define MAX_REACTIONS        3
 #define MAX_CONSEQUENCES     3
 #define MAX_EVENT_BEHAVIORS  64
+#define MAX_CANNED_PHRASES   16
+#define CANNED_TEXT_LEN      48
 #define MAX_FURBY_SCAN       8
 #define STT_BUF_MAX_SAMPLES  128000
 
@@ -200,6 +202,14 @@ struct Consequence {
     bool ctx_sensor              = false;  // includi sensore stimolato nel prompt
     char reactions[MAX_REACTIONS][32] = {};
     uint8_t reaction_count       = 0;
+    char canned_id[16]           = {};     // id frase pronta (vuoto + canned_random=true → casuale)
+    bool canned_random           = false;
+};
+
+struct CannedPhrase {
+    char id[16]                       = {};
+    char text[CANNED_TEXT_LEN]        = {};
+    char file[24]                     = {};   // path relativo alla persDir, es "it/3.mp3"
 };
 
 struct EventBehavior {
@@ -220,6 +230,8 @@ struct Personality {
     char         lang[8]                       = {};  // "it" o "en"
     EventBehavior behaviors[MAX_EVENT_BEHAVIORS] = {};
     int          behavior_count                = 0;
+    CannedPhrase canned[MAX_CANNED_PHRASES]    = {};
+    int          canned_count                  = 0;
 };
 
 struct BleAutoRecCtx { String addr; String name; esp_ble_addr_type_t atype; };
