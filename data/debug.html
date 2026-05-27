@@ -533,13 +533,22 @@ function fmSetSource(src){
 
 function fmRefresh(){ fmLoadDir(fmCurDir); }
 
-function fmColsCount(){ return fmSource==='sd' ? 5 : 4; }
+function fmColsCount(){ return fmSource==='sd' ? 6 : 5; } // Nome|Tipo|Dim|[Modifica]|azioni
+
+function fmFileExt(name){
+  if(!name) return '';
+  var n=name.replace(/^.*\//,''); // basename
+  var i=n.lastIndexOf('.');
+  if(i<=0||i===n.length-1) return '';
+  return n.substring(i+1).toLowerCase();
+}
 
 function fmRenderHead(){
   var thead=document.getElementById('fm-thead');
   var arrow=function(k){ return fmSortKey===k ? (fmSortDir>0?' ▲':' ▼') : ''; };
   var html='<tr>'
     +'<th role="button" onclick="fmSortBy(\'name\')">Nome'+arrow('name')+'</th>'
+    +'<th role="button" onclick="fmSortBy(\'type\')">Tipo'+arrow('type')+'</th>'
     +'<th role="button" onclick="fmSortBy(\'size\')">Dim.'+arrow('size')+'</th>';
   if(fmSource==='sd') html+='<th role="button" onclick="fmSortBy(\'mtime\')">Modifica'+arrow('mtime')+'</th>';
   html+='<th class="text-end"></th></tr>';
@@ -575,16 +584,24 @@ function fmRenderBody(){
   var cols=fmColsCount();
   var dir=fmCurDir;
   // sort: directory sempre prima, poi secondo chiave
+  // natural-aware compare: "1.mp3" < "2.mp3" < "10.mp3"
+  var _coll=new Intl.Collator(undefined,{numeric:true, sensitivity:'base'});
+  var _natCmp=function(a,b){ return _coll.compare(a||'', b||''); };
   var sorted=fmFiles.slice().sort(function(a,b){
     var da=!!a.dir, db=!!b.dir;
     if(da!==db) return da?-1:1;
-    var va,vb;
-    if(fmSortKey==='size'){ va=+a.size||0; vb=+b.size||0; }
-    else if(fmSortKey==='mtime'){ va=+a.mtime||0; vb=+b.mtime||0; }
-    else { va=(a.name||'').toLowerCase(); vb=(b.name||'').toLowerCase(); }
-    if(va<vb) return -1*fmSortDir;
-    if(va>vb) return  1*fmSortDir;
-    return 0;
+    var cmp;
+    if(fmSortKey==='size')       cmp = (+a.size||0)  - (+b.size||0);
+    else if(fmSortKey==='mtime') cmp = (+a.mtime||0) - (+b.mtime||0);
+    else if(fmSortKey==='type'){
+      cmp = _natCmp(fmFileExt(a.name), fmFileExt(b.name));
+      if(cmp===0) cmp = _natCmp(a.name||'', b.name||''); // a parità di tipo, ordina per nome
+    } else { // 'name'
+      cmp = _natCmp(a.name||'', b.name||'');
+    }
+    if(cmp!==0) return cmp*fmSortDir;
+    // tiebreaker stabile su nome
+    return _natCmp(a.name||'', b.name||'');
   });
 
   var rows='';
@@ -619,8 +636,10 @@ function fmRenderBody(){
       var playable=/\.(mp3|wav)$/i.test(f.name);
       var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath+'?dl=1':'/sd/get?dl=1&path='+encodeURIComponent(filePath);
       var pe=filePath.replace(/'/g,"\\'");
+      var ext=fmFileExt(f.name);
       rows+='<tr>'
         +'<td class="font-monospace small text-break">'+(fmSource==='sd'?'<i class="bi bi-file-earmark me-1 text-muted"></i>':'')+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
+        +'<td class="text-muted text-nowrap small">'+(ext||'—')+'</td>'
         +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
         +(fmSource==='sd'?'<td class="text-muted text-nowrap small">'+fmFmtDate(f.mtime)+'</td>':'')
         +'<td class="text-end">'
