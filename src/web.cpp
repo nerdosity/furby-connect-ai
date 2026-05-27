@@ -1260,7 +1260,9 @@ static void handleTestSimulate() {
     gSimSkipTts     = server.arg("skip_tts") == "1";
     gSimSkipBle     = server.arg("skip_ble") == "1";
     gSimAudioLocal  = server.arg("audio_local") == "1";
-    if (gSimAudioLocal) gSimSkipTts = false; // serve generare il file
+    // skip_tts ha precedenza: niente TTS, niente audio (né ESP né browser).
+    // audio_local vale solo se NON c'è skip_tts.
+    if (gSimSkipTts) gSimAudioLocal = false;
     gSimAudioFile   = "";
     String vadText = server.arg("vad_text");
     if (trg < 0 || trg > 2) {

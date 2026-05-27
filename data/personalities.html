@@ -130,7 +130,7 @@
             <label class="form-check-label" for="dbg-skip-llm">Skip LLM</label>
           </div>
           <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="dbg-skip-tts">
+            <input class="form-check-input" type="checkbox" id="dbg-skip-tts" onchange="updateAudioLocalState()">
             <label class="form-check-label" for="dbg-skip-tts">Skip TTS</label>
           </div>
           <div class="form-check form-switch">
@@ -231,6 +231,7 @@ const CSQ_INT_TO_TYPE = { 1:'furby_action', 2:'tts_fixed', 3:'prompt_fixed', 4:'
 /* ── init ── */
 behModal = new bootstrap.Modal(document.getElementById('behModal'));
 persLoad();
+document.addEventListener('DOMContentLoaded', updateAudioLocalState);
 
 /* ── personalities ── */
 function persLoad(onDone) {
@@ -900,6 +901,15 @@ function simBehSel() {
 function simVolSend(v) {
   const fd = new FormData(); fd.append('vol', v);
   fetch('/debug/vol', { method: 'POST', body: fd });
+}
+
+function updateAudioLocalState() {
+  // skip_tts ha precedenza: disabilita audio_local e lo spegne
+  const skipTts = document.getElementById('dbg-skip-tts');
+  const audioLocal = document.getElementById('dbg-audio-local');
+  if (!skipTts || !audioLocal) return;
+  if (skipTts.checked) { audioLocal.checked = false; audioLocal.disabled = true; }
+  else                  { audioLocal.disabled = false; }
 }
 
 function simRun() {
