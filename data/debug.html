@@ -249,6 +249,13 @@ function setLang(l){
       </table>
     </div>
   </div></div>
+  <div class="card shadow-sm mb-3" id="fm-player-card" style="display:none"><div class="card-body">
+    <div class="fb-sec mb-2" style="margin-top:0"><i class="bi bi-music-note-beamed"></i> <span id="fm-player-title">Player</span></div>
+    <audio id="fm-player-audio" controls preload="metadata" style="width:100%"></audio>
+    <div class="d-grid d-sm-flex gap-2 justify-content-sm-end mt-2">
+      <button class="btn btn-outline-secondary px-3" onclick="fmPlayerClose()"><i class="bi bi-x-lg"></i> Chiudi</button>
+    </div>
+  </div></div>
   <div class="card shadow-sm mb-3" id="fm-editor-card" style="display:none"><div class="card-body">
     <div class="fb-sec mb-2" style="margin-top:0"><i class="bi bi-pencil-square"></i> <span id="fm-editor-title">Editor</span></div>
     <textarea class="fm-editor" id="fm-editor-ta" spellcheck="false"></textarea>
@@ -543,13 +550,17 @@ function fmLoadDir(dir){
         var filePath=(fmSource==='spiffs')?f.name:(dir==='/'?'':dir)+'/'+f.name;
         var ro=fmSource==='spiffs'&&(/\.(html|htm|css|js|woff2|png)$/.test(f.name)||f.name==='/version.txt');
         var editable=!ro&&/\.(json|txt|md|sh|conf|config|cfg|ini|yaml|yml|log|csv|xml|html|htm|js|css|py|lua|c|cpp|h|ino)$/i.test(f.name);
-        var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath:'/sd/get?path='+encodeURIComponent(filePath);
+        var playable=/\.(mp3|wav)$/i.test(f.name);
+        var dlHref=(fmSource==='spiffs')?'/fs/get'+filePath+'?dl=1':'/sd/get?dl=1&path='+encodeURIComponent(filePath);
+        var pe=filePath.replace(/'/g,"\\'");
         rows+='<tr>'
           +'<td class="font-monospace small text-break">'+(fmSource==='sd'?'<i class="bi bi-file-earmark me-1 text-muted"></i>':'')+n+(ro?' <span class="badge bg-secondary">RO</span>':'')+'</td>'
           +'<td class="text-muted text-nowrap">'+fmFmtSize(f.size)+'</td>'
-          +'<td class="text-end">'+(editable?'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+filePath.replace(/'/g,"\\'")+'\')"><i class="bi bi-pencil"></i></button>':'')
-          +'<a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="'+dlHref+'" download>↓</a>'
-          +(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+filePath.replace(/'/g,"\\'")+'\')"><i class="bi bi-trash3"></i></button>')
+          +'<td class="text-end">'
+          +(playable?'<button class="btn btn-outline-primary btn-sm py-0 me-1" onclick="fmPlay(\''+pe+'\')"><i class="bi bi-play-fill"></i></button>':'')
+          +(editable?'<button class="btn btn-outline-secondary btn-sm py-0 me-1" onclick="fmEdit(\''+pe+'\')"><i class="bi bi-pencil"></i></button>':'')
+          +'<a class="btn btn-outline-secondary btn-sm py-0 text-decoration-none me-1" href="'+dlHref+'" download><i class="bi bi-download"></i></a>'
+          +(ro?'':'<button class="btn btn-danger btn-sm py-0" onclick="fmDel(\''+pe+'\')"><i class="bi bi-trash3"></i></button>')
           +'</td></tr>';
       }
     });
@@ -570,6 +581,16 @@ function fmEdit(path){
   fetch(url).then(r=>r.text()).then(function(txt){document.getElementById('fm-editor-ta').value=txt;document.getElementById('fm-editor-msg').textContent='';}).catch(function(){document.getElementById('fm-editor-msg').textContent=t('fm.load_err');});
 }
 function fmEditorClose(){document.getElementById('fm-editor-card').style.display='none';fmCurrentPath='';}
+function fmPlay(path){
+  var src=(fmSource==='spiffs')?'/fs/get'+path:'/sd/get?path='+encodeURIComponent(path);
+  document.getElementById('fm-player-title').textContent='Player: '+path;
+  var a=document.getElementById('fm-player-audio');
+  a.src=src;document.getElementById('fm-player-card').style.display='';a.play().catch(function(){});
+}
+function fmPlayerClose(){
+  var a=document.getElementById('fm-player-audio');a.pause();a.removeAttribute('src');a.load();
+  document.getElementById('fm-player-card').style.display='none';
+}
 function fmSave(){
   if(!fmCurrentPath)return;
   var content=document.getElementById('fm-editor-ta').value,fd=new FormData(),msg=document.getElementById('fm-editor-msg');

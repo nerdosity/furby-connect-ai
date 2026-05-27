@@ -612,6 +612,14 @@ static void handlePersonalitiesSave() {
     if (deserializeJson(doc, body) != DeserializationError::Ok) {
         server.send(400, "application/json", "{\"ok\":false,\"error\":\"JSON non valido\"}"); return;
     }
+    for (JsonObject p : doc["personalities"].as<JsonArray>()) {
+        for (JsonObject b : p["behaviors"].as<JsonArray>()) {
+            int trg = b["trigger"] | -1;
+            if (trg < 0 || trg > 2) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"trigger mancante o non valido\"}"); return; }
+            JsonArray csq = b["consequences"].as<JsonArray>();
+            if (csq.isNull() || csq.size() == 0) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"comportamento senza conseguenze\"}"); return; }
+        }
+    }
     if (!writePersFile(body)) { server.send(500, "application/json", "{\"ok\":false,\"error\":\"scrittura fallita\"}"); return; }
     loadPersonalities();
     server.send(200, "application/json", "{\"ok\":true}");
@@ -833,19 +841,47 @@ static void handleBleSave() {
     server.sendHeader("Location", "/"); server.send(303);
 }
 
-// svuota solo file .pcm e index.json (cache audio)
-static void handleSdFormat() {
-    HTTP_LOG();
-    if (!sdCheck()) { server.send(400, "application/json", "{\"ok\":false,\"error\":\"SD non disponibile\"}"); return; }
-    File root = SD_MMC.open("/");
-    File file = root.openNextFile();
-    while (file) {
-        String name = String("/") + file.name();
-        file.close();
-        if (name.endsWith(".pcm") || name == "/index.json") SD_MMC.remove(name);
-        file = root.openNextFile();
+// svuota cache audio: rimuove ricorsivamente ogni cartella personality che contiene index.json
+template<typename FSRef>
+static void rmTreeAudio(FSRef& fs, const String& dir) {
+    File root = fs.open(dir.c_str());
+    if (!root || !root.isDirectory()) return;
+    File f = root.openNextFile();
+    while (f) {
+        String name = String(f.name());
+        bool isDir = f.isDirectory();
+        f.close();
+        if (isDir) rmTreeAudio(fs, name);
+        else if (name.endsWith(".pcm") || name.endsWith(".mp3") || name.endsWith("/index.json")) fs.remove(name.c_str());
+        f = root.openNextFile();
     }
     root.close();
+    if (dir != "/") fs.rmdir(dir.c_str());
+}
+
+template<typename FSRef>
+static void wipeCacheRoots(FSRef& fs) {
+    File root = fs.open("/");
+    if (!root) return;
+    File f = root.openNextFile();
+    while (f) {
+        String name = String(f.name());
+        bool isDir = f.isDirectory();
+        f.close();
+        if (isDir) {
+            if (fs.exists((name + "/index.json").c_str())) rmTreeAudio(fs, name);
+        } else if (name.endsWith(".pcm") || name.endsWith(".mp3") || name == "/index.json") {
+            fs.remove(name.c_str());
+        }
+        f = root.openNextFile();
+    }
+    root.close();
+}
+
+static void handleSdFormat() {
+    HTTP_LOG();
+    if (sdAvailable) wipeCacheRoots(SD_MMC);
+    wipeCacheRoots(SPIFFS);
     Preferences prefs; prefs.begin("furby_sys", false);
     prefs.putInt("file_id", 0); prefs.end();
     server.send(200, "application/json", "{\"ok\":true}");
@@ -1232,19 +1268,37 @@ static void handleFsList() {
     server.send(200, "application/json", out);
 }
 
+static String mimeForPath(const String& path) {
+    String p = path; p.toLowerCase();
+    if (p.endsWith(".html") || p.endsWith(".htm")) return "text/html; charset=utf-8";
+    if (p.endsWith(".json")) return "application/json; charset=utf-8";
+    if (p.endsWith(".txt") || p.endsWith(".csv") || p.endsWith(".log") || p.endsWith(".md")) return "text/plain; charset=utf-8";
+    if (p.endsWith(".js"))   return "application/javascript";
+    if (p.endsWith(".css"))  return "text/css";
+    if (p.endsWith(".mp3"))  return "audio/mpeg";
+    if (p.endsWith(".wav"))  return "audio/wav";
+    if (p.endsWith(".pcm"))  return "audio/L16; rate=16000; channels=1";
+    if (p.endsWith(".png"))  return "image/png";
+    if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+    if (p.endsWith(".gif"))  return "image/gif";
+    if (p.endsWith(".svg"))  return "image/svg+xml";
+    if (p.endsWith(".ico"))  return "image/x-icon";
+    if (p.endsWith(".woff2")) return "font/woff2";
+    if (p.endsWith(".xml"))  return "application/xml; charset=utf-8";
+    return "application/octet-stream";
+}
+
 static void handleFsGet() {
     String path = server.uri().substring(7);
     if (path.length() == 0) path = "/";
     if (!SPIFFS.exists(path)) { server.send(404, "text/plain", "not found"); return; }
     File f = SPIFFS.open(path, "r");
     if (!f) { server.send(500, "text/plain", "open failed"); return; }
-    String ct = "application/octet-stream";
-    if (path.endsWith(".html") || path.endsWith(".htm")) ct = "text/html; charset=utf-8";
-    else if (path.endsWith(".json")) ct = "application/json; charset=utf-8";
-    else if (path.endsWith(".txt") || path.endsWith(".csv") || path.endsWith(".log")) ct = "text/plain; charset=utf-8";
-    else if (path.endsWith(".js"))  ct = "application/javascript";
-    else if (path.endsWith(".css")) ct = "text/css";
-    server.streamFile(f, ct);
+    if (server.hasArg("dl")) {
+        String fname = path; int s = fname.lastIndexOf('/'); if (s >= 0) fname = fname.substring(s + 1);
+        server.sendHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
+    }
+    server.streamFile(f, mimeForPath(path));
     f.close();
 }
 
@@ -1321,10 +1375,11 @@ static void handleSdGet() {
     if (path.length() == 0 || path[0] != '/') { server.send(400, "text/plain", "path mancante"); return; }
     File f = SD_MMC.open(path.c_str(), "r");
     if (!f || f.isDirectory()) { server.send(404, "text/plain", "non trovato"); return; }
-    String ct = "application/octet-stream";
-    if (path.endsWith(".json")) ct = "application/json; charset=utf-8";
-    else if (path.endsWith(".txt") || path.endsWith(".csv") || path.endsWith(".log")) ct = "text/plain; charset=utf-8";
-    server.streamFile(f, ct);
+    if (server.hasArg("dl")) {
+        String fname = path; int s = fname.lastIndexOf('/'); if (s >= 0) fname = fname.substring(s + 1);
+        server.sendHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
+    }
+    server.streamFile(f, mimeForPath(path));
     f.close();
 }
 

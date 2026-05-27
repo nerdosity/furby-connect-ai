@@ -32,10 +32,10 @@
       <table class="table table-sm table-hover mb-0" id="pers-table">
         <thead class="table-light">
           <tr>
-            <th>Nome</th>
-            <th>Voce</th>
-            <th>Comportamenti</th>
-            <th class="text-end">Azioni</th>
+            <th class="text-start">Nome</th>
+            <th class="text-start">Voce</th>
+            <th class="text-start">Comportamenti</th>
+            <th class="text-end pe-2">Azioni</th>
           </tr>
         </thead>
         <tbody id="pers-tbody"></tbody>
@@ -158,7 +158,7 @@
       </div>
       <div class="modal-footer">
         <div class="d-grid d-sm-flex gap-2 justify-content-sm-end" style="width:100%">
-          <button class="btn btn-success px-3" onclick="behSave()"><i class="bi bi-floppy"></i> Salva</button>
+          <button class="btn btn-success px-3" id="beh-save-btn" onclick="behSave()" disabled><i class="bi bi-floppy"></i> Salva</button>
           <button class="btn btn-secondary px-3" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Annulla</button>
         </div>
       </div>
@@ -536,10 +536,22 @@ function openBehModal(b) {
 function behTrgChange() {
   const v = document.getElementById('beh-trg').value;
   document.getElementById('beh-sensor-wrap').style.display = v === '2' ? '' : 'none';
+  behValidate();
+}
+
+function behValidate() {
+  const btn = document.getElementById('beh-save-btn');
+  if (!btn) return;
+  const trg = document.getElementById('beh-trg').value;
+  const hasTrg = trg !== '' && trg !== null && trg !== undefined;
+  const hasCsq = Array.isArray(csqData) && csqData.length > 0;
+  btn.disabled = !(hasTrg && hasCsq);
 }
 
 function behSave() {
   if (editIdx < 0) return;
+  const trgVal = document.getElementById('beh-trg').value;
+  if (trgVal === '' || !csqData.length) { alert('Serve un trigger e almeno una conseguenza.'); return; }
   const name = document.getElementById('beh-name').value.trim();
   const trigger = parseInt(document.getElementById('beh-trg').value);
   const sensor_id = trigger === 2 ? parseInt(document.getElementById('beh-sensor').value) : 0;
@@ -625,6 +637,7 @@ function renderCsqList() {
     csqTypeChange(ci, card, c);
     el.appendChild(card);
   });
+  behValidate();
 }
 
 function mkChk(id, label, checked, onChange) {

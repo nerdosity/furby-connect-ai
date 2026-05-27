@@ -2,11 +2,122 @@
 #include "hw.h"
 #include "llm.h"
 
-// ── Cache SD ──────────────────────────────────────────────────────────────────
+// ── Cache audio ───────────────────────────────────────────────────────────────
+// Layout: /<persId>/<lang>/<file>.{pcm,mp3}, indice in /<persId>/index.json
+// Entry index: chiave = "<lang>/<file>" (path relativo alla cartella personality).
+// SD-first con fallback SPIFFS; se un file esiste su SPIFFS ma non su SD, viene
+// migrato automaticamente su SD e rimosso da SPIFFS al primo accesso.
+
+static String sanitizeId(const char* s) {
+    String o; o.reserve(32);
+    for (const char* p = s; *p; p++) {
+        char c = *p;
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') o += c;
+        else o += '_';
+    }
+    if (o.length() == 0) o = "default";
+    return o;
+}
+
+static String persLang() {
+    if (gpActivePers && gpActivePers->lang[0]) return String(gpActivePers->lang);
+    return gPersonalityLang.length() ? gPersonalityLang : String("it");
+}
+
+static String persDir() {
+    String id = (gpActivePers && gpActivePers->id[0]) ? sanitizeId(gpActivePers->id) : String("default");
+    return "/" + id;
+}
+
+static String cacheIndexPath() { return persDir() + "/index.json"; }
+
+static void ensureDirsSD(const String& fullPath) {
+    int slash = 1;
+    while (true) {
+        int next = fullPath.indexOf('/', slash);
+        if (next < 0) break;
+        String sub = fullPath.substring(0, next);
+        if (sub.length() > 0 && !SD_MMC.exists(sub.c_str())) SD_MMC.mkdir(sub.c_str());
+        slash = next + 1;
+    }
+}
+
+static void ensureDirsSPIFFS(const String& fullPath) {
+    int slash = 1;
+    while (true) {
+        int next = fullPath.indexOf('/', slash);
+        if (next < 0) break;
+        String sub = fullPath.substring(0, next);
+        if (sub.length() > 0 && !SPIFFS.exists(sub.c_str())) SPIFFS.mkdir(sub.c_str());
+        slash = next + 1;
+    }
+}
+
+// Migra un file da SPIFFS a SD solo se la SD è realmente operativa e il file su SD manca.
+// "SD non inserita" != "SD vuota": migriamo solo quando sdAvailable è true.
+// Per sicurezza, cancelliamo SPIFFS solo se la copia su SD risulta integra (size byte-per-byte).
+static bool migrateToSD(const String& fullPath) {
+    if (!sdAvailable) return false;
+    if (SD_MMC.exists(fullPath.c_str())) return true;
+    if (!SPIFFS.exists(fullPath.c_str())) return false;
+    File src = SPIFFS.open(fullPath.c_str(), "r");
+    if (!src) return false;
+    size_t srcSize = src.size();
+    ensureDirsSD(fullPath);
+    File dst = SD_MMC.open(fullPath.c_str(), FILE_WRITE);
+    if (!dst) { src.close(); Serial.printf("[CACHE] SD open fallito per %s, non migro\n", fullPath.c_str()); return false; }
+    uint8_t buf[1024];
+    size_t written = 0;
+    bool ioErr = false;
+    while (src.available()) {
+        int n = src.read(buf, sizeof(buf));
+        if (n <= 0) { ioErr = true; break; }
+        size_t w = dst.write(buf, n);
+        if (w != (size_t)n) { ioErr = true; break; }
+        written += w;
+    }
+    src.close(); dst.close();
+    if (ioErr || written != srcSize) {
+        Serial.printf("[CACHE] migrazione %s ABORT (scritti %u/%u): mantengo SPIFFS\n", fullPath.c_str(), (unsigned)written, (unsigned)srcSize);
+        SD_MMC.remove(fullPath.c_str());
+        return false;
+    }
+    File chk = SD_MMC.open(fullPath.c_str(), "r");
+    if (!chk || chk.size() != srcSize) {
+        if (chk) chk.close();
+        Serial.printf("[CACHE] verify %s fallita: mantengo SPIFFS\n", fullPath.c_str());
+        SD_MMC.remove(fullPath.c_str());
+        return false;
+    }
+    chk.close();
+    SPIFFS.remove(fullPath.c_str());
+    Serial.printf("[CACHE] migrato SPIFFS->SD (%u B): %s\n", (unsigned)srcSize, fullPath.c_str());
+    return true;
+}
+
+// Apre per lettura: SD se disponibile (migrando da SPIFFS se serve), altrimenti SPIFFS.
+static File openRead(const String& fullPath) {
+    if (sdAvailable) {
+        migrateToSD(fullPath);
+        if (SD_MMC.exists(fullPath.c_str())) return SD_MMC.open(fullPath.c_str(), "r");
+    }
+    if (SPIFFS.exists(fullPath.c_str())) return SPIFFS.open(fullPath.c_str(), "r");
+    return File();
+}
+
+// Apre per scrittura: SD se disponibile, fallback SPIFFS.
+static File openWrite(const String& fullPath) {
+    if (sdAvailable) {
+        ensureDirsSD(fullPath);
+        File f = SD_MMC.open(fullPath.c_str(), FILE_WRITE);
+        if (f) return f;
+    }
+    ensureDirsSPIFFS(fullPath);
+    return SPIFFS.open(fullPath.c_str(), "w");
+}
 
 String getCacheJSON() {
-    if (!sdCheck()) return "{}";
-    File f = SD_MMC.open("/index.json");
+    File f = openRead(cacheIndexPath());
     if (!f) return "{}";
     String data = f.readString();
     f.close();
@@ -26,12 +137,11 @@ String getCacheSummaryJSON() {
 }
 
 static void saveCacheIndex(JsonDocument& doc) {
-    File f = SD_MMC.open("/index.json", FILE_WRITE);
+    File f = openWrite(cacheIndexPath());
     if (f) { serializeJson(doc, f); f.close(); }
 }
 
 void updateCacheJSON(String newFilename, String text) {
-    if (!sdCheck()) return;
     auto doc = JsonDocPsram();
     deserializeJson(doc, getCacheJSON());
     JsonObject entry = doc[newFilename].to<JsonObject>();
@@ -52,7 +162,6 @@ String getCachedPrefix(const String& audioFile) {
 }
 
 void setCachedPrefix(const String& audioFile, const String& prefixFile) {
-    if (!sdCheck()) return;
     auto doc = JsonDocPsram();
     deserializeJson(doc, getCacheJSON());
     JsonVariant v = doc[audioFile];
@@ -71,7 +180,7 @@ String getNextFilename() {
     Preferences prefs; prefs.begin("furby_sys", false);
     int counter = prefs.getInt("file_id", 0) + 1;
     prefs.putInt("file_id", counter); prefs.end();
-    return String(counter) + ".pcm";
+    return persLang() + "/" + String(counter) + ".pcm";
 }
 
 String elOutputFormat() {
@@ -143,9 +252,9 @@ static void playMp3FromStream(WiFiClient* stream, HTTPClient& http) {
 // ── SD playback ───────────────────────────────────────────────────────────────
 
 void playAudioSD(String filename) {
-    if (!sdCheck()) { Serial.println("[AUDIO-SD] ERRORE: SD non disponibile"); return; }
-    File file = SD_MMC.open("/" + filename);
-    if (!file) { Serial.printf("[AUDIO-SD] ERRORE: file /%s non trovato\n", filename.c_str()); return; }
+    String full = persDir() + "/" + filename;
+    File file = openRead(full);
+    if (!file) { Serial.printf("[AUDIO] ERRORE: file %s non trovato\n", full.c_str()); return; }
     size_t sz = file.size();
 
     if (filename.endsWith(".mp3")) {
@@ -202,12 +311,12 @@ void playAudioSDWithPrefix(const String& filename) {
 // ── TTS generation ────────────────────────────────────────────────────────────
 
 String generateAndSaveTTS_SD(const String& text) {
-    if (!sdCheck()) return "";
     bool mp3mode = (el_audio_fmt == "mp3");
     String ext = mp3mode ? ".mp3" : ".pcm";
     String filename = getNextFilename();
     if (mp3mode) filename = filename.substring(0, filename.lastIndexOf('.')) + ext;
-    Serial.printf("[TTS-SAVE] fmt=%s \"%s\" -> %s\n", el_audio_fmt.c_str(), text.c_str(), filename.c_str());
+    String full = persDir() + "/" + filename;
+    Serial.printf("[TTS-SAVE] fmt=%s \"%s\" -> %s (%s)\n", el_audio_fmt.c_str(), text.c_str(), full.c_str(), sdAvailable ? "SD" : "SPIFFS");
     WiFiClientSecure client; client.setInsecure();
     HTTPClient http;
     http.begin(client, "https://api.elevenlabs.io/v1/text-to-speech/" + elevenlabs_voice_id
@@ -218,7 +327,7 @@ String generateAndSaveTTS_SD(const String& text) {
     String payload; serializeJson(doc, payload);
     int code = http.POST(payload);
     if (code == 200) {
-        File f = SD_MMC.open("/" + filename, FILE_WRITE);
+        File f = openWrite(full);
         if (f) { http.writeToStream(&f); f.close(); }
         else { http.end(); return ""; }
     } else {
